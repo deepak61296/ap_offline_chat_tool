@@ -139,15 +139,68 @@ class FunctionGemmaInterface:
                 'content': 'Could not understand command'
             }
     
+    def format_result_message(self, function_name: str, result: Dict[str, Any]) -> str:
+        """
+        Format function result into a user-friendly message.
+        
+        Special formatting for data-returning functions like get_battery and get_position.
+        
+        Args:
+            function_name: Name of the function that was executed
+            result: Result dictionary from function execution
+            
+        Returns:
+            Formatted message string for display to user
+        """
+        if result.get('status') != 'success':
+            return result.get('message', 'Command failed')
+        
+        # Special formatting for battery status
+        if function_name == 'get_battery':
+            voltage = result.get('voltage', 0.0)
+            current = result.get('current', 0.0)
+            remaining = result.get('remaining', 0)
+            return f"🔋 Battery: {voltage:.2f}V, {current:.2f}A, {remaining}% remaining"
+        
+        # Special formatting for position
+        elif function_name == 'get_position':
+            lat = result.get('latitude', 0.0)
+            lon = result.get('longitude', 0.0)
+            alt = result.get('altitude', 0.0)
+            heading = result.get('heading', 0.0)
+            return f"📍 Position: Lat {lat:.6f}°, Lon {lon:.6f}°, Alt {alt:.1f}m, Heading {heading:.1f}°"
+        
+        # Special formatting for mode
+        elif function_name == 'get_mode':
+            mode = result.get('mode', 'UNKNOWN')
+            return f"🎮 Current mode: {mode}"
+        
+        # Special formatting for armable status
+        elif function_name == 'is_armable':
+            armable = result.get('armable', False)
+            reasons = result.get('reasons', [])
+            if armable:
+                return "✅ Drone is ready to arm"
+            else:
+                reason_text = ", ".join(reasons) if reasons else "Unknown reasons"
+                return f"⚠️ Drone not ready to arm: {reason_text}"
+        
+        # Default: use the message from result
+        return result.get('message', 'Command executed successfully')
+    
     def add_tool_result(self, function_name: str, result: Dict[str, Any]) -> str:
         """
-        Format tool result as response message
-        For backward compatibility with demo.py
+        Format tool result as response message.
+        For backward compatibility with demo.py and main.py
+        
+        Args:
+            function_name: Name of the function that was executed
+            result: Result dictionary from function execution
+            
+        Returns:
+            Formatted message string for display to user
         """
-        if result.get('status') == 'success':
-            return result.get('message', 'Command executed successfully')
-        else:
-            return result.get('message', 'Command failed')
+        return self.format_result_message(function_name, result)
     
     def reset_conversation(self):
         """Reset conversation history"""

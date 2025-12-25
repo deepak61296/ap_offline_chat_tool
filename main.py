@@ -9,8 +9,8 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Prompt
 from rich.table import Table
-from drone_functions import DroneController, DRONE_FUNCTIONS
-from function_gemma import FunctionGemmaInterface
+from src.drone_functions import DroneController, DRONE_FUNCTIONS
+from src.function_gemma import FunctionGemmaInterface
 
 console = Console()
 
@@ -102,22 +102,30 @@ class ArduPilotChatTool:
     
     def show_welcome(self):
         """Show welcome banner"""
-        welcome_text = """
-[bold cyan]╔═══════════════════════════════════════════════════════╗[/bold cyan]
-[bold cyan]║                                                       ║[/bold cyan]
-[bold cyan]║        ArduPilot Offline Chat Tool v1.0              ║[/bold cyan]
-[bold cyan]║        Powered by FunctionGemma (270M)               ║[/bold cyan]
-[bold cyan]║                                                       ║[/bold cyan]
-[bold cyan]╚═══════════════════════════════════════════════════════╝[/bold cyan]
+        welcome_text = f"""
+[bold cyan]╔═══════════════════════════════════════════════════════════╗[/bold cyan]
+[bold cyan]║                                                           ║[/bold cyan]
+[bold cyan]║     🚁 ArduPilot AI Assistant - Stage 1 (85% Accuracy)    ║[/bold cyan]
+[bold cyan]║                                                           ║[/bold cyan]
+[bold cyan]║        Natural language drone control - Fully offline!    ║[/bold cyan]
+[bold cyan]║        Powered by FunctionGemma (270M parameters)         ║[/bold cyan]
+[bold cyan]║                                                           ║[/bold cyan]
+[bold cyan]╚═══════════════════════════════════════════════════════════╝[/bold cyan]
 
-[bold white]Natural language → Function calls → Drone actions[/bold white]
+[bold white]Model:[/bold white] {self.gemma.model_name}
+[bold white]Mode:[/bold white] SITL (ArduPilot Software-in-the-Loop)
 
-[dim]Commands:[/dim]
-  - Natural language: "take off to 10 meters", "land the drone"
-  - [bold]/help[/bold]    - Show available functions
-  - [bold]/status[/bold]  - Get drone status
-  - [bold]/reset[/bold]   - Clear conversation history
-  - [bold]/quit[/bold]    - Exit
+[dim]Natural language commands:[/dim]
+  • "arm the drone and takeoff to 15 meters"
+  • "check battery status"
+  • "where am I?"
+  • "return to launch"
+
+[dim]Special commands:[/dim]
+  [bold]/help[/bold] or [bold]/h[/bold]    - Show available functions
+  [bold]/status[/bold] or [bold]/s[/bold]  - Get drone status
+  [bold]/reset[/bold] or [bold]/r[/bold]   - Clear conversation history
+  [bold]/quit[/bold] or [bold]/q[/bold]    - Exit application
 """
         console.print(Panel(welcome_text, border_style="cyan"))
     
@@ -172,19 +180,30 @@ class ArduPilotChatTool:
                 
                 # Handle commands
                 if user_input.startswith('/'):
-                    if user_input == '/quit' or user_input == '/exit':
+                    cmd = user_input.lower()
+                    
+                    # Quit commands
+                    if cmd in ['/quit', '/exit', '/q']:
                         console.print("\n[bold yellow]👋 Goodbye![/bold yellow]")
                         self.running = False
                         break
-                    elif user_input == '/help':
+                    
+                    # Help commands
+                    elif cmd in ['/help', '/h']:
                         self.show_help()
-                    elif user_input == '/status':
+                    
+                    # Status commands
+                    elif cmd in ['/status', '/s']:
                         self.show_status()
-                    elif user_input == '/reset':
+                    
+                    # Reset commands
+                    elif cmd in ['/reset', '/r']:
                         self.gemma.reset_conversation()
                         console.print("[green]🔄 Conversation reset[/green]")
+                    
                     else:
-                        console.print(f"[red]Unknown command: {user_input}[/red]")
+                        console.print(f"[red]❌ Unknown command: {user_input}[/red]")
+                        console.print("[dim]Type /help or /h for available commands[/dim]")
                 else:
                     # Process natural language query
                     self.process_query(user_input)
@@ -201,15 +220,44 @@ def main():
     """Main entry point"""
     import argparse
     
-    parser = argparse.ArgumentParser(description='ArduPilot Offline Chat Tool with FunctionGemma')
-    parser.add_argument('--connection', '-c', 
-                       default='udp:127.0.0.1:14550',
-                       help='MAVLink connection string (default: udp:127.0.0.1:14550)')
+    parser = argparse.ArgumentParser(
+        description='ArduPilot AI Assistant - Natural language drone control with FunctionGemma',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  %(prog)s                                    # Connect to default SITL
+  %(prog)s -c tcp:127.0.0.1:5760             # Connect to specific port
+  %(prog)s -m ardupilot-stage1 -v            # Use specific model with verbose output
+        """
+    )
+    
+    parser.add_argument(
+        '--connection', '-c',
+        default='udp:127.0.0.1:14550',
+        help='MAVLink connection string (default: udp:127.0.0.1:14550)'
+    )
+    
+    parser.add_argument(
+        '--model', '-m',
+        default='ardupilot-stage1',
+        help='Ollama model name (default: ardupilot-stage1)'
+    )
+    
+    parser.add_argument(
+        '--verbose', '-v',
+        action='store_true',
+        help='Enable verbose output for debugging'
+    )
     
     args = parser.parse_args()
     
+    # Set verbose mode (could be used for debug prints)
+    if args.verbose:
+        console.print("[dim]Verbose mode enabled[/dim]")
+    
     # Create and run chat tool
     chat_tool = ArduPilotChatTool(connection_string=args.connection)
+    chat_tool.gemma.model_name = args.model
     chat_tool.run()
 
 

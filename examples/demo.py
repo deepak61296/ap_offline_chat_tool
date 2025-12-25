@@ -8,8 +8,8 @@ import sys
 from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Prompt
-from drone_functions import DRONE_FUNCTIONS
-from function_gemma import FunctionGemmaInterface
+from src.drone_functions import DRONE_FUNCTIONS
+from src.function_gemma import FunctionGemmaInterface
 
 console = Console()
 
@@ -139,24 +139,32 @@ class DemoMode:
     
     def show_welcome(self):
         """Show demo welcome"""
-        welcome = """
-[bold magenta]╔═══════════════════════════════════════════════════════╗[/bold magenta]
-[bold magenta]║                                                       ║[/bold magenta]
-[bold magenta]║           DEMO MODE - No SITL Required                ║[/bold magenta]
-[bold magenta]║        Powered by FunctionGemma (270M)                ║[/bold magenta]
-[bold magenta]║                                                       ║[/bold magenta]
-[bold magenta]╚═══════════════════════════════════════════════════════╝[/bold magenta]
+        welcome = f"""
+[bold magenta]╔═══════════════════════════════════════════════════════════╗[/bold magenta]
+[bold magenta]║                                                           ║[/bold magenta]
+[bold magenta]║     🚁 ArduPilot AI Assistant - Stage 1 (85% Accuracy)    ║[/bold magenta]
+[bold magenta]║                                                           ║[/bold magenta]
+[bold magenta]║           DEMO MODE - No SITL Required                    ║[/bold magenta]
+[bold magenta]║        Powered by FunctionGemma (270M parameters)         ║[/bold magenta]
+[bold magenta]║                                                           ║[/bold magenta]
+[bold magenta]╚═══════════════════════════════════════════════════════════╝[/bold magenta]
 
 [bold yellow]⚠️  Running in DEMO mode - all responses are simulated[/bold yellow]
 [dim]This mode lets you test FunctionGemma without ArduPilot SITL[/dim]
 
-Try commands like:
-  • "take off to 10 meters"
-  • "what's my battery status?"
-  • "fly to latitude 28.5, longitude 77.0"
+[bold white]Model:[/bold white] {self.gemma.model_name}
 
-Commands:
-  [bold]/help[/bold]  - Show functions  [bold]/quit[/bold] - Exit  [bold]/reset[/bold] - Clear history
+[dim]Try these commands:[/dim]
+  • "arm the drone and takeoff to 15 meters"
+  • "check battery status"
+  • "where am I?"
+  • "fly to latitude 28.5, longitude 77.0"
+  • "return to launch"
+
+[dim]Special commands:[/dim]
+  [bold]/help[/bold] or [bold]/h[/bold]  - Show functions
+  [bold]/quit[/bold] or [bold]/q[/bold]  - Exit
+  [bold]/reset[/bold] or [bold]/r[/bold] - Clear history
 """
         console.print(Panel(welcome, border_style="magenta"))
     
@@ -175,13 +183,20 @@ Commands:
                     continue
                 
                 if user_input.startswith('/'):
-                    if user_input in ['/quit', '/exit']:
+                    cmd = user_input.lower()
+                    
+                    # Quit commands
+                    if cmd in ['/quit', '/exit', '/q']:
                         console.print("\n[bold yellow]👋 Goodbye![/bold yellow]")
                         break
-                    elif user_input == '/reset':
+                    
+                    # Reset commands
+                    elif cmd in ['/reset', '/r']:
                         self.gemma.reset_conversation()
                         console.print("[green]🔄 Conversation reset[/green]")
-                    elif user_input == '/help':
+                    
+                    # Help commands
+                    elif cmd in ['/help', '/h']:
                         from rich.table import Table
                         table = Table(title="Available Functions", border_style="cyan")
                         table.add_column("Function", style="yellow")
@@ -189,8 +204,10 @@ Commands:
                         for fname, fdef in DRONE_FUNCTIONS.items():
                             table.add_row(fname, fdef['description'])
                         console.print(table)
+                    
                     else:
-                        console.print(f"[red]Unknown command[/red]")
+                        console.print(f"[red]❌ Unknown command: {cmd}[/red]")
+                        console.print("[dim]Type /help or /h for available commands[/dim]")
                 else:
                     self.process_query(user_input)
                     
