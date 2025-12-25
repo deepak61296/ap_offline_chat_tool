@@ -45,7 +45,7 @@ class ArduPilotChatTool:
         Returns:
             Result dictionary from function execution
         """
-        console.print(f"\n[bold yellow]⚙️  Executing: {function_name}({arguments})[/bold yellow]")
+        console.print(f"\n[bold yellow][EXECUTING] {function_name}({arguments})[/bold yellow]")
         
         try:
             # Get the function from DroneController
@@ -59,15 +59,15 @@ class ArduPilotChatTool:
             
             # Print result
             if result.get("status") == "success":
-                console.print(f"[bold green]✅ {result.get('message', 'Success')}[/bold green]")
+                console.print(f"[bold green][SUCCESS] {result.get('message', 'Success')}[/bold green]")
             else:
-                console.print(f"[bold red]❌ {result.get('message', 'Failed')}[/bold red]")
+                console.print(f"[bold red][ERROR] {result.get('message', 'Failed')}[/bold red]")
             
             return result
             
         except Exception as e:
             error_result = {"status": "error", "message": f"Execution failed: {str(e)}"}
-            console.print(f"[bold red]❌ {error_result['message']}[/bold red]")
+            console.print(f"[bold red][ERROR] {error_result['message']}[/bold red]")
             return error_result
     
     def process_query(self, user_input: str):
@@ -91,14 +91,14 @@ class ArduPilotChatTool:
                 
                 # Send result back to FunctionGemma for natural language response
                 final_response = self.gemma.add_tool_result(func_name, result)
-                console.print(f"\n[bold blue]🤖 Assistant:[/bold blue] {final_response}")
+                console.print(f"\n[bold blue]Assistant:[/bold blue] {final_response}")
                 
         elif response['type'] == 'text':
             # Just a text response
-            console.print(f"\n[bold blue]🤖 Assistant:[/bold blue] {response['content']}")
+            console.print(f"\n[bold blue]Assistant:[/bold blue] {response['content']}")
             
         elif response['type'] == 'error':
-            console.print(f"\n[bold red]❌ Error:[/bold red] {response['message']}")
+            console.print(f"\n[bold red][ERROR][/bold red] {response['message']}")
     
     def show_welcome(self):
         """Show welcome banner"""
@@ -146,17 +146,17 @@ class ArduPilotChatTool:
     
     def show_status(self):
         """Show drone status"""
-        console.print("\n[bold cyan]📊 Getting drone status...[/bold cyan]")
+        console.print("\n[bold cyan][STATUS] Getting drone status...[/bold cyan]")
         
         # Get position
         pos = self.drone.get_position()
         if pos.get("status") == "success":
-            console.print(f"[green]📍 Position:[/green] Lat={pos['latitude']:.6f}, Lon={pos['longitude']:.6f}, Alt={pos['altitude']:.2f}m")
+            console.print(f"[green]Position:[/green] Lat={pos['latitude']:.6f}, Lon={pos['longitude']:.6f}, Alt={pos['altitude']:.2f}m")
         
         # Get battery
         batt = self.drone.get_battery()
         if batt.get("status") == "success":
-            console.print(f"[green]🔋 Battery:[/green] {batt['voltage']:.2f}V, {batt['current']:.2f}A, {batt['remaining']}%")
+            console.print(f"[green]Battery:[/green] {batt['voltage']:.2f}V, {batt['current']:.2f}A, {batt['remaining']}%")
     
     def run(self):
         """Main chat loop"""
@@ -164,10 +164,10 @@ class ArduPilotChatTool:
         
         # Connect to drone
         if not self.connect_drone():
-            console.print("[bold red]❌ Failed to connect to drone. Exiting.[/bold red]")
+            console.print("[bold red][ERROR] Failed to connect to drone. Exiting.[/bold red]")
             return
         
-        console.print("\n[bold green]✅ Ready! Type your command or /help for assistance.[/bold green]\n")
+        console.print("\n[bold green]Ready! Type your command or /help for assistance.[/bold green]\n")
         
         self.running = True
         while self.running:
@@ -199,10 +199,10 @@ class ArduPilotChatTool:
                     # Reset commands
                     elif cmd in ['/reset', '/r']:
                         self.gemma.reset_conversation()
-                        console.print("[green]🔄 Conversation reset[/green]")
+                        console.print("[green]Conversation reset[/green]")
                     
                     else:
-                        console.print(f"[red]❌ Unknown command: {user_input}[/red]")
+                        console.print(f"[red][ERROR] Unknown command: {user_input}[/red]")
                         console.print("[dim]Type /help or /h for available commands[/dim]")
                 else:
                     # Process natural language query
@@ -213,7 +213,7 @@ class ArduPilotChatTool:
                 self.running = False
                 break
             except Exception as e:
-                console.print(f"\n[bold red]❌ Error:[/bold red] {str(e)}")
+                console.print(f"\n[bold red][ERROR][/bold red] {str(e)}")
 
 
 def main():

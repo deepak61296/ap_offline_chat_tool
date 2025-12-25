@@ -52,10 +52,10 @@ class TestSuite:
             result = self.gemma.parse_function_call(test["input"])
             
             if result and result["function_name"] == test["expected_name"]:
-                print(f"✅ Test {i}: Parsed '{test['expected_name']}' correctly")
+                print(f"[PASS] Test {i}: Parsed '{test['expected_name']}' correctly")
                 self.passed += 1
             else:
-                print(f"❌ Test {i}: Failed to parse '{test['expected_name']}'")
+                print(f"[FAIL] Test {i}: Failed to parse '{test['expected_name']}'")
                 self.failed += 1
     
     def test_arm_function(self):
@@ -67,11 +67,11 @@ class TestSuite:
         result = self.drone.arm()
         
         if result.get("status") == "success":
-            print(f"✅ arm() executed successfully")
+            print(f"[PASS] arm() executed successfully")
             print(f"   Message: {result.get('message')}")
             self.passed += 1
         else:
-            print(f"❌ arm() failed: {result.get('message')}")
+            print(f"[FAIL] arm() failed: {result.get('message')}")
             self.failed += 1
     
     def test_disarm_function(self):
@@ -83,11 +83,11 @@ class TestSuite:
         result = self.drone.disarm()
         
         if result.get("status") == "success":
-            print(f"✅ disarm() executed successfully")
+            print(f"[PASS] disarm() executed successfully")
             print(f"   Message: {result.get('message')}")
             self.passed += 1
         else:
-            print(f"❌ disarm() failed: {result.get('message')}")
+            print(f"[FAIL] disarm() failed: {result.get('message')}")
             self.failed += 1
     
     def test_takeoff_function(self):
@@ -103,11 +103,11 @@ class TestSuite:
         result = self.drone.takeoff(15)
         
         if result.get("status") == "success" and result.get("altitude") == 15:
-            print(f"✅ takeoff(15) executed successfully")
+            print(f"[PASS] takeoff(15) executed successfully")
             print(f"   Message: {result.get('message')}")
             self.passed += 1
         else:
-            print(f"❌ takeoff(15) failed: {result.get('message')}")
+            print(f"[FAIL] takeoff(15) failed: {result.get('message')}")
             self.failed += 1
         
         # Test takeoff without arming
@@ -115,10 +115,10 @@ class TestSuite:
         result = self.drone.takeoff(10)
         
         if result.get("status") == "error":
-            print(f"✅ takeoff() correctly fails when not armed")
+            print(f"[PASS] takeoff() correctly fails when not armed")
             self.passed += 1
         else:
-            print(f"❌ takeoff() should fail when not armed")
+            print(f"[FAIL] takeoff() should fail when not armed")
             self.failed += 1
     
     def test_land_function(self):
@@ -130,11 +130,11 @@ class TestSuite:
         result = self.drone.land()
         
         if result.get("status") == "success":
-            print(f"✅ land() executed successfully")
+            print(f"[PASS] land() executed successfully")
             print(f"   Message: {result.get('message')}")
             self.passed += 1
         else:
-            print(f"❌ land() failed: {result.get('message')}")
+            print(f"[FAIL] land() failed: {result.get('message')}")
             self.failed += 1
     
     def test_rtl_function(self):
@@ -146,11 +146,11 @@ class TestSuite:
         result = self.drone.rtl()
         
         if result.get("status") == "success":
-            print(f"✅ rtl() executed successfully")
+            print(f"[PASS] rtl() executed successfully")
             print(f"   Message: {result.get('message')}")
             self.passed += 1
         else:
-            print(f"❌ rtl() failed: {result.get('message')}")
+            print(f"[FAIL] rtl() failed: {result.get('message')}")
             self.failed += 1
     
     def test_change_mode_function(self):
@@ -165,10 +165,10 @@ class TestSuite:
             result = self.drone.change_mode(mode)
             
             if result.get("status") == "success":
-                print(f"✅ change_mode('{mode}') executed successfully")
+                print(f"[PASS] change_mode('{mode}') executed successfully")
                 self.passed += 1
             else:
-                print(f"❌ change_mode('{mode}') failed")
+                print(f"[FAIL] change_mode('{mode}') failed")
                 self.failed += 1
     
     def test_get_battery_function(self):
@@ -183,7 +183,7 @@ class TestSuite:
             "voltage" in result and 
             "current" in result and 
             "remaining" in result):
-            print(f"✅ get_battery() executed successfully")
+            print(f"[PASS] get_battery() executed successfully")
             print(f"   Voltage: {result['voltage']}V")
             print(f"   Current: {result['current']}A")
             print(f"   Remaining: {result['remaining']}%")
@@ -192,15 +192,15 @@ class TestSuite:
             formatted = self.gemma.format_result_message("get_battery", result)
             print(f"   Formatted: {formatted}")
             
-            if "🔋" in formatted and str(result['voltage']) in formatted:
-                print(f"✅ Battery formatting correct")
+            if "Battery:" in formatted and str(result['voltage']) in formatted:
+                print(f"[PASS] Battery formatting correct")
                 self.passed += 2  # +1 for function, +1 for formatting
             else:
-                print(f"❌ Battery formatting incorrect")
+                print(f"[FAIL] Battery formatting incorrect")
                 self.passed += 1
                 self.failed += 1
         else:
-            print(f"❌ get_battery() failed or missing data")
+            print(f"[FAIL] get_battery() failed or missing data")
             self.failed += 1
     
     def test_get_position_function(self):
@@ -215,7 +215,7 @@ class TestSuite:
             "latitude" in result and 
             "longitude" in result and 
             "altitude" in result):
-            print(f"✅ get_position() executed successfully")
+            print(f"[PASS] get_position() executed successfully")
             print(f"   Latitude: {result['latitude']}°")
             print(f"   Longitude: {result['longitude']}°")
             print(f"   Altitude: {result['altitude']}m")
@@ -225,15 +225,15 @@ class TestSuite:
             formatted = self.gemma.format_result_message("get_position", result)
             print(f"   Formatted: {formatted}")
             
-            if "📍" in formatted and str(result['latitude']) in formatted:
-                print(f"✅ Position formatting correct")
+            if "Position:" in formatted and str(result['latitude']) in formatted:
+                print(f"[PASS] Position formatting correct")
                 self.passed += 2  # +1 for function, +1 for formatting
             else:
-                print(f"❌ Position formatting incorrect")
+                print(f"[FAIL] Position formatting incorrect")
                 self.passed += 1
                 self.failed += 1
         else:
-            print(f"❌ get_position() failed or missing data")
+            print(f"[FAIL] get_position() failed or missing data")
             self.failed += 1
     
     def test_result_formatting(self):
@@ -264,10 +264,10 @@ class TestSuite:
             formatted = self.gemma.format_result_message(test["function"], test["result"])
             
             if test["should_contain"] in formatted:
-                print(f"✅ {test['function']} formatting correct: {formatted}")
+                print(f"[PASS] {test['function']} formatting correct: {formatted}")
                 self.passed += 1
             else:
-                print(f"❌ {test['function']} formatting incorrect: {formatted}")
+                print(f"[FAIL] {test['function']} formatting incorrect: {formatted}")
                 self.failed += 1
     
     def run_all_tests(self):
@@ -297,8 +297,8 @@ class TestSuite:
         percentage = (self.passed / total * 100) if total > 0 else 0
         
         print(f"Total Tests: {total}")
-        print(f"✅ Passed: {self.passed}")
-        print(f"❌ Failed: {self.failed}")
+        print(f"[PASS] Passed: {self.passed}")
+        print(f"[FAIL] Failed: {self.failed}")
         print(f"Success Rate: {percentage:.1f}%")
         print("="*60)
         
@@ -306,7 +306,7 @@ class TestSuite:
             print("\n🎉 ALL TESTS PASSED! 🎉\n")
             return 0
         else:
-            print(f"\n⚠️  {self.failed} TEST(S) FAILED ⚠️\n")
+            print(f"\n[WARN]  {self.failed} TEST(S) FAILED [WARN]\n")
             return 1
 
 

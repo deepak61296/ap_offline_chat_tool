@@ -25,11 +25,11 @@ class MockDroneController:
         
     def arm(self):
         self.armed = True
-        return {"status": "success", "message": "✈️ Drone armed (simulated)"}
+        return {"status": "success", "message": "Drone armed (simulated)"}
     
     def disarm(self):
         self.armed = False
-        return {"status": "success", "message": "🛑 Drone disarmed (simulated)"}
+        return {"status": "success", "message": "Drone disarmed (simulated)"}
     
     def takeoff(self, altitude):
         if not self.armed:
@@ -38,29 +38,29 @@ class MockDroneController:
         self.mode = "GUIDED"
         return {
             "status": "success",
-            "message": f"🚁 Taking off to {altitude}m (simulated)",
+            "message": f"Taking off to {altitude}m (simulated)",
             "altitude": altitude
         }
     
     def land(self):
         self.altitude = 0
         self.mode = "LAND"
-        return {"status": "success", "message": "🛬 Landing (simulated)"}
+        return {"status": "success", "message": "Landing (simulated)"}
     
     def rtl(self):
         self.mode = "RTL"
-        return {"status": "success", "message": "🏠 Returning to launch (simulated)"}
+        return {"status": "success", "message": "Returning to launch (simulated)"}
     
     def change_mode(self, mode):
         self.mode = mode
-        return {"status": "success", "message": f"🔄 Mode changed to {mode} (simulated)"}
+        return {"status": "success", "message": f"Mode changed to {mode} (simulated)"}
     
     def goto_location(self, lat, lon, alt):
         self.position = {"lat": lat, "lon": lon, "alt": alt}
         self.mode = "GUIDED"
         return {
             "status": "success",
-            "message": f"📍 Flying to ({lat:.4f}, {lon:.4f}) at {alt}m (simulated)",
+            "message": f"Flying to ({lat:.4f}, {lon:.4f}) at {alt}m (simulated)",
             "latitude": lat,
             "longitude": lon,
             "altitude": alt
@@ -69,7 +69,7 @@ class MockDroneController:
     def set_speed(self, speed, speed_type="ground"):
         return {
             "status": "success",
-            "message": f"⚡ {speed_type.capitalize()} speed set to {speed} m/s (simulated)"
+            "message": f"{speed_type.capitalize()} speed set to {speed} m/s (simulated)"
         }
     
     def get_position(self):

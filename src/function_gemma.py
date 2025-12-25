@@ -20,6 +20,55 @@ class FunctionGemmaInterface:
         """
         self.model_name = model_name
         self.conversation_history = []
+    
+    def preprocess_command(self, user_input: str) -> str:
+        """
+        Preprocess user commands to fix common pattern variations.
+        
+        Converts natural variations to model-friendly format. This helps handle
+        commands that weren't in the training data but are natural to say.
+        
+        Args:
+            user_input: Raw user command
+            
+        Returns:
+            Preprocessed command that the model can understand
+            
+        Example:
+            >>> preprocess_command("takeoff 20")
+            'takeoff to 20 meters'
+            >>> preprocess_command("takeoff drone at 15")
+            'takeoff to 15 meters'
+        """
+        import re
+        
+        processed = user_input.lower().strip()
+        
+        # Fix takeoff variations - convert to "takeoff to X meters"
+        takeoff_patterns = [
+            # "takeoff 20" → "takeoff to 20 meters"
+            (r'\btakeoff\s+(\d+)\s*(?:meters?|m)?\s*$', r'takeoff to \1 meters'),
+            
+            # "takeoff drone 20" → "takeoff to 20 meters"
+            (r'\btakeoff\s+drone\s+(\d+)\b', r'takeoff to \1 meters'),
+            
+            # "takeoff drone at 20" → "takeoff to 20 meters"
+            (r'\btakeoff\s+drone\s+at\s+(\d+)\b', r'takeoff to \1 meters'),
+            
+            # "takeoff at 20" → "takeoff to 20 meters"
+            (r'\btakeoff\s+at\s+(\d+)\b', r'takeoff to \1 meters'),
+            
+            # "take off 20" → "takeoff to 20 meters"
+            (r'\btake\s+off\s+(\d+)\b', r'takeoff to \1 meters'),
+            
+            # "take off drone 20" → "takeoff to 20 meters"
+            (r'\btake\s+off\s+drone\s+(\d+)\b', r'takeoff to \1 meters'),
+        ]
+        
+        for pattern, replacement in takeoff_patterns:
+            processed = re.sub(pattern, replacement, processed)
+        
+        return processed
         
     def parse_function_call(self, response: str) -> Optional[Dict[str, Any]]:
         """
@@ -89,13 +138,20 @@ class FunctionGemmaInterface:
             Dictionary with function_name and arguments, or None if parsing failed
         """
         try:
+            # Preprocess the input to fix common variations
+            processed_input = self.preprocess_command(user_input)
+            
+            # Show preprocessing if input was changed
+            if processed_input != user_input.lower().strip():
+                print(f"[PREPROCESSED] '{user_input}' -> '{processed_input}'")
+            
             # Call model (no tools parameter - using embedded template)
             response = ollama.chat(
                 model=self.model_name,
                 messages=[
                     {
                         'role': 'user',
-                        'content': user_input
+                        'content': processed_input
                     }
                 ]
             )
@@ -107,14 +163,14 @@ class FunctionGemmaInterface:
             result = self.parse_function_call(raw_response)
             
             if result:
-                print(f"✅ Parsed: {result['function_name']}({result['arguments']})")
+                print(f"[PARSED] {result['function_name']}({result['arguments']})")
             else:
-                print(f"❌ Could not parse function call from: {raw_response}")
+                print(f"[ERROR] Could not parse function call from: {raw_response}")
                 
             return result
             
         except Exception as e:
-            print(f"❌ Error communicating with model: {e}")
+            print(f"[ERROR] Error communicating with model: {e}")
             return None
     
     def query(self, user_input: str) -> Dict[str, Any]:
@@ -160,7 +216,7 @@ class FunctionGemmaInterface:
             voltage = result.get('voltage', 0.0)
             current = result.get('current', 0.0)
             remaining = result.get('remaining', 0)
-            return f"🔋 Battery: {voltage:.2f}V, {current:.2f}A, {remaining}% remaining"
+            return f"Battery: {voltage:.2f}V, {current:.2f}A, {remaining}% remaining"
         
         # Special formatting for position
         elif function_name == 'get_position':
@@ -168,22 +224,22 @@ class FunctionGemmaInterface:
             lon = result.get('longitude', 0.0)
             alt = result.get('altitude', 0.0)
             heading = result.get('heading', 0.0)
-            return f"📍 Position: Lat {lat:.6f}°, Lon {lon:.6f}°, Alt {alt:.1f}m, Heading {heading:.1f}°"
+            return f"Position: Lat {lat:.6f}°, Lon {lon:.6f}°, Alt {alt:.1f}m, Heading {heading:.1f}°"
         
         # Special formatting for mode
         elif function_name == 'get_mode':
             mode = result.get('mode', 'UNKNOWN')
-            return f"🎮 Current mode: {mode}"
+            return f"Current mode: {mode}"
         
         # Special formatting for armable status
         elif function_name == 'is_armable':
             armable = result.get('armable', False)
             reasons = result.get('reasons', [])
             if armable:
-                return "✅ Drone is ready to arm"
+                return "Drone is ready to arm"
             else:
                 reason_text = ", ".join(reasons) if reasons else "Unknown reasons"
-                return f"⚠️ Drone not ready to arm: {reason_text}"
+                return f"WARNING: Drone not ready to arm: {reason_text}"
         
         # Default: use the message from result
         return result.get('message', 'Command executed successfully')
