@@ -5,6 +5,11 @@ Simulates drone responses for testing the AI interface
 """
 
 import sys
+import os
+
+# Add parent directory to path for imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Prompt

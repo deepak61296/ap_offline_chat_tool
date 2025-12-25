@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  ardupilot-assistant:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ardupilot-ai-assistant:latest
+    container_name: ardupilot-assistant
+
+    # Interactive mode for demo
+    stdin_open: true
+    tty: true
+
+    # Environment variables
+    environment:
+      - PYTHONUNBUFFERED=1
+      - OLLAMA_HOST=http://localhost:11434
+
+    # Volumes for persistent data
+    volumes:
+      # Ollama models (persistent)
+      - ollama-models:/home/ardupilot/.ollama
+      # Optional: Mount local code for development
+      # - ./src:/app/src
+      # - ./examples:/app/examples
+
+      # Network mode for Ollama
+    network_mode: host
+
+    # Resource limits (optional)
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+
+    # Health check
+    healthcheck:
+      test: [ "CMD", "python3", "-c", "import ollama; print('OK')" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    # Restart policy
+    restart: unless-stopped
+
+volumes:
+  ollama-models:
+    driver: local
