@@ -11,24 +11,27 @@ echo ""
 
 # Start Ollama service in background
 echo "[1/4] Starting Ollama service..."
-ollama serve &
+ollama serve > /tmp/ollama.log 2>&1 &
 OLLAMA_PID=$!
 
 # Wait for Ollama to be ready
 echo "[2/4] Waiting for Ollama to be ready..."
-sleep 5
+for i in {1..30}; do
+    if ollama list > /dev/null 2>&1; then
+        echo "Ollama is ready!"
+        break
+    fi
+    sleep 1
+done
 
-# Check if model exists, if not pull/create it
+# Check if model exists, if not pull it
 echo "[3/4] Setting up ardupilot-stage1 model..."
 if ollama list | grep -q "ardupilot-stage1"; then
     echo "Model already exists"
 else
-    echo "Creating model from Modelfile..."
-    cd /app/models
-    ollama create ardupilot-stage1 -f ardupilot-stage1.Modelfile
-    
-    # Alternative: Pull from Ollama library (if available)
-    # ollama pull deepakpopli/ardupilot-stage1
+    echo "Pulling model from Ollama library..."
+    ollama pull deepakpopli/ardupilot-stage1
+    echo "Model downloaded successfully!"
 fi
 
 echo "[4/4] Setup complete!"

@@ -39,6 +39,10 @@ COPY CHANGELOG.md .
 COPY CONTRIBUTING.md .
 COPY LICENSE .
 
+# Copy entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 # Create a non-root user
 RUN useradd -m -u 1000 ardupilot && \
     chown -R ardupilot:ardupilot /app
@@ -46,11 +50,11 @@ RUN useradd -m -u 1000 ardupilot && \
 # Switch to non-root user
 USER ardupilot
 
-# Set up Ollama model
-# Note: This will be done at runtime via entrypoint script
-
 # Expose port for potential web interface (future)
 EXPOSE 8080
+
+# Use entrypoint script
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 
 # Default command: run demo mode
 CMD ["python3", "examples/demo.py"]
