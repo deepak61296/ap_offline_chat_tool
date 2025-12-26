@@ -1,0 +1,101 @@
+FROM ubuntu:22.04
+
+# Avoid prompts from apt
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Set timezone
+ENV TZ=UTC
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# Install system dependencies for ArduPilot SITL
+RUN apt-get update && apt-get install -y \
+    python3.10 \
+    python3-pip \
+    python3-dev \
+    curl \
+    git \
+    build-essential \
+    ccache \
+    g++ \
+    gawk \
+    make \
+    wget \
+    libtool \
+    libxml2-dev \
+    libxslt1-dev \
+    python3-numpy \
+    python3-matplotlib \
+    python3-serial \
+    python3-opencv \
+    python3-wxgtk4.0 \
+    python3-lxml \
+    xterm \
+    sudo \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Ollama
+RUN curl -fsSL https://ollama.com/install.sh | sh
+
+# Create ardupilot user
+RUN useradd -m -u 1000 -s /bin/bash ardupilot && \
+    echo "ardupilot ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+# Switch to ardupilot user
+USER ardupilot
+WORKDIR /home/ardupilot
+
+# Clone ArduPilot
+RUN git clone --recurse-submodules https://github.com/ArduPilot/ardupilot.git && \
+    cd ardupilot && \
+    git checkout Copter-4.5 && \
+    git submodule update --init --recursive
+
+# Install ArduPilot prerequisites
+RUN cd ardupilot && \
+    Tools/environment_install/install-prereqs-ubuntu.sh -y
+
+# Set up environment variables
+ENV PATH="/home/ardupilot/.local/bin:/home/ardupilot/ardupilot/Tools/autotest:${PATH}"
+ENV PYTHONPATH="/home/ardupilot/ardupilot/Tools/autotest"
+
+# Build ArduCopter SITL
+RUN cd ardupilot/ArduCopter && \
+    ../Tools/scripts/waf configure --board sitl && \
+    ../Tools/scripts/waf build
+
+# Install MAVProxy
+RUN pip3 install --user MAVProxy
+
+# Create app directory
+WORKDIR /home/ardupilot/app
+
+# Copy requirements first for better caching
+COPY --chown=ardupilot:ardupilot requirements.txt .
+
+# Install Python dependencies
+RUN pip3 install --user --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY --chown=ardupilot:ardupilot src/ ./src/
+COPY --chown=ardupilot:ardupilot examples/ ./examples/
+COPY --chown=ardupilot:ardupilot tests/ ./tests/
+COPY --chown=ardupilot:ardupilot models/ ./models/
+COPY --chown=ardupilot:ardupilot scripts/ ./scripts/
+COPY --chown=ardupilot:ardupilot main.py .
+COPY --chown=ardupilot:ardupilot README.md .
+COPY --chown=ardupilot:ardupilot CHANGELOG.md .
+COPY --chown=ardupilot:ardupilot CONTRIBUTING.md .
+COPY --chown=ardupilot:ardupilot LICENSE .
+
+# Copy entrypoint scripts
+COPY --chown=ardupilot:ardupilot docker-entrypoint-full.sh /home/ardupilot/
+RUN chmod +x /home/ardupilot/docker-entrypoint-full.sh
+
+# Expose ports
+EXPOSE 8080 14550 14551 5760 5761
+
+# Use entrypoint script
+ENTRYPOINT ["/home/ardupilot/docker-entrypoint-full.sh"]
+
+# Default command: run demo mode
+CMD ["demo"]
