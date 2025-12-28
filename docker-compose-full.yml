@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  # Demo mode - No SITL, just AI assistant with simulated responses
+  ardupilot-demo:
+    build:
+      context: .
+      dockerfile: Dockerfile.full
+    image: ardupilot-ai-full:latest
+    container_name: ardupilot-demo
+    stdin_open: true
+    tty: true
+    command: demo
+    volumes:
+      - ollama-models:/home/ardupilot/.ollama
+    network_mode: host
+    profiles: ["demo"]
+
+  # SITL mode - Full ArduPilot SITL + AI assistant
+  ardupilot-sitl:
+    build:
+      context: .
+      dockerfile: Dockerfile.full
+    image: ardupilot-ai-full:latest
+    container_name: ardupilot-sitl
+    stdin_open: true
+    tty: true
+    command: sitl
+    volumes:
+      - ollama-models:/home/ardupilot/.ollama
+      - sitl-data:/home/ardupilot/ardupilot
+    network_mode: host
+    privileged: true
+    profiles: ["sitl"]
+
+  # Test mode - Run all tests
+  ardupilot-test:
+    build:
+      context: .
+      dockerfile: Dockerfile.full
+    image: ardupilot-ai-full:latest
+    container_name: ardupilot-test
+    command: test
+    volumes:
+      - ollama-models:/home/ardupilot/.ollama
+    network_mode: host
+    profiles: ["test"]
+
+volumes:
+  ollama-models:
+    driver: local
+  sitl-data:
+    driver: local
