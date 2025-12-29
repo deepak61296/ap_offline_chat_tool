@@ -10,7 +10,7 @@ import os
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.function_gemma import FunctionGemmaInterface
+from src.qwen_interface import Qwen25Interface as FunctionGemmaInterface
 from examples.demo import MockDroneController
 
 

@@ -14,7 +14,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Prompt
 from src.drone_functions import DRONE_FUNCTIONS
-from src.function_gemma import FunctionGemmaInterface
+from src.qwen_interface import Qwen25Interface as FunctionGemmaInterface
 
 console = Console()
 

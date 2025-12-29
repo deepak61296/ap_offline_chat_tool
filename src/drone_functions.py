@@ -978,6 +978,142 @@ class DroneController:
             "status": "success",
             "message": "Mission cleared"
         }
+    
+    def arm_and_takeoff(self, altitude: float) -> Dict[str, Any]:
+        """
+        Composite function: Arm motors and takeoff to altitude in one command
+        
+        Args:
+            altitude: Target altitude in meters
+            
+        Returns:
+            Dictionary with status and message
+        """
+        try:
+            if altitude < 2 or altitude > 120:
+                return {"status": "error", "message": "Altitude must be 2-120m"}
+            
+            # Arm
+            arm_result = self.arm()
+            if arm_result.get("status") != "success":
+                return arm_result
+            
+            time.sleep(0.5)
+            
+            # Takeoff
+            takeoff_result = self.takeoff(altitude)
+            return takeoff_result
+        except Exception as e:
+            return {"status": "error", "message": f"Arm and takeoff failed: {str(e)}"}
+    
+    def hover(self, duration: float) -> Dict[str, Any]:
+        """Hold current position for specified duration in seconds"""
+        try:
+            if duration <= 0 or duration > 300:
+                return {"status": "error", "message": "Duration must be 0-300 seconds"}
+            
+            if not self._check_armed_state():
+                return {"status": "error", "message": "Vehicle must be armed"}
+            
+            self.change_mode("LOITER")
+            time.sleep(duration)
+            
+            return {"status": "success", "message": f"Hovered for {duration} seconds"}
+        except Exception as e:
+            return {"status": "error", "message": f"Hover failed: {str(e)}"}
+    
+    def land_and_disarm(self) -> Dict[str, Any]:
+        """Composite function: Land and automatically disarm"""
+        try:
+            land_result = self.land()
+            if land_result.get("status") != "success":
+                return land_result
+            
+            # Wait for landing
+            time.sleep(10)
+            
+            disarm_result = self.disarm()
+            return {"status": "success", "message": "Landed and disarmed"}
+        except Exception as e:
+            return {"status": "error", "message": f"Land and disarm failed: {str(e)}"}
+    
+    def set_parameter(self, param_name: str, value: float) -> Dict[str, Any]:
+        """Set ArduPilot parameter (e.g., 'WPNAV_SPEED', 500)"""
+        try:
+            param_id = param_name.encode('utf-8')[:16]
+            
+            self.master.mav.param_set_send(
+                self.master.target_system,
+                self.master.target_component,
+                param_id,
+                value,
+                mavutil.mavlink.MAV_PARAM_TYPE_REAL32
+            )
+            
+            ack = self.master.recv_match(type='PARAM_VALUE', blocking=True, timeout=3)
+            if ack:
+                return {"status": "success", "message": f"Parameter {param_name} set to {value}"}
+            else:
+                return {"status": "error", "message": f"Failed to set {param_name}"}
+        except Exception as e:
+            return {"status": "error", "message": f"Parameter set failed: {str(e)}"}
+    
+    def get_parameter(self, param_name: str) -> Dict[str, Any]:
+        """Get ArduPilot parameter value"""
+        try:
+            param_id = param_name.encode('utf-8')[:16]
+            
+            self.master.mav.param_request_read_send(
+                self.master.target_system,
+                self.master.target_component,
+                param_id,
+                -1
+            )
+            
+            response = self.master.recv_match(type='PARAM_VALUE', blocking=True, timeout=3)
+            if response:
+                return {
+                    "status": "success",
+                    "parameter": param_name,
+                    "value": response.param_value
+                }
+            else:
+                return {"status": "error", "message": f"Parameter {param_name} not found"}
+        except Exception as e:
+            return {"status": "error", "message": f"Parameter get failed: {str(e)}"}
+    
+    def emergency_stop(self) -> Dict[str, Any]:
+        """Emergency motor stop - USE WITH CAUTION! Drone will fall."""
+        try:
+            self.disarm()
+            return {"status": "success", "message": "EMERGENCY STOP executed"}
+        except Exception as e:
+            return {"status": "error", "message": f"Emergency stop failed: {str(e)}"}
+    
+    def set_yaw(self, angle: float, relative: bool = False) -> Dict[str, Any]:
+        """Set drone heading/yaw in degrees (0-360)"""
+        try:
+            self.change_mode("GUIDED")
+            
+            self.master.mav.command_long_send(
+                self.master.target_system,
+                self.master.target_component,
+                mavutil.mavlink.MAV_CMD_CONDITION_YAW,
+                0,
+                angle,
+                0,
+                1 if angle >= 0 else -1,
+                1 if relative else 0,
+                0, 0, 0
+            )
+            
+            ack = self.master.recv_match(type='COMMAND_ACK', blocking=True, timeout=3)
+            if ack and ack.result == 0:
+                return {"status": "success", "message": f"Yaw set to {angle}°"}
+            else:
+                return {"status": "error", "message": "Yaw command rejected"}
+        except Exception as e:
+            return {"status": "error", "message": f"Set yaw failed: {str(e)}"}
 
 
 # Function definitions for FunctionGemma
@@ -1231,5 +1367,80 @@ DRONE_FUNCTIONS = {
         "name": "clear_mission",
         "description": "Clear the current mission plan",
         "parameters": {}
+    },
+    "arm_and_takeoff": {
+        "name": "arm_and_takeoff",
+        "description": "Arm motors and takeoff to altitude in one command. Combines arm() and takeoff().",
+        "parameters": {
+            "altitude": {
+                "type": "number",
+                "description": "Target altitude in meters (2-120m)",
+                "required": True
+            }
+        }
+    },
+    "hover": {
+        "name": "hover",
+        "description": "Hold current position for specified duration. Useful for waiting or pausing.",
+        "parameters": {
+            "duration": {
+                "type": "number",
+                "description": "Time to hover in seconds (max 300)",
+                "required": True
+            }
+        }
+    },
+    "land_and_disarm": {
+        "name": "land_and_disarm",
+        "description": "Land and automatically disarm motors. Combines land() and disarm().",
+        "parameters": {}
+    },
+    "set_parameter": {
+        "name": "set_parameter",
+        "description": "Set ArduPilot parameter value. Examples: WPNAV_SPEED, RTL_ALT, ANGLE_MAX",
+        "parameters": {
+            "param_name": {
+                "type": "string",
+                "description": "Parameter name (e.g., 'WPNAV_SPEED')",
+                "required": True
+            },
+            "value": {
+                "type": "number",
+                "description": "Parameter value",
+                "required": True
+            }
+        }
+    },
+    "get_parameter": {
+        "name": "get_parameter",
+        "description": "Get ArduPilot parameter value",
+        "parameters": {
+            "param_name": {
+                "type": "string",
+                "description": "Parameter name to retrieve",
+                "required": True
+            }
+        }
+    },
+    "emergency_stop": {
+        "name": "emergency_stop",
+        "description": "EMERGENCY ONLY: Immediately stop motors. Drone will fall. Use only in critical situations.",
+        "parameters": {}
+    },
+    "set_yaw": {
+        "name": "set_yaw",
+        "description": "Set drone heading/yaw angle",
+        "parameters": {
+            "angle": {
+                "type": "number",
+                "description": "Target angle in degrees (0-360)",
+                "required": True
+            },
+            "relative": {
+                "type": "boolean",
+                "description": "If true, angle is relative to current heading",
+                "required": False
+            }
+        }
     }
 }

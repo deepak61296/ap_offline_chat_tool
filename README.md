@@ -1,14 +1,14 @@
 # ArduPilot Offline AI Assistant
 
 [![Stage 1 Complete](https://img.shields.io/badge/Stage%201-Complete-success)](https://github.com/deepak61296/ap_offline_chat_tool)
-[![Model Accuracy](https://img.shields.io/badge/Accuracy-85%25-blue)](https://ollama.com/deepakpopli/ardupilot-stage1)
+[![Model Accuracy](https://img.shields.io/badge/Accuracy-96%25-brightgreen)](https://ollama.com/library/qwen2.5)
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 [![Docker](https://img.shields.io/badge/Docker-Supported-2496ED?logo=docker)](docs/DOCKER.md)
 
 > **Natural language drone control powered by AI - Fully offline, no API keys required**
 
-A production-ready AI assistant that translates natural language commands into ArduPilot drone control actions using a fine-tuned Google FunctionGemma model (270M parameters). Control your drone through conversational commands without requiring internet connectivity or external API services.
+A production-ready AI assistant that translates natural language commands into ArduPilot drone control actions using Qwen 2.5 (3B parameters). Control your drone through conversational commands without requiring internet connectivity or external API services.
 
 ## ⚠️ Important Disclaimer
 
@@ -37,8 +37,8 @@ This project provides an intelligent interface for ArduPilot-based drones, enabl
 
 - **Natural Language Processing**: Issue commands in plain English (e.g., "arm the drone and takeoff to 15 meters")
 - **Offline Operation**: Runs entirely on local hardware without internet dependency
-- **Lightweight Architecture**: 270M parameter model optimized for edge deployment
-- **High Accuracy**: 85% command interpretation accuracy on Stage 1 functions
+- **Powerful AI Model**: Qwen 2.5 (3B parameters) for superior natural language understanding
+- **High Accuracy**: 96% command interpretation accuracy across 38 functions
 - **Safety Validation**: Built-in pre-flight checks and command validation
 - **Dual Operation Modes**: 
   - Demo mode for testing without hardware
@@ -46,8 +46,9 @@ This project provides an intelligent interface for ArduPilot-based drones, enabl
 
 ### Technical Specifications
 
-- **Model**: Fine-tuned FunctionGemma (270M parameters)
+- **Model**: Qwen 2.5 (3B parameters)
 - **Inference Engine**: Ollama (local deployment)
+- **Function Library**: 38 drone control functions
 - **Communication Protocol**: MAVLink via pymavlink
 - **Supported Platforms**: Linux, Windows (macOS support planned)
 - **Deployment Options**: Native installation or Docker containers
@@ -91,7 +92,7 @@ The installation is modular and platform-specific:
 
 6. **Pull AI Model**
    ```bash
-   ollama pull deepakpopli/ardupilot-stage1
+   ollama pull qwen2.5:3b
    ```
 
 7. **Test Demo Mode**
@@ -256,20 +257,50 @@ Just speak naturally! The AI understands:
 
 ## 🎯 Stage 1 Functions
 
-The current model (Stage 1) supports 8 core functions:
+### Supported Commands (38 Functions)
 
-| Function | Description | Example Command |
-|----------|-------------|-----------------|
-| `arm()` | Arm drone motors | "arm the drone" |
-| `disarm()` | Disarm drone motors | "disarm" |
-| `takeoff(altitude)` | Takeoff to specified altitude | "takeoff to 15 meters" |
-| `land()` | Land at current location | "land the drone" |
-| `rtl()` | Return to launch position | "return home" |
-| `change_mode(mode)` | Change flight mode | "change mode to guided" |
-| `get_battery()` | Get battery status | "check battery" |
-| `get_position()` | Get current position | "where am I?" |
+**Basic Control:**
+- `arm` - Arm drone motors
+- `disarm` - Disarm drone motors  
+- `takeoff <altitude>` - Takeoff to specified altitude
+- `land` - Land at current location
+- `rtl` - Return to launch
+- `change_mode <mode>` - Change flight mode
 
-**Note**: 21 additional functions are available in `drone_functions.py` and will be included in Stage 2 training.
+**Composite Functions (NEW!):**
+- `arm_and_takeoff <altitude>` - Arm and takeoff in one command
+- `hover <duration>` - Hold position for X seconds
+- `land_and_disarm` - Land and automatically disarm
+
+**Altitude Control:**
+- `increase_altitude <meters>` - Climb by specified meters
+- `decrease_altitude <meters>` - Descend by specified meters
+
+**Navigation:**
+- `goto_location <lat> <lon> <alt>` - Fly to GPS coordinates
+- `move_north/south/east/west <meters>` - Directional movement
+- `set_yaw <angle>` - Set heading in degrees
+
+**Status & Information:**
+- `get_battery` - Battery voltage, current, and percentage
+- `get_position` - GPS coordinates and altitude
+- `get_mode` - Current flight mode
+- `is_armable` - Pre-arm check status
+
+**Parameter Configuration (NEW!):**
+- `set_parameter <name> <value>` - Set ArduPilot parameter
+- `get_parameter <name>` - Get parameter value
+
+**Mission Planning:**
+- `create_mission` - Start new mission
+- `add_waypoint <lat> <lon> <alt>` - Add GPS waypoint
+- `upload_mission` - Upload to drone
+- `start_mission` - Execute mission
+
+**Emergency:**
+- `emergency_stop` - Emergency motor stop (USE WITH CAUTION!)
+
+See [Function Library Plan](docs/FUNCTION_LIBRARY_PLAN.md) for complete details.
 
 ## ⚙️ Configuration
 

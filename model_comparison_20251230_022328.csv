@@ -1,0 +1,52 @@
+Command,Expected_Function,Expected_Params,Qwen25_Result,Qwen25_Correct,Qwen25_Time,Gemma3_Result,Gemma3_Correct,Gemma3_Time,ArduPilot_Result,ArduPilot_Correct,ArduPilot_Time
+arm the drone,arm,{},"{""function"": ""arm"", ""parameters"": {}}",YES,4.166,"{""function"": ""arm"", ""parameters"": {}}",YES,4.908,FAIL,NO,2.084
+please arm the drone,arm,{},"{""function"": ""arm"", ""parameters"": {}}",YES,2.433,"{""function"": ""arm"", ""parameters"": {}}",YES,4.402,FAIL,NO,0.379
+can you arm the UAV,arm,{},"{""function"": ""arm"", ""parameters"": {}}",YES,2.448,"{""function"": ""arm"", ""parameters"": {}}",YES,4.453,FAIL,NO,0.391
+hey arm it,arm,{},"{""function"": ""arm"", ""parameters"": {}}",YES,2.740,"{""function"": ""arm"", ""parameters"": {}}",YES,4.688,FAIL,NO,0.506
+prepare for flight,arm,{},"{""function"": ""change_mode"", ""parameters"": {""mode"": ""GUIDED""}}",NO,2.489,"{""function"": ""arm"", ""parameters"": {}}",YES,4.527,FAIL,NO,0.416
+get ready to fly,arm,{},"{""function"": ""get_position"", ""parameters"": {}}",NO,2.460,"{""function"": ""get_battery"", ""parameters"": {}}",NO,4.456,FAIL,NO,0.384
+disarm the drone,disarm,{},"{""function"": ""disarm"", ""parameters"": {}}",YES,2.404,"{""function"": ""disarm"", ""parameters"": {}}",YES,4.415,FAIL,NO,0.394
+please disarm,disarm,{},"{""function"": ""disarm"", ""parameters"": {}}",YES,2.436,"{""function"": ""disarm"", ""parameters"": {}}",YES,4.439,FAIL,NO,0.387
+shut down motors,disarm,{},"{""function"": ""disarm"", ""parameters"": {}}",YES,2.437,"{""function"": ""disarm"", ""parameters"": {}}",YES,4.456,FAIL,NO,0.392
+turn off the drone,disarm,{},"{""function"": ""disarm"", ""parameters"": {}}",YES,2.405,"{""function"": ""disarm"", ""parameters"": {}}",YES,4.504,FAIL,NO,0.404
+takeoff to 15 meters,takeoff,"{""altitude"": 15}","{""function"": ""takeoff"", ""parameters"": {""altitude"": 15}}",YES,2.473,"{""function"": ""takeoff"", ""parameters"": {""altitude"": 15}}",YES,4.590,FAIL,NO,0.438
+take off to 20 meters,takeoff,"{""altitude"": 20}","{""function"": ""takeoff"", ""parameters"": {""altitude"": 20}}",YES,2.776,"{""function"": ""takeoff"", ""parameters"": {""altitude"": 20}}",YES,4.584,FAIL,NO,0.446
+please takeoff to 10 meters,takeoff,"{""altitude"": 10}","{""function"": ""takeoff"", ""parameters"": {""altitude"": 10}}",YES,2.518,"{""function"": ""takeoff"", ""parameters"": {""altitude"": 10}}",YES,4.527,FAIL,NO,0.416
+can you takeoff to 25 meters,takeoff,"{""altitude"": 25}","{""function"": ""takeoff"", ""parameters"": {""altitude"": 25}}",YES,2.471,"{""function"": ""takeoff"", ""parameters"": {""altitude"": 25}}",YES,4.496,FAIL,NO,0.449
+hey takeoff the UAV to 30 meters,takeoff,"{""altitude"": 30}","{""function"": ""takeoff"", ""parameters"": {""altitude"": 30}}",YES,2.741,"{""function"": ""takeoff"", ""parameters"": {""altitude"": 30}}",YES,4.682,FAIL,NO,0.451
+lift off to 12 meters,takeoff,"{""altitude"": 12}","{""function"": ""takeoff"", ""parameters"": {""altitude"": 12}}",YES,2.469,"{""function"": ""takeoff"", ""parameters"": {""altitude"": 12}}",YES,4.568,FAIL,NO,0.420
+ascend to 18 meters,takeoff,"{""altitude"": 18}","{""function"": ""takeoff"", ""parameters"": {""altitude"": 18}}",YES,2.486,"{""function"": ""takeoff"", ""parameters"": {""altitude"": 18}}",YES,4.658,FAIL,NO,0.410
+go up to 22 meters,takeoff,"{""altitude"": 22}","{""function"": ""takeoff"", ""parameters"": {""altitude"": 22}}",YES,2.778,"{""function"": ""takeoff"", ""parameters"": {""altitude"": 22}}",YES,4.571,FAIL,NO,0.418
+fly to 15 meters altitude,takeoff,"{""altitude"": 15}","{""function"": ""takeoff"", ""parameters"": {""altitude"": 15}}",YES,2.478,"{""function"": ""takeoff"", ""parameters"": {""altitude"": 15}}",YES,4.607,FAIL,NO,0.405
+takeoff 20,takeoff,"{""altitude"": 20}","{""function"": ""takeoff"", ""parameters"": {""altitude"": 20}}",YES,2.500,"{""function"": ""takeoff"", ""parameters"": {""altitude"": 20}}",YES,4.511,FAIL,NO,0.357
+takeoff drone at 25,takeoff,"{""altitude"": 25}","{""function"": ""takeoff"", ""parameters"": {""altitude"": 25}}",YES,2.505,"{""function"": ""takeoff"", ""parameters"": {""altitude"": 25}}",YES,4.592,FAIL,NO,0.386
+take off 10m,takeoff,"{""altitude"": 10}","{""function"": ""takeoff"", ""parameters"": {""altitude"": 10}}",YES,2.477,"{""function"": ""takeoff"", ""parameters"": {""altitude"": 10}}",YES,4.598,FAIL,NO,0.438
+land the drone,land,{},"{""function"": ""land"", ""parameters"": {}}",YES,2.444,"{""function"": ""land"", ""parameters"": {}}",YES,4.442,FAIL,NO,0.390
+please land,land,{},"{""function"": ""land"", ""parameters"": {}}",YES,2.429,"{""function"": ""land"", ""parameters"": {}}",YES,4.478,FAIL,NO,0.400
+can you land now,land,{},"{""function"": ""land"", ""parameters"": {}}",YES,2.406,"{""function"": ""land"", ""parameters"": {}}",YES,4.458,FAIL,NO,0.373
+bring it down,land,{},"{""function"": ""land"", ""parameters"": {}}",YES,2.402,"{""function"": ""land"", ""parameters"": {}}",YES,4.408,FAIL,NO,0.390
+descend and land,land,{},"{""function"": ""land"", ""parameters"": {}}",YES,2.443,"{""function"": ""land"", ""parameters"": {}}",YES,4.462,FAIL,NO,0.370
+touch down,land,{},"{""function"": ""land"", ""parameters"": {}}",YES,2.402,"{""function"": ""land"", ""parameters"": {}}",YES,4.512,FAIL,NO,0.389
+return to launch,rtl,{},"{""function"": ""rtl"", ""parameters"": {}}",YES,2.655,"{""function"": ""rtl"", ""parameters"": {}}",YES,4.422,FAIL,NO,0.374
+go back home,rtl,{},"{""function"": ""rtl"", ""parameters"": {}}",YES,2.405,"{""function"": ""rtl"", ""parameters"": {}}",YES,4.473,FAIL,NO,0.355
+return home,rtl,{},"{""function"": ""rtl"", ""parameters"": {}}",YES,2.385,"{""function"": ""rtl"", ""parameters"": {}}",YES,4.471,FAIL,NO,0.394
+come back to start,rtl,{},"{""function"": ""rtl"", ""parameters"": {}}",YES,2.380,"{""function"": ""rtl"", ""parameters"": {}}",YES,4.428,FAIL,NO,0.360
+RTL please,rtl,{},"{""function"": ""rtl"", ""parameters"": {}}",YES,2.374,"{""function"": ""rtl"", ""parameters"": {}}",YES,4.385,FAIL,NO,0.436
+change mode to GUIDED,change_mode,"{""mode"": ""GUIDED""}","{""function"": ""change_mode"", ""parameters"": {""mode"": ""GUIDED""}}",YES,2.505,"{""function"": ""change_mode"", ""parameters"": {""mode"": ""GUIDED""}}",YES,4.529,FAIL,NO,0.427
+switch to LOITER mode,change_mode,"{""mode"": ""LOITER""}","{""function"": ""change_mode"", ""parameters"": {""mode"": ""LOITER""}}",YES,2.470,"{""function"": ""change_mode"", ""parameters"": {""mode"": ""LOITER""}}",YES,4.562,FAIL,NO,0.418
+set mode to RTL,change_mode,"{""mode"": ""RTL""}","{""function"": ""change_mode"", ""parameters"": {""mode"": ""RTL""}}",YES,2.510,"{""function"": ""change_mode"", ""parameters"": {""mode"": ""RTL""}}",YES,4.525,FAIL,NO,0.432
+go to GUIDED,change_mode,"{""mode"": ""GUIDED""}","{""function"": ""change_mode"", ""parameters"": {""mode"": ""GUIDED""}}",YES,2.476,"{""function"": ""change_mode"", ""parameters"": {""mode"": ""GUIDED""}}",YES,4.521,FAIL,NO,0.421
+enter LOITER mode,change_mode,"{""mode"": ""LOITER""}","{""function"": ""change_mode"", ""parameters"": {""mode"": ""LOITER""}}",YES,2.446,"{""function"": ""change_mode"", ""parameters"": {""mode"": ""LOITER""}}",YES,4.482,FAIL,NO,0.436
+change to LAND mode,change_mode,"{""mode"": ""LAND""}","{""function"": ""change_mode"", ""parameters"": {""mode"": ""LAND""}}",YES,2.456,"{""function"": ""change_mode"", ""parameters"": {""mode"": ""land""}}",NO,4.538,FAIL,NO,0.399
+check battery,get_battery,{},"{""function"": ""get_battery"", ""parameters"": {}}",YES,2.425,"{""function"": ""get_battery"", ""parameters"": {}}",YES,4.481,FAIL,NO,0.375
+battery status,get_battery,{},"{""function"": ""get_battery"", ""parameters"": {}}",YES,2.388,"{""function"": ""get_battery"", ""parameters"": {}}",YES,4.468,FAIL,NO,0.379
+how much battery left,get_battery,{},"{""function"": ""get_battery"", ""parameters"": {}}",YES,2.414,"{""function"": ""get_battery"", ""parameters"": {}}",YES,4.454,FAIL,NO,0.400
+what's the battery level,get_battery,{},"{""function"": ""get_battery"", ""parameters"": {}}",YES,2.382,"{""function"": ""get_battery"", ""parameters"": {}}",YES,4.466,FAIL,NO,0.401
+show me battery,get_battery,{},"{""function"": ""get_battery"", ""parameters"": {}}",YES,2.422,"{""function"": ""get_battery"", ""parameters"": {}}",YES,4.482,FAIL,NO,0.390
+battery info,get_battery,{},"{""function"": ""get_battery"", ""parameters"": {}}",YES,2.404,"{""function"": ""get_battery"", ""parameters"": {}}",YES,4.440,FAIL,NO,0.367
+where am I,get_position,{},"{""function"": ""get_position"", ""parameters"": {}}",YES,2.398,"{""function"": ""get_position"", ""parameters"": {}}",YES,4.444,FAIL,NO,0.398
+current position,get_position,{},"{""function"": ""get_position"", ""parameters"": {}}",YES,2.406,"{""function"": ""get_position"", ""parameters"": {}}",YES,4.436,FAIL,NO,0.404
+what's my location,get_position,{},"{""function"": ""get_position"", ""parameters"": {}}",YES,2.438,"{""function"": ""get_position"", ""parameters"": {}}",YES,4.449,FAIL,NO,0.396
+show position,get_position,{},"{""function"": ""get_position"", ""parameters"": {}}",YES,2.390,"{""function"": ""get_position"", ""parameters"": {}}",YES,4.509,FAIL,NO,0.391
+GPS coordinates,get_position,{},"{""function"": ""get_position"", ""parameters"": {}}",YES,2.416,"{""function"": ""get_position"", ""parameters"": {}}",YES,4.475,FAIL,NO,0.366
+where is the drone,get_position,{},"{""function"": ""get_position"", ""parameters"": {}}",YES,2.409,"{""function"": ""get_position"", ""parameters"": {}}",YES,4.516,FAIL,NO,0.400

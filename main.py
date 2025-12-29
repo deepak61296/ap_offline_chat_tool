@@ -10,7 +10,7 @@ from rich.panel import Panel
 from rich.prompt import Prompt
 from rich.table import Table
 from src.drone_functions import DroneController, DRONE_FUNCTIONS
-from src.function_gemma import FunctionGemmaInterface
+from src.qwen_interface import Qwen25Interface as FunctionGemmaInterface
 
 console = Console()
 
@@ -26,7 +26,7 @@ class ArduPilotChatTool:
             connection_string: MAVLink connection string
         """
         self.drone = DroneController(connection_string)
-        self.gemma = FunctionGemmaInterface()
+        self.gemma = FunctionGemmaInterface("qwen2.5:3b")  # Use Qwen 2.5 for 96.1% accuracy
         self.running = False
         
     def connect_drone(self) -> bool:
@@ -105,10 +105,10 @@ class ArduPilotChatTool:
         welcome_text = f"""
 [bold cyan]╔═══════════════════════════════════════════════════════════╗[/bold cyan]
 [bold cyan]║                                                           ║[/bold cyan]
-[bold cyan]║     🚁 ArduPilot AI Assistant - Stage 1 (85% Accuracy)    ║[/bold cyan]
+[bold cyan]║     🚁 ArduPilot AI Assistant - Qwen 2.5 (96% Accuracy)   ║[/bold cyan]
 [bold cyan]║                                                           ║[/bold cyan]
 [bold cyan]║        Natural language drone control - Fully offline!    ║[/bold cyan]
-[bold cyan]║        Powered by FunctionGemma (270M parameters)         ║[/bold cyan]
+[bold cyan]║        Powered by Qwen 2.5 (3B parameters)                ║[/bold cyan]
 [bold cyan]║                                                           ║[/bold cyan]
 [bold cyan]╚═══════════════════════════════════════════════════════════╝[/bold cyan]
 
@@ -239,8 +239,8 @@ Examples:
     
     parser.add_argument(
         '--model', '-m',
-        default='ardupilot-stage1',
-        help='Ollama model name (default: ardupilot-stage1)'
+        default='qwen2.5:3b',
+        help='Ollama model name (default: qwen2.5:3b)'
     )
     
     parser.add_argument(

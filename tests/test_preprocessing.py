@@ -7,7 +7,7 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.function_gemma import FunctionGemmaInterface
+from src.qwen_interface import Qwen25Interface as FunctionGemmaInterface
 
 def test_preprocessing():
     """Test that preprocessing converts variations correctly"""
