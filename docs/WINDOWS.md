@@ -50,20 +50,20 @@ cd ap_offline_chat_tool
 
 ```powershell
 # Build the Docker image
-docker build -t ardupilot-ai-assistant .
+docker build -t ap_offline_chat_tool .
 
 # Run demo mode
-docker run -it --rm ardupilot-ai-assistant
+docker run -it --rm ap_offline_chat_tool
 ```
 
 ### Option 2: Using Pre-built Image (Coming Soon)
 
 ```powershell
 # Pull the image from Docker Hub
-docker pull deepak61296/ardupilot-ai-assistant
+docker pull deepak61296/ap_offline_chat_tool
 
 # Run it
-docker run -it --rm deepak61296/ardupilot-ai-assistant
+docker run -it --rm deepak61296/ap_offline_chat_tool
 ```
 
 ## Running the Assistant
@@ -72,7 +72,7 @@ docker run -it --rm deepak61296/ardupilot-ai-assistant
 
 ```powershell
 # Run interactive demo
-docker run -it --rm ardupilot-ai-assistant
+docker run -it --rm ap_offline_chat_tool
 
 # Try commands:
 # - arm the drone
@@ -90,7 +90,7 @@ docker volume create ollama-models
 # Run with persistent storage
 docker run -it --rm `
   -v ollama-models:/home/ardupilot/.ollama `
-  ardupilot-ai-assistant
+  ap_offline_chat_tool
 ```
 
 **Note**: In PowerShell, use backtick (`) for line continuation. In CMD, use caret (^).
@@ -99,10 +99,10 @@ docker run -it --rm `
 
 ```powershell
 # Run all tests
-docker run --rm ardupilot-ai-assistant python3 tests/test_suite.py
+docker run --rm ap_offline_chat_tool python3 tests/test_suite.py
 
 # Run preprocessing tests
-docker run --rm ardupilot-ai-assistant python3 tests/test_preprocessing.py
+docker run --rm ap_offline_chat_tool python3 tests/test_preprocessing.py
 ```
 
 ## Windows-Specific Notes
@@ -121,10 +121,10 @@ Windows uses backslashes (`\`) but Docker uses forward slashes (`/`). When mount
 
 ```powershell
 # Correct way to mount Windows paths
-docker run -v C:/Users/YourName/data:/data ardupilot-ai-assistant
+docker run -v C:/Users/YourName/data:/data ap_offline_chat_tool
 
 # Or use PowerShell's automatic conversion
-docker run -v ${PWD}:/app ardupilot-ai-assistant
+docker run -v ${PWD}:/app ap_offline_chat_tool
 ```
 
 ### Line Endings
@@ -265,7 +265,7 @@ git clone https://github.com/deepak61296/ap_offline_chat_tool.git
 # Multi-line commands use backtick
 docker run -it --rm `
   -v ollama-models:/home/ardupilot/.ollama `
-  ardupilot-ai-assistant
+  ap_offline_chat_tool
 ```
 
 ### Command Prompt (CMD)
@@ -274,7 +274,7 @@ docker run -it --rm `
 REM Multi-line commands use caret
 docker run -it --rm ^
   -v ollama-models:/home/ardupilot/.ollama ^
-  ardupilot-ai-assistant
+  ap_offline_chat_tool
 ```
 
 ## Windows Terminal Tips
@@ -377,10 +377,10 @@ processors=2
 
 Once you have the assistant running:
 
-1. **Try the demo**: `docker run -it --rm ardupilot-ai-assistant`
+1. **Try the demo**: `docker run -it --rm ap_offline_chat_tool`
 2. **Read the docs**: See [README.md](../README.md)
 3. **Check commands**: See [COMMAND_REFERENCE.md](COMMAND_REFERENCE.md)
-4. **Run tests**: `docker run --rm ardupilot-ai-assistant python3 tests/test_suite.py`
+4. **Run tests**: `docker run --rm ap_offline_chat_tool python3 tests/test_suite.py`
 
 ## Getting Help
 

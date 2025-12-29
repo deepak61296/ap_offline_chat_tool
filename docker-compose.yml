@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: ardupilot-ai-assistant:latest
+    image: ap_offline_chat_tool:latest
     container_name: ardupilot-assistant
 
     # Interactive mode for demo

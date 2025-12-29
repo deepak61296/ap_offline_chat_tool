@@ -8,7 +8,7 @@ echo ""
 echo "Starting container (this will take ~30 seconds for first-time setup)..."
 echo ""
 
-docker run -it --rm ardupilot-ai-assistant
+docker run -it --rm ap_offline_chat_tool
 
 # Note: The container will:
 # 1. Start Ollama service

@@ -5,7 +5,7 @@
 ### Docker Container Tests
 
 **Date**: 2025-12-30  
-**Container**: ardupilot-ai-assistant:latest  
+**Container**: ap_offline_chat_tool:latest  
 **Status**: ✅ All tests passing
 
 ### Test Suite Results
@@ -96,7 +96,7 @@ Results: 11 passed, 0 failed
 ### Build Status
 ```
 Successfully built 6007ae459940
-Successfully tagged ardupilot-ai-assistant:latest
+Successfully tagged ap_offline_chat_tool:latest
 ```
 
 ### Image Details
@@ -109,11 +109,11 @@ Successfully tagged ardupilot-ai-assistant:latest
 ### Running Container
 ```bash
 # Demo mode works
-docker run -it --rm ardupilot-ai-assistant
+docker run -it --rm ap_offline_chat_tool
 
 # Tests work
-docker run --rm ardupilot-ai-assistant python3 tests/test_suite.py
-docker run --rm ardupilot-ai-assistant python3 tests/test_preprocessing.py
+docker run --rm ap_offline_chat_tool python3 tests/test_suite.py
+docker run --rm ap_offline_chat_tool python3 tests/test_preprocessing.py
 ```
 
 ## Documentation Updates
@@ -169,14 +169,14 @@ docker run --rm ardupilot-ai-assistant python3 tests/test_preprocessing.py
 
 **Linux/macOS:**
 ```bash
-docker build -t ardupilot-ai-assistant .
-docker run -it --rm ardupilot-ai-assistant
+docker build -t ap_offline_chat_tool .
+docker run -it --rm ap_offline_chat_tool
 ```
 
 **Windows (PowerShell):**
 ```powershell
-docker build -t ardupilot-ai-assistant .
-docker run -it --rm ardupilot-ai-assistant
+docker build -t ap_offline_chat_tool .
+docker run -it --rm ap_offline_chat_tool
 ```
 
 ### Model Access

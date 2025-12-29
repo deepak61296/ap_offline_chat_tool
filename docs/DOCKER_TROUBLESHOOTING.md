@@ -17,19 +17,19 @@ Instead of `docker-compose`, use `docker` commands directly:
 
 ```bash
 # Build image
-docker build -t ardupilot-ai-assistant .
+docker build -t ap_offline_chat_tool .
 
 # Run demo mode (interactive)
-docker run -it --rm ardupilot-ai-assistant
+docker run -it --rm ap_offline_chat_tool
 
 # Run tests
-docker run --rm ardupilot-ai-assistant python3 tests/test_suite.py
+docker run --rm ap_offline_chat_tool python3 tests/test_suite.py
 
 # Run with Ollama service
 docker run -it --rm \
   --network host \
   -v ollama-models:/home/ardupilot/.ollama \
-  ardupilot-ai-assistant
+  ap_offline_chat_tool
 ```
 
 ### Solution 2: Upgrade docker-compose
@@ -69,7 +69,7 @@ Try building with docker directly:
 
 ```bash
 cd /home/deepak/Documents/Projects/AP_Offline_chat_tools
-docker build -t ardupilot-ai-assistant .
+docker build -t ap_offline_chat_tool .
 ```
 
 If this works, use the Docker commands from Solution 1.

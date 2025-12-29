@@ -4,7 +4,7 @@
 
 ```bash
 # Run interactive demo (recommended)
-docker run -it --rm ardupilot-ai-assistant
+docker run -it --rm ap_offline_chat_tool
 ```
 
 **First run:** Takes ~1-2 minutes (downloads 552MB model from Ollama)  
@@ -38,7 +38,7 @@ docker volume create ollama-models
 # Run with persistent storage
 docker run -it --rm \
   -v ollama-models:/home/ardupilot/.ollama \
-  ardupilot-ai-assistant
+  ap_offline_chat_tool
 ```
 
 Now the model only downloads once!
@@ -47,10 +47,10 @@ Now the model only downloads once!
 
 ```bash
 # Run full test suite
-docker run --rm ardupilot-ai-assistant python3 tests/test_suite.py
+docker run --rm ap_offline_chat_tool python3 tests/test_suite.py
 
 # Run preprocessing tests
-docker run --rm ardupilot-ai-assistant python3 tests/test_preprocessing.py
+docker run --rm ap_offline_chat_tool python3 tests/test_preprocessing.py
 ```
 
 ## Troubleshooting
@@ -65,7 +65,7 @@ docker run --rm ardupilot-ai-assistant python3 tests/test_preprocessing.py
 
 **Want to rebuild?**
 ```bash
-docker build --no-cache -t ardupilot-ai-assistant .
+docker build --no-cache -t ap_offline_chat_tool .
 ```
 
 ---

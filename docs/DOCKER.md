@@ -22,13 +22,13 @@ docker-compose down
 
 ```bash
 # Build image
-docker build -t ardupilot-ai-assistant .
+docker build -t ap_offline_chat_tool .
 
 # Run demo mode
-docker run -it --rm ardupilot-ai-assistant
+docker run -it --rm ap_offline_chat_tool
 
 # Run with custom command
-docker run -it --rm ardupilot-ai-assistant python3 tests/test_suite.py
+docker run -it --rm ap_offline_chat_tool python3 tests/test_suite.py
 ```
 
 ## What's Included
@@ -105,7 +105,7 @@ docker-compose run --rm ardupilot-assistant ollama show ardupilot-stage1
 docker-compose build --no-cache
 
 # Build with specific tag
-docker build -t ardupilot-ai-assistant:v1.0.1 .
+docker build -t ap_offline_chat_tool:v1.0.1 .
 ```
 
 ## Troubleshooting
@@ -193,7 +193,7 @@ For production use:
 
 1. **Build optimized image:**
    ```bash
-   docker build -t ardupilot-ai-assistant:prod .
+   docker build -t ap_offline_chat_tool:prod .
    ```
 
 2. **Run with resource limits:**
@@ -203,7 +203,7 @@ For production use:
      --memory="4g" \
      --cpus="2.0" \
      --restart=unless-stopped \
-     ardupilot-ai-assistant:prod
+     ap_offline_chat_tool:prod
    ```
 
 3. **Use docker-compose with limits** (already configured)
@@ -225,7 +225,7 @@ docker-compose down
 docker-compose down -v
 
 # Remove images
-docker rmi ardupilot-ai-assistant:latest
+docker rmi ap_offline_chat_tool:latest
 
 # Clean all Docker resources
 docker system prune -a
@@ -247,10 +247,10 @@ jobs:
       - uses: actions/checkout@v2
       
       - name: Build Docker image
-        run: docker build -t ardupilot-ai-assistant .
+        run: docker build -t ap_offline_chat_tool .
       
       - name: Run tests
-        run: docker run ardupilot-ai-assistant python3 tests/test_suite.py
+        run: docker run ap_offline_chat_tool python3 tests/test_suite.py
 ```
 
 ## Multi-Architecture Support
@@ -264,7 +264,7 @@ docker buildx create --use
 # Build for multiple platforms
 docker buildx build \
   --platform linux/amd64,linux/arm64 \
-  -t ardupilot-ai-assistant:latest \
+  -t ap_offline_chat_tool:latest \
   --push .
 ```
 
