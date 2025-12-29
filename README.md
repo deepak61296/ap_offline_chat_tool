@@ -10,6 +10,16 @@
 
 A production-ready AI assistant that translates natural language commands into ArduPilot drone control actions using a fine-tuned Google FunctionGemma model (270M parameters). Control your drone through conversational commands without requiring internet connectivity or external API services.
 
+## ⚠️ Important Disclaimer
+
+**This is a Stage 1 prototype for testing and development purposes only.**
+
+- **DO NOT use with real drones in production environments**
+- **Always test in simulation (SITL) first**
+- **Use at your own risk**
+- This is a research project for prototyping natural language drone control
+- Not certified for commercial or safety-critical applications
+
 ## Overview
 
 This project provides an intelligent interface for ArduPilot-based drones, enabling operators to issue commands in natural language rather than through traditional ground control station interfaces. The system uses a locally-hosted AI model fine-tuned specifically for drone operations, ensuring reliable offline operation and data privacy.
@@ -39,41 +49,63 @@ This project provides an intelligent interface for ArduPilot-based drones, enabl
 - **Model**: Fine-tuned FunctionGemma (270M parameters)
 - **Inference Engine**: Ollama (local deployment)
 - **Communication Protocol**: MAVLink via pymavlink
-- **Supported Platforms**: Linux, Windows, macOS
+- **Supported Platforms**: Linux, Windows (macOS support planned)
 - **Deployment Options**: Native installation or Docker containers
 
 ## Quick Start
 
-### Prerequisites
+### Choose Your Platform
 
-- Python 3.8 or higher
-- Conda (recommended for environment management)
-- Ollama (for local model hosting)
-- ArduPilot SITL (optional, for simulation)
+**Linux Users**: See [docs/INSTALL_LINUX.md](docs/INSTALL_LINUX.md)  
+**Windows Users**: See [docs/INSTALL_WINDOWS.md](docs/INSTALL_WINDOWS.md)  
+**macOS Users**: Currently not supported (planned for future releases)
 
-### Installation
+### Installation Overview
 
-```bash
-# Clone the repository
-git clone https://github.com/deepak61296/ap_offline_chat_tool.git
-cd ap_offline_chat_tool
+The installation is modular and platform-specific:
 
-# Run automated setup
-bash scripts/setup.sh
+1. **Install Miniconda** - Python environment manager
+   - Linux: https://docs.conda.io/en/latest/miniconda.html
+   - Windows: https://docs.conda.io/en/latest/miniconda.html
 
-# Verify installation
-python examples/demo.py
-```
+2. **Create Conda Environment**
+   ```bash
+   conda create -n ap_chat_tools python=3.10 -y
+   conda activate ap_chat_tools
+   ```
 
-The setup script will:
-1. Create and configure a Conda environment
-2. Install all required dependencies
-3. Download and configure the AI model
-4. Run verification tests
+3. **Clone Repository**
+   ```bash
+   git clone https://github.com/deepak61296/ap_offline_chat_tool.git
+   cd ap_offline_chat_tool
+   ```
 
-### Docker Installation
+4. **Install Dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-For containerized deployment:
+5. **Install Ollama**
+   - Linux: https://ollama.com/download/linux
+   - Windows: https://ollama.com/download/windows
+
+6. **Pull AI Model**
+   ```bash
+   ollama pull deepakpopli/ardupilot-stage1
+   ```
+
+7. **Test Demo Mode**
+   ```bash
+   python examples/demo.py
+   ```
+
+**For detailed step-by-step instructions**, see the platform-specific guides:
+- [Linux Installation Guide](docs/INSTALL_LINUX.md)
+- [Windows Installation Guide](docs/INSTALL_WINDOWS.md)
+
+### Docker Installation (All Platforms)
+
+For a containerized setup:
 
 ```bash
 # Build the Docker image
@@ -88,25 +120,26 @@ docker run --rm ap_offline_chat_tool python3 tests/test_suite.py
 
 See [docs/DOCKER.md](docs/DOCKER.md) for comprehensive Docker documentation.
 
-### First Flight - Demo Mode
+## Usage
 
-Demo mode allows testing without drone hardware or SITL:
+### Demo Mode (No Drone Required)
+
+Perfect for testing the AI assistant without hardware:
 
 ```bash
-# Start the demo interface
 python examples/demo.py
-
-# Example commands:
-# - "arm the drone"
-# - "takeoff to 10 meters"
-# - "check battery status"
-# - "what is my current position?"
-# - "land the drone"
 ```
 
-### First Flight - SITL Mode
+**Try these commands:**
+- "arm the drone"
+- "takeoff to 15 meters"
+- "check battery status"
+- "what is my current position?"
+- "land the drone"
 
-For full simulation with ArduPilot SITL:
+### SITL Mode (Simulation)
+
+**Note**: SITL requires ArduPilot installation. See platform-specific guides for setup.
 
 ```bash
 # Terminal 1: Start ArduPilot SITL
@@ -117,6 +150,12 @@ sim_vehicle.py -w --console --map
 cd ap_offline_chat_tool
 conda activate ap_chat_tools
 python main.py
+```
+
+**ArduPilot SITL Setup**:
+- Linux: https://ardupilot.org/dev/docs/building-setup-linux.html
+- Windows: Use Docker or WSL (see [docs/INSTALL_WINDOWS.md](docs/INSTALL_WINDOWS.md))
+
 
 # Now you can control the real simulated drone!
 ```
