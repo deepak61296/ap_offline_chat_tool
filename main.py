@@ -126,6 +126,7 @@ class ArduPilotChatTool:
 [dim]Special commands:[/dim]
   [bold]/help[/bold] or [bold]/h[/bold]    - Show available functions
   [bold]/status[/bold] or [bold]/s[/bold]  - Get drone status
+  [bold]/model[/bold] [model-name] - Switch AI model (e.g., /model gemma3:4b)
   [bold]/reset[/bold] or [bold]/r[/bold]   - Clear conversation history
   [bold]/quit[/bold] or [bold]/q[/bold]    - Exit application
 """
@@ -159,6 +160,37 @@ class ArduPilotChatTool:
         batt = self.drone.get_battery()
         if batt.get("status") == "success":
             console.print(f"[green]Battery:[/green] {batt['voltage']:.2f}V, {batt['current']:.2f}A, {batt['remaining']}%")
+    
+    def handle_model_switch(self, command: str):
+        """Handle model switching command"""
+        parts = command.split()
+        
+        if len(parts) == 1:
+            # Just /model - show current model and available options
+            console.print(f"\n[bold cyan]Current Model:[/bold cyan] {self.model_name}")
+            console.print("\n[bold green]Available Models:[/bold green]")
+            console.print("  • qwen2.5:3b (default) - 96% accuracy, 2.5s response")
+            console.print("  • gemma3:4b - 96% accuracy, 4.5s response")
+            console.print("  • ardupilot-stage1 (legacy) - 85% accuracy, 0.4s response")
+            console.print("\n[dim]Usage: /model <model-name>[/dim]")
+            console.print("[dim]Example: /model gemma3:4b[/dim]")
+        else:
+            # Switch to specified model
+            new_model = parts[1]
+            console.print(f"\n[bold yellow]Switching model...[/bold yellow]")
+            console.print(f"[dim]From: {self.model_name}[/dim]")
+            console.print(f"[dim]To: {new_model}[/dim]")
+            
+            try:
+                # Create new interface with new model
+                from src.qwen_interface import Qwen25Interface
+                self.gemma = Qwen25Interface(new_model)
+                self.model_name = new_model
+                console.print(f"[bold green]✓ Model switched to {new_model}[/bold green]")
+                console.print("[dim]Conversation history preserved[/dim]")
+            except Exception as e:
+                console.print(f"[bold red]✗ Failed to switch model: {e}[/bold red]")
+                console.print("[dim]Make sure the model is installed: ollama pull <model-name>[/dim]")
     
     def run(self):
         """Main chat loop"""
@@ -202,6 +234,10 @@ class ArduPilotChatTool:
                     elif cmd in ['/reset', '/r']:
                         self.gemma.reset_conversation()
                         console.print("[green]Conversation reset[/green]")
+                    
+                    # Model switching commands
+                    elif cmd.startswith('/model'):
+                        self.handle_model_switch(user_input)
                     
                     else:
                         console.print(f"[red][ERROR] Unknown command: {user_input}[/red]")
