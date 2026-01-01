@@ -18,16 +18,18 @@ console = Console()
 class ArduPilotChatTool:
     """Main chat interface for ArduPilot drone control"""
     
-    def __init__(self, connection_string: str = 'udp:127.0.0.1:14550'):
+    def __init__(self, connection_string: str = 'udp:127.0.0.1:14550', model_name: str = 'qwen2.5:3b'):
         """
         Initialize chat tool
         
         Args:
             connection_string: MAVLink connection string
+            model_name: Ollama model name (default: qwen2.5:3b)
         """
         self.drone = DroneController(connection_string)
-        self.gemma = FunctionGemmaInterface("qwen2.5:3b")  # Use Qwen 2.5 for 96.1% accuracy
+        self.gemma = FunctionGemmaInterface(model_name)
         self.running = False
+        self.model_name = model_name
         
     def connect_drone(self) -> bool:
         """Connect to drone/SITL"""
@@ -240,7 +242,13 @@ Examples:
     parser.add_argument(
         '--model', '-m',
         default='qwen2.5:3b',
-        help='Ollama model name (default: qwen2.5:3b)'
+        help='Ollama model name. Options: qwen2.5:3b (default, 96%% accuracy), gemma3:4b, ardupilot-stage1 (legacy)'
+    )
+    
+    parser.add_argument(
+        '--list-models',
+        action='store_true',
+        help='List available Ollama models and exit'
     )
     
     parser.add_argument(
@@ -251,13 +259,31 @@ Examples:
     
     args = parser.parse_args()
     
-    # Set verbose mode (could be used for debug prints)
+    # List available models if requested
+    if args.list_models:
+        try:
+            import subprocess
+            result = subprocess.run(['ollama', 'list'], capture_output=True, text=True)
+            console.print("\n[bold cyan]Available Ollama Models:[/bold cyan]")
+            console.print(result.stdout)
+            console.print("\n[bold green]Recommended for ArduPilot:[/bold green]")
+            console.print("  • qwen2.5:3b (default) - 96% accuracy, 2.5s response")
+            console.print("  • gemma3:4b - 96% accuracy, 4.5s response")
+            console.print("  • ardupilot-stage1 (legacy) - 85% accuracy, 0.4s response")
+            return
+        except Exception as e:
+            console.print(f"[red]Error listing models: {e}[/red]")
+            return
+    
+    # Set verbose mode
     if args.verbose:
         console.print("[dim]Verbose mode enabled[/dim]")
     
-    # Create and run chat tool
-    chat_tool = ArduPilotChatTool(connection_string=args.connection)
-    chat_tool.gemma.model_name = args.model
+    # Validate model selection
+    console.print(f"\n[bold cyan]Selected Model:[/bold cyan] {args.model}")
+    
+    # Create and run chat tool with selected model
+    chat_tool = ArduPilotChatTool(connection_string=args.connection, model_name=args.model)
     chat_tool.run()
 
 

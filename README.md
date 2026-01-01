@@ -121,6 +121,29 @@ docker run --rm ap_offline_chat_tool python3 tests/test_suite.py
 
 See [docs/DOCKER.md](docs/DOCKER.md) for comprehensive Docker documentation.
 
+### Model Selection
+
+The system supports multiple AI models. **Qwen 2.5 (3B) is the default** with 96% accuracy.
+
+```bash
+# Use default model (Qwen 2.5)
+python main.py
+
+# List available models
+python main.py --list-models
+
+# Use specific model
+python main.py --model gemma3:4b
+python main.py --model ardupilot-stage1  # Legacy model
+```
+
+**Available Models:**
+- `qwen2.5:3b` (default) - 96% accuracy, 2.5s response
+- `gemma3:4b` - 96% accuracy, 4.5s response  
+- `ardupilot-stage1` (legacy) - 85% accuracy, 0.4s response
+
+See [Model Selection Guide](docs/MODEL_SELECTION.md) for detailed comparison.
+
 ## Usage
 
 ### Demo Mode (No Drone Required)
