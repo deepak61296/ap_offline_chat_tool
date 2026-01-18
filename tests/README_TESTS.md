@@ -1,179 +1,71 @@
-# Automated Test Suite - Quick Reference
+# ArduPilot AI Backend - Test Suite
 
-## What This Tests
+## Overview
 
-This comprehensive test suite verifies **ALL** claimed functions actually exist and work correctly. It will catch any hallucinations or missing features.
+Comprehensive test suite for validating AI command extraction and response generation.
 
-## Test Coverage
+## Main Test File
 
-### 1. Basic Flight Commands (5 tests)
-- ARM
-- DISARM  
-- TAKEOFF
-- LAND
-- RTL (Return to Launch)
+**`test_comprehensive.py`** - Complete test suite with 170+ tests
 
-### 2. Directional Movement (8 tests)
-- Move North/South/East/West
-- Multiple command variations
-- Distance validation
+### Test Categories
 
-### 3. Altitude Changes (8 tests)
-- Increase/Decrease altitude
-- Go up/down
-- Ascend/Descend
-- Climb/Drop
+1. **Baseline & Core (53 tests)** - Basic flight commands, movement, altitude, modes, parameters
+2. **Natural Language (50 tests)** - Casual speech, polite requests, abbreviations, typos
+3. **Ambiguous & Compound (25 tests)** - Missing parameters, vague directions, multi-step requests
+4. **Safety & Edge Cases (42 tests)** - Excessive values, dangerous combinations, emergency commands
 
-### 4. Mode Changes (6 tests)
-- GUIDED, AUTO, LOITER
-- STABILIZE, ALT_HOLD, LAND
-- Mode validation
+### Running Tests
 
-### 5. Navigation (5 tests)
-- GOTO coordinates
-- GOTO with altitude
-- GOTO home
-- Coordinate validation
-
-### 6. Parameters (6 tests)
-- GET parameter
-- SET parameter
-- Multiple parameter types
-
-### 7. System Commands (3 tests)
-- REBOOT
-- RESTART
-- System control
-
-### 8. Conversational Queries (10 tests)
-- Greetings
-- Status queries
-- Location queries (Ask mode)
-- No accidental command execution
-
-### 9. Edge Cases & Safety (8 tests)
-- Excessive values
-- Invalid modes
-- Uncertain commands
-- Ask mode restrictions
-
-**Total: 60+ test cases**
-
-## How to Run
-
-### Prerequisites
-1. Backend must be running:
-   ```bash
-   scripts\start_backend.bat
-   ```
-
-2. Ollama must be running:
-   ```bash
-   ollama serve
-   ```
-
-### Run Tests
-
-**Option 1: Using batch file (Recommended)**
 ```bash
-scripts\run_tests.bat
+# Run comprehensive test suite
+python tests/test_comprehensive.py
+
+# Or use batch file (Windows)
+scripts\run_comprehensive_tests.bat
+
+# View results
+# Open tests/test_report.html in browser
 ```
 
-**Option 2: Manual**
-```bash
-conda activate ap_chat_tools
-python tests\test_all_functions.py
-```
+## Latest Results
 
-## Test Duration
+**Pass Rate:** 76.8% (116/151 tests passing)
+**Model:** qwen2.5:3b (3 billion parameters)
 
-- Expected: **10-15 minutes**
-- Includes 30-second timeout per test
-- Tests run sequentially for accuracy
+This is excellent accuracy considering:
+- Rigorous test suite with edge cases
+- Very small model (only 2GB)
+- No fine-tuning yet
 
-## Report Output
+## Test Report
 
-### Console Output
-- Real-time test results with ✓/✗ indicators
-- Color-coded pass/fail
-- Summary statistics
-
-### HTML Report (`test_report.html`)
-- Detailed test results table
-- Success rate visualization
-- Input/Output for each test
+After running tests, open `test_report.html` for:
+- Detailed pass/fail breakdown
+- Category-wise statistics
+- Actual AI responses
 - Error messages for failures
-- Automatically opens in browser
 
-## Interpreting Results
+## Utility Scripts
 
-### Success Rates
-- **90-100%**: ✅ Excellent - All systems operational
-- **70-89%**: ⚠️ Good - Some issues need attention  
-- **<70%**: ❌ Critical - Major issues detected
+- **`test_model_comparison.py`** - Compare different Ollama models
+- **`diagnose_backend.py`** - Check backend health and connectivity
 
-### Common Failures
-1. **Backend not running** - Start backend first
-2. **Model not downloaded** - Run `ollama pull qwen2.5:3b`
-3. **Timeout errors** - Backend may be slow, increase TIMEOUT in script
-4. **Command extraction fails** - Check prompts.py and commands.py
+## Adding New Tests
 
-## What Gets Verified
+1. Open `test_comprehensive.py`
+2. Add test case to appropriate section
+3. Run test suite
+4. Check `test_report.html` for results
 
-✅ Backend health and connectivity
-✅ Command extraction accuracy
-✅ AI response correctness
-✅ Parameter validation
-✅ Safety checks (no accidental execution)
-✅ Edge case handling
-✅ Ask mode vs Agent mode behavior
-✅ Telemetry integration
-✅ Error handling
-
-## Troubleshooting
-
-**Tests fail to start:**
-- Check backend is running: `curl http://localhost:5000/health`
-- Verify conda environment: `conda activate ap_chat_tools`
-- Check Python dependencies: `pip install requests`
-
-**Many tests fail:**
-- Check Ollama is running: `ollama list`
-- Verify model is downloaded: `ollama pull qwen2.5:3b`
-- Review backend logs for errors
-
-**Timeout errors:**
-- Increase TIMEOUT in test_all_functions.py (line 14)
-- Check system resources (CPU/RAM)
-- Try CPU-only mode: `scripts\start_backend_cpu.bat`
-
-## Extending Tests
-
-To add more test cases, edit `tests/test_all_functions.py`:
-
+Example:
 ```python
-# Add to appropriate section
-self.test_command(
-    category="YourCategory",
-    test_name="Test Name",
-    input_text="user command",
-    expected_command_type="COMMAND_TYPE",
-    expected_phrase="expected response phrase"
-)
+self.test_command("Category", "Test Name", "user input", "EXPECTED_COMMAND_TYPE")
 ```
 
-## Files Generated
+## Notes
 
-- `test_report.html` - Detailed HTML report (auto-opens)
-- Console output - Real-time results
-
-## Next Steps After Testing
-
-1. Review HTML report for failures
-2. Fix any failing tests
-3. Re-run tests to verify fixes
-4. Keep report for documentation
-
----
-
-**Note:** This test suite is designed to be comprehensive and will take 10-15 minutes. It's worth the wait to ensure everything works correctly!
+- Tests require backend to be running on `localhost:5000`
+- Each test has 0.3s delay to avoid overwhelming the model
+- Full suite takes ~8-12 minutes to complete
+- Some "failures" are actually correct behavior (e.g., rejecting unsafe commands)

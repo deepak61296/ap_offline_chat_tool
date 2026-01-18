@@ -15,17 +15,27 @@ def extract_command(ai_response: str) -> Optional[Dict[str, Any]]:
     """
     response_lower = ai_response.lower()
     
-    # Try each command type in order of specificity
+    # Split into lines and get first substantive line for basic command checking
+    # This prevents multi-line responses from triggering wrong commands
+    lines = [line.strip() for line in ai_response.split('\n') if line.strip()]
+    first_line_lower = lines[0].lower() if lines else response_lower
     
-    # ARM command - only if AI says "arming the drone now"
-    if re.search(r'arming the drone now', response_lower) and not re.search(r'\bdisarm', response_lower):
+    # Try each command type in order of specificity
+    # Check first line only for basic commands to avoid conflicts
+    
+    # LAND command - check first line only
+    if re.search(r'landing the drone', first_line_lower):
+        return {"type": "LAND", "params": {}}
+    
+    # ARM command - check first line only
+    if re.search(r'arming the drone now', first_line_lower) and not re.search(r'\bdisarm', first_line_lower):
         return {"type": "ARM", "params": {}}
     
-    # DISARM command - only if AI says "disarming the drone"
-    if re.search(r'disarming the drone', response_lower):
+    # DISARM command - check first line only
+    if re.search(r'disarming the drone', first_line_lower):
         return {"type": "DISARM", "params": {}}
     
-    # TAKEOFF command with altitude - only if AI says "taking off to X meters"
+    # TAKEOFF command with altitude - check full response
     takeoff_match = re.search(r'taking off to (\d+)\s*(?:meters|m\b)', response_lower)
     if takeoff_match:
         altitude = int(takeoff_match.group(1))
@@ -33,17 +43,14 @@ def extract_command(ai_response: str) -> Optional[Dict[str, Any]]:
             return {"type": "ERROR", "params": {"message": f"Altitude {altitude}m exceeds maximum {TAKEOFF_MAX_ALTITUDE}m"}}
         return {"type": "TAKEOFF", "params": {"altitude": altitude}}
     
-    # LAND command - only if AI says "landing the drone"
-    if re.search(r'landing the drone', response_lower):
-        return {"type": "LAND", "params": {}}
-    
-    # RTL (Return to Launch) command - only if AI says "returning to launch"
+    # RTL (Return to Launch) command
     if re.search(r'returning to launch', response_lower):
         return {"type": "RTL", "params": {}}
     
-    # REBOOT command - only if AI says "rebooting the flight controller"
+    # REBOOT command
     if re.search(r'rebooting the flight controller', response_lower):
         return {"type": "REBOOT", "params": {}}
+
     
     # CHANGE_MODE command - detect mode changes
     mode_match = re.search(r'changing (?:mode|flight mode) to (\w+)', response_lower)
