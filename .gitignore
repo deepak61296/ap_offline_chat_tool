@@ -1,6 +1,9 @@
 # Project context file (for AI assistants)
 context.md
 
+# Environment files (API keys, secrets)
+.env
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

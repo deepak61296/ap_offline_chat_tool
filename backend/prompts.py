@@ -233,15 +233,9 @@ def get_agent_prompt(connection_status: str, telemetry_section: str) -> str:
     )
 
 def get_ask_prompt(connection_status: str, telemetry_section: str, rag_context: str = "") -> str:
-    """Get formatted ask mode prompt with optional RAG context"""
-    # Format RAG context if available
-    if rag_context:
-        rag_section = f"\n{rag_context}\n"
-    else:
-        rag_section = ""
-    
+    """Get formatted ask mode prompt"""
     return ASK_MODE_PROMPT.format(
         connection_status=connection_status,
         telemetry_section=telemetry_section,
-        rag_context=rag_section
+        rag_context=""  # RAG removed, always empty
     )

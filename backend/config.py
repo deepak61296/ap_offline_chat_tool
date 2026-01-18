@@ -20,7 +20,10 @@ API_PORT = 5000
 API_DEBUG = False
 
 # Model Configuration
+# Currently focused on qwen2.5:3b for stability
+# Other models can be added later after thorough testing
 DEFAULT_MODEL = 'qwen2.5:3b'
+SUPPORTED_MODEL = 'qwen2.5:3b'  # Only this model is tested and supported
 
 # CPU/GPU Configuration
 USE_GPU = not args.no_gpu
@@ -30,32 +33,6 @@ LOW_POWER_MODE = args.low_power
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 OLLAMA_NUM_CTX = 2048 if LOW_POWER_MODE else 4096  # Context window size
 OLLAMA_NUM_GPU = 0 if not USE_GPU else -1  # 0 = CPU only, -1 = auto
-
-# RAG Configuration  
-RAG_MAX_CONTEXT = 800 if LOW_POWER_MODE else 1500  # Max chars from docs
-RAG_NUM_RESULTS = 2 if LOW_POWER_MODE else 3  # Number of doc chunks
-
-AVAILABLE_MODELS = [
-    # Qwen models (recommended for ArduPilot)
-    'qwen2.5:3b',
-    'qwen2.5:7b',
-    'qwen2.5:14b',
-    
-    # Gemma models (Google)
-    'gemma2:2b',
-    'gemma2:9b',
-    
-    # Llama models (Meta)
-    'llama3.2:3b',
-    'llama3.1:8b',
-    
-    # Mistral models
-    'mistral:7b',
-    
-    # Phi models (Microsoft)
-    'phi3:3.8b',
-    'phi3:14b'
-]
 
 # Safety Limits
 MAX_PARAM_VALUE = 1000000  # Maximum parameter value

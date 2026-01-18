@@ -1,25 +1,29 @@
-"""ArduPilot AI Backend - Core Module
-
-A modular AI backend for ArduPilot ground control stations.
-Provides HTTP API for AI-powered drone assistance with RAG-enhanced responses.
-
-Version: 2.1.0
+"""
+ArduPilot AI Backend Package
+Provides AI-powered chat assistance for ArduPilot Mission Planner
 """
 
-__version__ = "2.1.0"
-__author__ = "Deepak"
-__description__ = "AI Backend for ArduPilot Mission Planner with RAG support"
+__version__ = '2.1.0'
 
 # Core modules
 from .api_server import app
-from .config import DEFAULT_MODEL, API_HOST, API_PORT
-from .rag import get_rag, ArduPilotRAG
+from .commands import extract_command, validate_command
+from .prompts import get_agent_prompt, get_ask_prompt
+from .config import (
+    DEFAULT_MODEL,
+    API_HOST,
+    API_PORT,
+    SUPPORTED_MODES
+)
 
 __all__ = [
     'app',
+    'extract_command',
+    'validate_command', 
+    'get_agent_prompt',
+    'get_ask_prompt',
     'DEFAULT_MODEL',
     'API_HOST',
     'API_PORT',
-    'get_rag',
-    'ArduPilotRAG'
+    'SUPPORTED_MODES'
 ]

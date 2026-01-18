@@ -27,21 +27,12 @@ from backend.prompts import get_agent_prompt, get_ask_prompt
 from backend.commands import extract_command, validate_command
 from backend.telemetry_data import format_telemetry_for_prompt
 
-# Configure logging BEFORE RAG import
+# Configure logging
 logging.basicConfig(
     level=getattr(logging, LOG_LEVEL),
     format=LOG_FORMAT
 )
 logger = logging.getLogger(__name__)
-
-# Import RAG module (after logger is configured)
-try:
-    from backend.rag import get_rag
-    RAG_AVAILABLE = True
-    logger.info("[OK] RAG system available")
-except ImportError as e:
-    RAG_AVAILABLE = False
-    logger.warning(f"[WARNING] RAG system not available: {e}")
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -205,25 +196,12 @@ def chat():
         
         logger.info(f"Processing message in {mode} mode: {user_message} (Connected: {is_connected})")
         
-        # Get RAG context for Ask mode
-        rag_context = ""
-        if mode == 'ask' and RAG_AVAILABLE:
-            try:
-                from backend.config import RAG_MAX_CONTEXT, RAG_NUM_RESULTS
-                rag = get_rag()
-                rag_context = rag.get_context(user_message, max_length=RAG_MAX_CONTEXT)
-                if rag_context:
-                    logger.info(f"[OK] RAG context retrieved ({len(rag_context)} chars)")
-                else:
-                    logger.warning("No relevant documentation found for query")
-            except Exception as e:
-                logger.warning(f"RAG retrieval failed: {e}")
-        
         # Select prompt based on mode
         if mode == 'agent':
             system_prompt = get_agent_prompt(connection_status, telemetry_section)
         else:  # ask mode
-            system_prompt = get_ask_prompt(connection_status, telemetry_section, rag_context)
+            # Ask mode - no RAG, just use prompt
+            system_prompt = get_ask_prompt(connection_status, telemetry_section, "")
         
         # Call Ollama API with CPU/GPU configuration
         from backend.config import OLLAMA_NUM_CTX, OLLAMA_NUM_GPU
