@@ -125,38 +125,27 @@ def extract_movement_command(ai_response: str) -> Optional[Dict[str, Any]]:
 def extract_altitude_command(ai_response: str) -> Optional[Dict[str, Any]]:
     """
     Extract altitude change commands
-    Examples: "increase altitude by 20m", "go up 10 meters", "descend 5m"
-    These should use GOTO with current position + altitude change
+    Looks for "increasing altitude by X" or "decreasing altitude by X"
     """
     response_lower = ai_response.lower()
     
-    # Only extract if AI says "flying to coordinates" (our standard phrase)
-    if not re.search(r'flying to coordinates', response_lower):
-        return None
+    # Look for "increasing altitude by X meters"
+    increase_match = re.search(r'increasing altitude by (\d+)\s*(?:meters|m\b)', response_lower)
+    if increase_match:
+        altitude_change = int(increase_match.group(1))
+        return {
+            "type": "ALTITUDE_CHANGE",
+            "params": {"altitude_change": altitude_change}
+        }
     
-    # Check if this is an altitude-only change (no lat/lon mentioned)
-    # Pattern: altitude change without specific coordinates
-    patterns = [
-        r'increase altitude by (\d+)\s*(?:meters|m\\b)',
-        r'go up (\d+)\s*(?:meters|m\\b)',
-        r'ascend (\d+)\s*(?:meters|m\\b)',
-        r'descend (\d+)\s*(?:meters|m\\b)',
-        r'go down (\d+)\s*(?:meters|m\\b)',
-        r'decrease altitude by (\d+)\s*(?:meters|m\\b)',
-    ]
-    
-    for pattern in patterns:
-        match = re.search(pattern, response_lower)
-        if match:
-            altitude_change = int(match.group(1))
-            # Negative for descend/down
-            if 'descend' in pattern or 'down' in pattern or 'decrease' in pattern:
-                altitude_change = -altitude_change
-            
-            return {
-                "type": "ALTITUDE_CHANGE",
-                "params": {"altitude_change": altitude_change}
-            }
+    # Look for "decreasing altitude by X meters"
+    decrease_match = re.search(r'decreasing altitude by (\d+)\s*(?:meters|m\b)', response_lower)
+    if decrease_match:
+        altitude_change = -int(decrease_match.group(1))
+        return {
+            "type": "ALTITUDE_CHANGE",
+            "params": {"altitude_change": altitude_change}
+        }
     
     return None
 
@@ -175,27 +164,35 @@ def extract_goto_command(ai_response: str) -> Optional[Dict[str, Any]]:
     if re.search(r'flying to home', response_lower):
         return {"type": "GOTO_HOME", "params": {}}
     
-    # Pattern for coordinates with optional altitude
-    # "flying to coordinates 37.7749, -122.4194" or "flying to 37.7749, -122.4194 at 100m"
-    coord_pattern = r'flying to (?:coordinates\s+)?(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)(?:\s+at\s+(\d+)\s*(?:meters|m\b))?'
-    match = re.search(coord_pattern, response_lower)
+    # More flexible pattern for coordinates with optional altitude
+    # Handles: "flying to coordinates 37.7749, -122.4194"
+    #         "flying to coordinates: 37.7749, -122.4194 at 100 meters"
+    #         "flying to coordinates: Latitude 40.7128, Longitude -74.0060"
+    coord_patterns = [
+        # Standard format: "flying to [coordinates] LAT, LON [at ALT meters]"
+        r'flying to (?:coordinates:?\s*)?(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)(?:\s+at\s+(\d+)\s*(?:meters|m\b))?',
+        # Verbose format: "Latitude X, Longitude Y"
+        r'latitude\s+(-?\d+\.?\d*)\s*,?\s*longitude\s+(-?\d+\.?\d*)',
+    ]
     
-    if match:
-        lat = float(match.group(1))
-        lon = float(match.group(2))
-        altitude = int(match.group(3)) if match.group(3) else None
-        
-        # Validate coordinates
-        if not (-90 <= lat <= 90):
-            return {"type": "ERROR", "params": {"message": f"Invalid latitude: {lat}"}}
-        if not (-180 <= lon <= 180):
-            return {"type": "ERROR", "params": {"message": f"Invalid longitude: {lon}"}}
-        
-        params = {"latitude": lat, "longitude": lon}
-        if altitude:
-            params["altitude"] = altitude
-        
-        return {"type": "GOTO", "params": params}
+    for pattern in coord_patterns:
+        match = re.search(pattern, response_lower)
+        if match:
+            lat = float(match.group(1))
+            lon = float(match.group(2))
+            altitude = int(match.group(3)) if len(match.groups()) >= 3 and match.group(3) else None
+            
+            # Validate coordinates
+            if not (-90 <= lat <= 90):
+                return {"type": "ERROR", "params": {"message": f"Invalid latitude: {lat}"}}
+            if not (-180 <= lon <= 180):
+                return {"type": "ERROR", "params": {"message": f"Invalid longitude: {lon}"}}
+            
+            params = {"latitude": lat, "longitude": lon}
+            if altitude:
+                params["altitude"] = altitude
+            
+            return {"type": "GOTO", "params": params}
     
     return None
 
