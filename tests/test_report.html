@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>ArduPilot AI Backend Test Report</title>
+    <title>ArduPilot AI Backend - Ultimate Test Report</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
         .header { background: #2c3e50; color: white; padding: 20px; border-radius: 5px; }
@@ -12,7 +12,7 @@
         .stat-label { color: #666; margin-top: 10px; }
         .pass { color: #27ae60; }
         .fail { color: #e74c3c; }
-        table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 20px; }
         th { background: #34495e; color: white; padding: 12px; text-align: left; }
         td { padding: 10px; border-bottom: 1px solid #ddd; }
         tr:hover { background: #f8f9fa; }
@@ -20,33 +20,33 @@
         .pass-badge { background: #27ae60; color: white; padding: 4px 8px; border-radius: 3px; font-size: 12px; }
         .fail-badge { background: #e74c3c; color: white; padding: 4px 8px; border-radius: 3px; font-size: 12px; }
         .error { color: #e74c3c; font-size: 12px; }
-        .response { font-size: 12px; color: #666; max-width: 400px; overflow: hidden; text-overflow: ellipsis; }
+        .response { font-size: 12px; color: #666; max-width: 400px; }
         .command { font-family: monospace; background: #ecf0f1; padding: 2px 6px; border-radius: 3px; font-size: 12px; }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>🚁 ArduPilot AI Backend - Comprehensive Test Report</h1>
-        <p>Generated: 2026-01-18 14:47:47</p>
-        <p>Duration: 193.73 seconds</p>
+        <h1>🚁 ArduPilot AI Backend - Ultimate Comprehensive Test Report</h1>
+        <p>Generated: 2026-01-18 20:54:48</p>
+        <p>Duration: 460.37 seconds (7.7 minutes)</p>
     </div>
     
     <div class="summary">
         <div class="stats">
             <div class="stat">
-                <div class="stat-value">59</div>
+                <div class="stat-value">151</div>
                 <div class="stat-label">Total Tests</div>
             </div>
             <div class="stat">
-                <div class="stat-value pass">53</div>
+                <div class="stat-value pass">116</div>
                 <div class="stat-label">Passed</div>
             </div>
             <div class="stat">
-                <div class="stat-value fail">6</div>
+                <div class="stat-value fail">35</div>
                 <div class="stat-label">Failed</div>
             </div>
             <div class="stat">
-                <div class="stat-value" style="color: #e67e22">89.8%</div>
+                <div class="stat-value" style="color: #e67e22">76.8%</div>
                 <div class="stat-label">Success Rate</div>
             </div>
         </div>
@@ -59,8 +59,8 @@
                 <th>Test Name</th>
                 <th>Input</th>
                 <th>Expected</th>
-                <th>Extracted Command</th>
-                <th>AI Response</th>
+                <th>Got</th>
+                <th>Response</th>
                 <th>Status</th>
             </tr>
         </thead>
@@ -68,7 +68,7 @@
 <tr class="category"><td colspan="7">Flight</td></tr>
 <tr>
                 <td></td>
-                <td>ARM command</td>
+                <td>ARM</td>
                 <td><em>arm the drone</em></td>
                 <td><span class="command">ARM</span></td>
                 <td><span class="command">ARM</span></td>
@@ -77,7 +77,7 @@
             </tr>
 <tr>
                 <td></td>
-                <td>DISARM command</td>
+                <td>DISARM</td>
                 <td><em>disarm</em></td>
                 <td><span class="command">DISARM</span></td>
                 <td><span class="command">DISARM</span></td>
@@ -86,7 +86,7 @@
             </tr>
 <tr>
                 <td></td>
-                <td>TAKEOFF command</td>
+                <td>TAKEOFF</td>
                 <td><em>takeoff to 15 meters</em></td>
                 <td><span class="command">TAKEOFF</span></td>
                 <td><span class="command">TAKEOFF</span></td>
@@ -95,19 +95,22 @@
             </tr>
 <tr>
                 <td></td>
-                <td>LAND command</td>
+                <td>LAND</td>
                 <td><em>land the drone</em></td>
                 <td><span class="command">LAND</span></td>
-                <td><span class="command">LAND</span></td>
+                <td><span class="command">ARM</span></td>
                 <td class="response">Landing the drone.
-Current telemetry:
-Battery: 12.6V, 5.2A, 84% remaining
-GPS: 12 satellites, 3D Fix...</td>
-                <td><span class="pass-badge">✓ PASS</span></td>
+Arming the drone now.
+Landing the drone....</td>
+                <td><span class="fail-badge">✗ FAIL</span></td>
             </tr>
+<tr><td colspan="7" class="error">→ Expected: LAND, Got: ARM
+Response: 'Landing the drone.
+Arming the drone now.
+Landing the drone....'</td></tr>
 <tr>
                 <td></td>
-                <td>RTL command</td>
+                <td>RTL</td>
                 <td><em>return to launch</em></td>
                 <td><span class="command">RTL</span></td>
                 <td><span class="command">RTL</span></td>
@@ -117,7 +120,7 @@ GPS: 12 satellites, 3D Fix...</td>
 <tr class="category"><td colspan="7">Movement</td></tr>
 <tr>
                 <td></td>
-                <td>Move North</td>
+                <td>North</td>
                 <td><em>move north 20 meters</em></td>
                 <td><span class="command">MOVE_DIRECTION</span></td>
                 <td><span class="command">MOVE_DIRECTION</span></td>
@@ -126,7 +129,7 @@ GPS: 12 satellites, 3D Fix...</td>
             </tr>
 <tr>
                 <td></td>
-                <td>Move South</td>
+                <td>South</td>
                 <td><em>move south 30m</em></td>
                 <td><span class="command">MOVE_DIRECTION</span></td>
                 <td><span class="command">MOVE_DIRECTION</span></td>
@@ -135,7 +138,7 @@ GPS: 12 satellites, 3D Fix...</td>
             </tr>
 <tr>
                 <td></td>
-                <td>Move East</td>
+                <td>East</td>
                 <td><em>move east 50 meters</em></td>
                 <td><span class="command">MOVE_DIRECTION</span></td>
                 <td><span class="command">MOVE_DIRECTION</span></td>
@@ -144,7 +147,7 @@ GPS: 12 satellites, 3D Fix...</td>
             </tr>
 <tr>
                 <td></td>
-                <td>Move West</td>
+                <td>West</td>
                 <td><em>move west 10m</em></td>
                 <td><span class="command">MOVE_DIRECTION</span></td>
                 <td><span class="command">MOVE_DIRECTION</span></td>
@@ -153,7 +156,7 @@ GPS: 12 satellites, 3D Fix...</td>
             </tr>
 <tr>
                 <td></td>
-                <td>Go North variant</td>
+                <td>Go North</td>
                 <td><em>go north 25 meters</em></td>
                 <td><span class="command">MOVE_DIRECTION</span></td>
                 <td><span class="command">MOVE_DIRECTION</span></td>
@@ -162,15 +165,15 @@ GPS: 12 satellites, 3D Fix...</td>
             </tr>
 <tr>
                 <td></td>
-                <td>Fly East variant</td>
+                <td>Fly East</td>
                 <td><em>fly east 40m</em></td>
                 <td><span class="command">MOVE_DIRECTION</span></td>
-                <td><span class="command">None</span></td>
-                <td class="response">Flying to coordinates: 40 meters east....</td>
+                <td><span class="command">ERROR</span></td>
+                <td class="response">Flying to coordinates: 123.456789, -45.678912 at 40 meters....</td>
                 <td><span class="fail-badge">✗ FAIL</span></td>
             </tr>
-<tr><td colspan="7" class="error">→ Expected: MOVE_DIRECTION, Got: None
-    AI Response: 'Flying to coordinates: 40 meters east....'</td></tr>
+<tr><td colspan="7" class="error">→ Expected: MOVE_DIRECTION, Got: ERROR
+Response: 'Flying to coordinates: 123.456789, -45.678912 at 40 meters....'</td></tr>
 <tr>
                 <td></td>
                 <td>Move South variant</td>
@@ -182,7 +185,7 @@ GPS: 12 satellites, 3D Fix...</td>
             </tr>
 <tr>
                 <td></td>
-                <td>Move West variant</td>
+                <td>Go West</td>
                 <td><em>go 15m west</em></td>
                 <td><span class="command">MOVE_DIRECTION</span></td>
                 <td><span class="command">MOVE_DIRECTION</span></td>
@@ -192,7 +195,7 @@ GPS: 12 satellites, 3D Fix...</td>
 <tr class="category"><td colspan="7">Altitude</td></tr>
 <tr>
                 <td></td>
-                <td>Increase altitude</td>
+                <td>Increase</td>
                 <td><em>increase altitude by 20m</em></td>
                 <td><span class="command">ALTITUDE_CHANGE</span></td>
                 <td><span class="command">ALTITUDE_CHANGE</span></td>
@@ -201,7 +204,7 @@ GPS: 12 satellites, 3D Fix...</td>
             </tr>
 <tr>
                 <td></td>
-                <td>Decrease altitude</td>
+                <td>Decrease</td>
                 <td><em>decrease altitude by 10m</em></td>
                 <td><span class="command">ALTITUDE_CHANGE</span></td>
                 <td><span class="command">ALTITUDE_CHANGE</span></td>
@@ -265,7 +268,7 @@ GPS: 12 satellites, 3D Fix...</td>
 <tr class="category"><td colspan="7">Mode</td></tr>
 <tr>
                 <td></td>
-                <td>Change to GUIDED</td>
+                <td>GUIDED</td>
                 <td><em>change mode to guided</em></td>
                 <td><span class="command">CHANGE_MODE</span></td>
                 <td><span class="command">CHANGE_MODE</span></td>
@@ -274,7 +277,7 @@ GPS: 12 satellites, 3D Fix...</td>
             </tr>
 <tr>
                 <td></td>
-                <td>Switch to AUTO</td>
+                <td>AUTO</td>
                 <td><em>switch to auto</em></td>
                 <td><span class="command">CHANGE_MODE</span></td>
                 <td><span class="command">CHANGE_MODE</span></td>
@@ -283,7 +286,7 @@ GPS: 12 satellites, 3D Fix...</td>
             </tr>
 <tr>
                 <td></td>
-                <td>Change to LOITER</td>
+                <td>LOITER</td>
                 <td><em>change mode to loiter</em></td>
                 <td><span class="command">CHANGE_MODE</span></td>
                 <td><span class="command">CHANGE_MODE</span></td>
@@ -292,7 +295,7 @@ GPS: 12 satellites, 3D Fix...</td>
             </tr>
 <tr>
                 <td></td>
-                <td>Switch to STABILIZE</td>
+                <td>STABILIZE</td>
                 <td><em>switch to stabilize</em></td>
                 <td><span class="command">CHANGE_MODE</span></td>
                 <td><span class="command">CHANGE_MODE</span></td>
@@ -301,16 +304,16 @@ GPS: 12 satellites, 3D Fix...</td>
             </tr>
 <tr>
                 <td></td>
-                <td>Change to ALT_HOLD</td>
+                <td>ALT_HOLD</td>
                 <td><em>change mode to alt_hold</em></td>
                 <td><span class="command">CHANGE_MODE</span></td>
                 <td><span class="command">CHANGE_MODE</span></td>
-                <td class="response">Changing mode to AUTO....</td>
+                <td class="response">Changing mode to ALT_HOLD....</td>
                 <td><span class="pass-badge">✓ PASS</span></td>
             </tr>
 <tr>
                 <td></td>
-                <td>Switch to LAND</td>
+                <td>LAND mode</td>
                 <td><em>switch flight mode to land</em></td>
                 <td><span class="command">CHANGE_MODE</span></td>
                 <td><span class="command">CHANGE_MODE</span></td>
@@ -320,7 +323,7 @@ GPS: 12 satellites, 3D Fix...</td>
 <tr class="category"><td colspan="7">Navigation</td></tr>
 <tr>
                 <td></td>
-                <td>GOTO coordinates</td>
+                <td>GOTO coords</td>
                 <td><em>fly to coordinates 37.7749, -122.4194</em></td>
                 <td><span class="command">GOTO</span></td>
                 <td><span class="command">GOTO</span></td>
@@ -329,7 +332,7 @@ GPS: 12 satellites, 3D Fix...</td>
             </tr>
 <tr>
                 <td></td>
-                <td>GOTO with altitude</td>
+                <td>GOTO with alt</td>
                 <td><em>fly to 37.7749, -122.4194 at 100 meters</em></td>
                 <td><span class="command">GOTO</span></td>
                 <td><span class="command">GOTO</span></td>
@@ -341,65 +344,62 @@ GPS: 12 satellites, 3D Fix...</td>
                 <td>GOTO home</td>
                 <td><em>fly to home</em></td>
                 <td><span class="command">GOTO_HOME</span></td>
-                <td><span class="command">None</span></td>
-                <td class="response">Flying to coordinates: current location at HOME....</td>
-                <td><span class="fail-badge">✗ FAIL</span></td>
-            </tr>
-<tr><td colspan="7" class="error">→ Expected: GOTO_HOME, Got: None
-    AI Response: 'Flying to coordinates: current location at HOME....'</td></tr>
-<tr>
-                <td></td>
-                <td>Return home</td>
-                <td><em>go to home position</em></td>
-                <td><span class="command">GOTO_HOME</span></td>
                 <td><span class="command">GOTO_HOME</span></td>
                 <td class="response">Flying to home....</td>
                 <td><span class="pass-badge">✓ PASS</span></td>
             </tr>
 <tr>
                 <td></td>
-                <td>Navigate to coords</td>
+                <td>Return home</td>
+                <td><em>go to home position</em></td>
+                <td><span class="command">GOTO_HOME</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">Flying to coordinates: current location at Home Position....</td>
+                <td><span class="fail-badge">✗ FAIL</span></td>
+            </tr>
+<tr><td colspan="7" class="error">→ Expected: GOTO_HOME, Got: None
+Response: 'Flying to coordinates: current location at Home Position....'</td></tr>
+<tr>
+                <td></td>
+                <td>Navigate to</td>
                 <td><em>navigate to 40.7128, -74.0060</em></td>
                 <td><span class="command">GOTO</span></td>
                 <td><span class="command">GOTO</span></td>
-                <td class="response">Flying to coordinates: 40.7128, -74.0060 at 50 meters....</td>
+                <td class="response">Flying to coordinates: 40.7128, -74.0060 at 5 meters....</td>
                 <td><span class="pass-badge">✓ PASS</span></td>
             </tr>
 <tr class="category"><td colspan="7">Parameters</td></tr>
 <tr>
                 <td></td>
-                <td>GET parameter</td>
+                <td>GET</td>
                 <td><em>what is parameter WPNAV_SPEED?</em></td>
                 <td><span class="command">GET_PARAM</span></td>
                 <td><span class="command">GET_PARAM</span></td>
-                <td class="response">Getting parameter WPNAV_SPEED...
-WPNAV_SPEED is set to 500....</td>
+                <td class="response">Getting parameter WPNAV_SPEED.
+WPNAV_SPEED is the waypoint navigation speed parameter. Its value rep...</td>
                 <td><span class="pass-badge">✓ PASS</span></td>
             </tr>
 <tr>
                 <td></td>
-                <td>SET parameter</td>
+                <td>SET</td>
                 <td><em>set parameter DISARM_DELAY to 40</em></td>
                 <td><span class="command">SET_PARAM</span></td>
                 <td><span class="command">SET_PARAM</span></td>
-                <td class="response">Setting parameter DISARM_DELAY to 40.
-Current telemetry:
-Battery: 12.6V, 5.2A, 85% remaining
-GPS: 12...</td>
+                <td class="response">Setting parameter DISARM_DELAY to 40....</td>
                 <td><span class="pass-badge">✓ PASS</span></td>
             </tr>
 <tr>
                 <td></td>
-                <td>GET BATT_CAPACITY</td>
+                <td>GET BATT</td>
                 <td><em>get parameter BATT_CAPACITY</em></td>
                 <td><span class="command">GET_PARAM</span></td>
                 <td><span class="command">GET_PARAM</span></td>
-                <td class="response">Getting parameter BATT_CAPACITY. Please wait while I retrieve the value....</td>
+                <td class="response">Getting parameter BATT_CAPACITY....</td>
                 <td><span class="pass-badge">✓ PASS</span></td>
             </tr>
 <tr>
                 <td></td>
-                <td>SET WPNAV_SPEED</td>
+                <td>SET WPNAV</td>
                 <td><em>set WPNAV_SPEED to 500</em></td>
                 <td><span class="command">SET_PARAM</span></td>
                 <td><span class="command">SET_PARAM</span></td>
@@ -408,7 +408,7 @@ GPS: 12...</td>
             </tr>
 <tr>
                 <td></td>
-                <td>Check parameter</td>
+                <td>Check</td>
                 <td><em>check parameter FENCE_ENABLE</em></td>
                 <td><span class="command">GET_PARAM</span></td>
                 <td><span class="command">GET_PARAM</span></td>
@@ -417,13 +417,15 @@ GPS: 12...</td>
             </tr>
 <tr>
                 <td></td>
-                <td>Update parameter</td>
+                <td>Update</td>
                 <td><em>update parameter RTL_ALT to 50</em></td>
                 <td><span class="command">SET_PARAM</span></td>
-                <td><span class="command">SET_PARAM</span></td>
-                <td class="response">Setting parameter RTL_ALT to 50....</td>
-                <td><span class="pass-badge">✓ PASS</span></td>
+                <td><span class="command">GET_PARAM</span></td>
+                <td class="response">Getting parameter RTL_ALT to 50....</td>
+                <td><span class="fail-badge">✗ FAIL</span></td>
             </tr>
+<tr><td colspan="7" class="error">→ Expected: SET_PARAM, Got: GET_PARAM
+Response: 'Getting parameter RTL_ALT to 50....'</td></tr>
 <tr class="category"><td colspan="7">System</td></tr>
 <tr>
                 <td></td>
@@ -431,7 +433,8 @@ GPS: 12...</td>
                 <td><em>reboot the flight controller</em></td>
                 <td><span class="command">REBOOT</span></td>
                 <td><span class="command">REBOOT</span></td>
-                <td class="response">Rebooting the flight controller. Please stand by while I reboot your drone's flight controller. This...</td>
+                <td class="response">Rebooting the flight controller.
+Please wait while I reboot your drone's flight controller system. T...</td>
                 <td><span class="pass-badge">✓ PASS</span></td>
             </tr>
 <tr>
@@ -440,7 +443,7 @@ GPS: 12...</td>
                 <td><em>restart the system</em></td>
                 <td><span class="command">REBOOT</span></td>
                 <td><span class="command">REBOOT</span></td>
-                <td class="response">Rebooting the flight controller. Please wait while I reboot your drone's system. This may take a mom...</td>
+                <td class="response">Rebooting the flight controller....</td>
                 <td><span class="pass-badge">✓ PASS</span></td>
             </tr>
 <tr>
@@ -449,8 +452,7 @@ GPS: 12...</td>
                 <td><em>reboot flight controller</em></td>
                 <td><span class="command">REBOOT</span></td>
                 <td><span class="command">REBOOT</span></td>
-                <td class="response">Rebooting the flight controller.
-Please be aware that this may cause your drone to lose connection a...</td>
+                <td class="response">Rebooting the flight controller. Please stand by while I reboot your drone's system....</td>
                 <td><span class="pass-badge">✓ PASS</span></td>
             </tr>
 <tr class="category"><td colspan="7">Conversational</td></tr>
@@ -469,10 +471,11 @@ Please be aware that this may cause your drone to lose connection a...</td>
                 <td><em>what can you do?</em></td>
                 <td><span class="command">None</span></td>
                 <td><span class="command">None</span></td>
-                <td class="response">I can help you with a variety of things related to your drone:
-
-- Arm and disarm the drone.
-- Take o...</td>
+                <td class="response">I can help you with:
+- Arm or disarm the drone
+- Take off to a specified altitude
+- Land the drone
+-...</td>
                 <td><span class="pass-badge">✓ PASS</span></td>
             </tr>
 <tr>
@@ -499,16 +502,16 @@ Please be aware that this may cause your drone to lose connection a...</td>
                 <td><em>am I armed?</em></td>
                 <td><span class="command">None</span></td>
                 <td><span class="command">None</span></td>
-                <td class="response">The drone is currently ARMED....</td>
+                <td class="response">Your drone is currently ARMED. You can confirm this by checking the telemetry data if you need more ...</td>
                 <td><span class="pass-badge">✓ PASS</span></td>
             </tr>
 <tr>
                 <td></td>
-                <td>Location query (Ask mode)</td>
+                <td>Location (Ask)</td>
                 <td><em>where am I?</em></td>
                 <td><span class="command">GPS coords</span></td>
                 <td><span class="command">None</span></td>
-                <td class="response">You are currently at latitude [CURRENT_TELEMETRY - Latitude]°, longitude [CURRENT_TELEMETRY - Longit...</td>
+                <td class="response">You are currently at latitude XX.XXXXXX°, longitude YY.YYYYYY°, altitude 50.0 meters. Please note th...</td>
                 <td><span class="pass-badge">✓ PASS</span></td>
             </tr>
 <tr>
@@ -517,7 +520,7 @@ Please be aware that this may cause your drone to lose connection a...</td>
                 <td><em>what mode am I in?</em></td>
                 <td><span class="command">None</span></td>
                 <td><span class="command">None</span></td>
-                <td class="response">Your drone is currently in GUIDED mode. Would you like to change the mode to something else?...</td>
+                <td class="response">Your drone is currently in GUIDED mode....</td>
                 <td><span class="pass-badge">✓ PASS</span></td>
             </tr>
 <tr>
@@ -526,7 +529,7 @@ Please be aware that this may cause your drone to lose connection a...</td>
                 <td><em>do I have GPS lock?</em></td>
                 <td><span class="command">None</span></td>
                 <td><span class="command">None</span></td>
-                <td class="response">Your current telemetry shows that you have a GPS fix with 12 satellites and are in a 3D Fix mode. Do...</td>
+                <td class="response">Yes, you currently have a 3D Fix with GPS satellites count of 12....</td>
                 <td><span class="pass-badge">✓ PASS</span></td>
             </tr>
 <tr>
@@ -535,22 +538,22 @@ Please be aware that this may cause your drone to lose connection a...</td>
                 <td><em>how are you?</em></td>
                 <td><span class="command">None</span></td>
                 <td><span class="command">None</span></td>
-                <td class="response">I'm functioning perfectly and ready to assist! All systems are operational. What can I help you with...</td>
+                <td class="response">I'm functioning perfectly and ready to assist! All systems are operational. How can I help you today...</td>
                 <td><span class="pass-badge">✓ PASS</span></td>
             </tr>
 <tr>
                 <td></td>
-                <td>About query</td>
+                <td>About</td>
                 <td><em>tell me about yourself</em></td>
                 <td><span class="command">None</span></td>
                 <td><span class="command">None</span></td>
-                <td class="response">Certainly! I am an AI assistant designed to help you control your drone and provide information abou...</td>
+                <td class="response">I am an AI assistant designed to help control and manage your drone using the ArduPilot Mission Plan...</td>
                 <td><span class="pass-badge">✓ PASS</span></td>
             </tr>
 <tr class="category"><td colspan="7">Edge Cases</td></tr>
 <tr>
                 <td></td>
-                <td>Excessive altitude</td>
+                <td>Excessive alt</td>
                 <td><em>takeoff to 500 meters</em></td>
                 <td><span class="command">ERROR</span></td>
                 <td><span class="command">TAKEOFF</span></td>
@@ -558,59 +561,61 @@ Please be aware that this may cause your drone to lose connection a...</td>
                 <td><span class="fail-badge">✗ FAIL</span></td>
             </tr>
 <tr><td colspan="7" class="error">→ Expected: ERROR, Got: TAKEOFF
-    AI Response: 'Taking off to 500 meters....'</td></tr>
+Response: 'Taking off to 500 meters....'</td></tr>
 <tr>
                 <td></td>
-                <td>Excessive distance</td>
+                <td>Excessive dist</td>
                 <td><em>move north 5000 meters</em></td>
                 <td><span class="command">ERROR</span></td>
                 <td><span class="command">None</span></td>
-                <td class="response">I can only move in cardinal directions: north, south, east, or west. Please specify one of these dir...</td>
+                <td class="response">I can only move in cardinal directions such as north, south, east, or west. Please specify one of th...</td>
                 <td><span class="fail-badge">✗ FAIL</span></td>
             </tr>
 <tr><td colspan="7" class="error">→ Expected: ERROR, Got: None
-    AI Response: 'I can only move in cardinal directions: north, south, east, or west. Please specify one of these dir...'</td></tr>
+Response: 'I can only move in cardinal directions such as north, south, east, or west. Plea...'</td></tr>
 <tr>
                 <td></td>
                 <td>Invalid mode</td>
                 <td><em>change mode to INVALID_MODE</em></td>
                 <td><span class="command">ERROR</span></td>
                 <td><span class="command">None</span></td>
-                <td class="response">I cannot change the mode to "INVALID_MODE" as that is not a valid flight mode for ArduPilot Mission ...</td>
+                <td class="response">I can only change the flight mode between several valid options such as GUIDED, AUTO, LOITER, STABIL...</td>
                 <td><span class="fail-badge">✗ FAIL</span></td>
             </tr>
 <tr><td colspan="7" class="error">→ Expected: ERROR, Got: None
-    AI Response: 'I cannot change the mode to "INVALID_MODE" as that is not a valid flight mode for ArduPilot Mission ...'</td></tr>
+Response: 'I can only change the flight mode between several valid options such as GUIDED, ...'</td></tr>
 <tr>
                 <td></td>
-                <td>Invalid coordinates</td>
+                <td>Invalid coords</td>
                 <td><em>fly to 200, 300</em></td>
                 <td><span class="command">ERROR</span></td>
-                <td><span class="command">ERROR</span></td>
-                <td class="response">Flying to coordinates: 200, 300 at 15 meters....</td>
-                <td><span class="pass-badge">✓ PASS</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">I can only move in cardinal directions: north, south, east, or west. Please specify one of these dir...</td>
+                <td><span class="fail-badge">✗ FAIL</span></td>
             </tr>
+<tr><td colspan="7" class="error">→ Expected: ERROR, Got: None
+Response: 'I can only move in cardinal directions: north, south, east, or west. Please spec...'</td></tr>
 <tr>
                 <td></td>
-                <td>Uncertain command</td>
+                <td>Uncertain</td>
                 <td><em>maybe arm?</em></td>
                 <td><span class="command">None</span></td>
                 <td><span class="command">None</span></td>
-                <td class="response">I can help with that safely. Please confirm: do you want to arm the drone now?...</td>
+                <td class="response">I can help with that. Please confirm by saying "arm the drone" to proceed....</td>
                 <td><span class="pass-badge">✓ PASS</span></td>
             </tr>
 <tr>
                 <td></td>
-                <td>Question not command</td>
+                <td>Question not cmd</td>
                 <td><em>can you arm?</em></td>
                 <td><span class="command">None</span></td>
                 <td><span class="command">None</span></td>
-                <td class="response">I can only arm the drone if you give me a direct command to do so. Would you like to arm the drone n...</td>
+                <td class="response">I can only check the armed status or arm the drone directly. Please say "arm the drone" to proceed w...</td>
                 <td><span class="pass-badge">✓ PASS</span></td>
             </tr>
 <tr>
                 <td></td>
-                <td>Indirect request</td>
+                <td>Indirect</td>
                 <td><em>I want to takeoff</em></td>
                 <td><span class="command">None</span></td>
                 <td><span class="command">TAKEOFF</span></td>
@@ -619,13 +624,908 @@ Please be aware that this may cause your drone to lose connection a...</td>
             </tr>
 <tr>
                 <td></td>
-                <td>Command in Ask mode</td>
-                <td><em>arm (in Ask mode)</em></td>
+                <td>Cmd in Ask</td>
+                <td><em>arm (Ask mode)</em></td>
                 <td><span class="command">Rejected</span></td>
                 <td><span class="command">None</span></td>
-                <td class="response">To arm your drone, follow these steps based on the information provided in the documentation:
+                <td class="response">In order to arm the vehicle, make sure all people, objects, and any body parts (e.g., hands) are cle...</td>
+                <td><span class="fail-badge">✗ FAIL</span></td>
+            </tr>
+<tr class="category"><td colspan="7">NL-Casual</td></tr>
+<tr>
+                <td></td>
+                <td>arm it</td>
+                <td><em>arm it</em></td>
+                <td><span class="command">ARM</span></td>
+                <td><span class="command">ARM</span></td>
+                <td class="response">Arming the drone now....</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>get it armed</td>
+                <td><em>get it armed</em></td>
+                <td><span class="command">ARM</span></td>
+                <td><span class="command">ARM</span></td>
+                <td class="response">Arming the drone now....</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>bring her up</td>
+                <td><em>bring her up 20 meters</em></td>
+                <td><span class="command">ALTITUDE_CHANGE</span></td>
+                <td><span class="command">ALTITUDE_CHANGE</span></td>
+                <td class="response">Increasing altitude by 20 meters....</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>take her down</td>
+                <td><em>take her down 10m</em></td>
+                <td><span class="command">ALTITUDE_CHANGE</span></td>
+                <td><span class="command">ALTITUDE_CHANGE</span></td>
+                <td class="response">Decreasing altitude by 10 meters....</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>drop it</td>
+                <td><em>drop it 5 meters</em></td>
+                <td><span class="command">ALTITUDE_CHANGE</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">I can only move in cardinal directions: north, south, east, or west. Please specify one of these dir...</td>
+                <td><span class="fail-badge">✗ FAIL</span></td>
+            </tr>
+<tr><td colspan="7" class="error">→ Expected: ALTITUDE_CHANGE, Got: None
+Response: 'I can only move in cardinal directions: north, south, east, or west. Please spec...'</td></tr>
+<tr>
+                <td></td>
+                <td>bring it home</td>
+                <td><em>bring it home</em></td>
+                <td><span class="command">RTL</span></td>
+                <td><span class="command">RTL</span></td>
+                <td class="response">Returning to launch....</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>kill motors</td>
+                <td><em>kill the motors</em></td>
+                <td><span class="command">DISARM</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">I'm sorry, but I cannot carry out that command as it could potentially harm your drone or anyone nea...</td>
+                <td><span class="fail-badge">✗ FAIL</span></td>
+            </tr>
+<tr><td colspan="7" class="error">→ Expected: DISARM, Got: None
+Response: 'I'm sorry, but I cannot carry out that command as it could potentially harm your...'</td></tr>
+<tr>
+                <td></td>
+                <td>spin up</td>
+                <td><em>spin up the motors</em></td>
+                <td><span class="command">ARM</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">I can only control the drone's movements and modes directly. To spin up the motors, I would need you...</td>
+                <td><span class="fail-badge">✗ FAIL</span></td>
+            </tr>
+<tr><td colspan="7" class="error">→ Expected: ARM, Got: None
+Response: 'I can only control the drone's movements and modes directly. To spin up the moto...'</td></tr>
+<tr class="category"><td colspan="7">NL-Polite</td></tr>
+<tr>
+                <td></td>
+                <td>please arm</td>
+                <td><em>could you arm the drone please</em></td>
+                <td><span class="command">ARM</span></td>
+                <td><span class="command">ARM</span></td>
+                <td class="response">Arming the drone now....</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>would you mind</td>
+                <td><em>would you mind taking off to 20m</em></td>
+                <td><span class="command">TAKEOFF</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">I can help with that! I will take you to an altitude of 20 meters. 
 
-1. Ma...</td>
+"Takeoff to 20m."...</td>
+                <td><span class="fail-badge">✗ FAIL</span></td>
+            </tr>
+<tr><td colspan="7" class="error">→ Expected: TAKEOFF, Got: None
+Response: 'I can help with that! I will take you to an altitude of 20 meters. 
+
+"Takeoff to...'</td></tr>
+<tr>
+                <td></td>
+                <td>if you could</td>
+                <td><em>if you could land the drone</em></td>
+                <td><span class="command">LAND</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">I can help with that. Please confirm if you would like to LAND the drone now....</td>
+                <td><span class="fail-badge">✗ FAIL</span></td>
+            </tr>
+<tr><td colspan="7" class="error">→ Expected: LAND, Got: None
+Response: 'I can help with that. Please confirm if you would like to LAND the drone now....'</td></tr>
+<tr class="category"><td colspan="7">NL-Abbrev</td></tr>
+<tr>
+                <td></td>
+                <td>t/o</td>
+                <td><em>t/o to 15m</em></td>
+                <td><span class="command">TAKEOFF</span></td>
+                <td><span class="command">TAKEOFF</span></td>
+                <td class="response">Taking off to 15 meters....</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>disarm asap</td>
+                <td><em>disarm asap</em></td>
+                <td><span class="command">DISARM</span></td>
+                <td><span class="command">DISARM</span></td>
+                <td class="response">Disarming the drone....</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>rtl now</td>
+                <td><em>rtl now</em></td>
+                <td><span class="command">RTL</span></td>
+                <td><span class="command">RTL</span></td>
+                <td class="response">Flying to home. Returning to launch....</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>up 10m</td>
+                <td><em>up 10m</em></td>
+                <td><span class="command">ALTITUDE_CHANGE</span></td>
+                <td><span class="command">ALTITUDE_CHANGE</span></td>
+                <td class="response">Increasing altitude by 10 meters....</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>down 5m</td>
+                <td><em>down 5m</em></td>
+                <td><span class="command">ALTITUDE_CHANGE</span></td>
+                <td><span class="command">ALTITUDE_CHANGE</span></td>
+                <td class="response">Decreasing altitude by 5 meters....</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr class="category"><td colspan="7">NL-Question</td></tr>
+<tr>
+                <td></td>
+                <td>ready to arm?</td>
+                <td><em>ready to arm?</em></td>
+                <td><span class="command">None</span></td>
+                <td><span class="command">ARM</span></td>
+                <td class="response">Arming the drone now....</td>
+                <td><span class="fail-badge">✗ FAIL</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>should we?</td>
+                <td><em>should we takeoff?</em></td>
+                <td><span class="command">None</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">I can help with that. Do you want to take off immediately or would you like to arm the drone first?...</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>is it safe?</td>
+                <td><em>is it safe to land?</em></td>
+                <td><span class="command">None</span></td>
+                <td><span class="command">LAND</span></td>
+                <td class="response">It looks like the drone is currently in a GUIDED mode and has been armed. Based on the current telem...</td>
+                <td><span class="fail-badge">✗ FAIL</span></td>
+            </tr>
+<tr class="category"><td colspan="7">NL-Indirect</td></tr>
+<tr>
+                <td></td>
+                <td>I want to</td>
+                <td><em>I want to arm</em></td>
+                <td><span class="command">None</span></td>
+                <td><span class="command">ARM</span></td>
+                <td class="response">Arming the drone now....</td>
+                <td><span class="fail-badge">✗ FAIL</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>I'd like</td>
+                <td><em>I'd like to takeoff</em></td>
+                <td><span class="command">None</span></td>
+                <td><span class="command">TAKEOFF</span></td>
+                <td class="response">Taking off to 15 meters....</td>
+                <td><span class="fail-badge">✗ FAIL</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>thinking about</td>
+                <td><em>thinking about landing</em></td>
+                <td><span class="command">None</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">The current status of your drone is GUIDED and ARMED. If you're ready to land, you can say "land" to...</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr class="category"><td colspan="7">NL-Filler</td></tr>
+<tr>
+                <td></td>
+                <td>um arm</td>
+                <td><em>um, can you like, arm the drone</em></td>
+                <td><span class="command">ARM</span></td>
+                <td><span class="command">ARM</span></td>
+                <td class="response">Arming the drone now....</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>so yeah</td>
+                <td><em>so yeah, takeoff to uh 20 meters</em></td>
+                <td><span class="command">TAKEOFF</span></td>
+                <td><span class="command">TAKEOFF</span></td>
+                <td class="response">Taking off to 20 meters....</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>well land</td>
+                <td><em>well, I guess land the drone</em></td>
+                <td><span class="command">LAND</span></td>
+                <td><span class="command">LAND</span></td>
+                <td class="response">Landing the drone.
+Current telemetry:
+Battery: 12.6V, 5.2A, 85% remaining
+GPS: 12 satellites, 3D Fix...</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr class="category"><td colspan="7">NL-Urgent</td></tr>
+<tr>
+                <td></td>
+                <td>ARM NOW</td>
+                <td><em>ARM NOW</em></td>
+                <td><span class="command">ARM</span></td>
+                <td><span class="command">ARM</span></td>
+                <td class="response">Arming the drone now....</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>LAND IMM</td>
+                <td><em>LAND IMMEDIATELY</em></td>
+                <td><span class="command">LAND</span></td>
+                <td><span class="command">LAND</span></td>
+                <td class="response">Landing the drone....</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>RTL NOW</td>
+                <td><em>RTL RIGHT NOW</em></td>
+                <td><span class="command">RTL</span></td>
+                <td><span class="command">GOTO_HOME</span></td>
+                <td class="response">Flying to home....</td>
+                <td><span class="fail-badge">✗ FAIL</span></td>
+            </tr>
+<tr><td colspan="7" class="error">→ Expected: RTL, Got: GOTO_HOME
+Response: 'Flying to home....'</td></tr>
+<tr class="category"><td colspan="7">NL-Verbose</td></tr>
+<tr>
+                <td></td>
+                <td>please go ahead</td>
+                <td><em>please go ahead and arm the drone for me</em></td>
+                <td><span class="command">ARM</span></td>
+                <td><span class="command">ARM</span></td>
+                <td class="response">Arming the drone now....</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>if you can</td>
+                <td><em>can you please takeoff to 15 meters if you can</em></td>
+                <td><span class="command">TAKEOFF</span></td>
+                <td><span class="command">TAKEOFF</span></td>
+                <td class="response">Taking off to 15 meters....</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr class="category"><td colspan="7">Typo</td></tr>
+<tr>
+                <td></td>
+                <td>armm</td>
+                <td><em>armm the drone</em></td>
+                <td><span class="command">ARM</span></td>
+                <td><span class="command">ARM</span></td>
+                <td class="response">Arming the drone now....</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>disrm</td>
+                <td><em>disrm</em></td>
+                <td><span class="command">DISARM</span></td>
+                <td><span class="command">DISARM</span></td>
+                <td class="response">Disarming the drone....</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>takeof</td>
+                <td><em>takeof to 15m</em></td>
+                <td><span class="command">TAKEOFF</span></td>
+                <td><span class="command">TAKEOFF</span></td>
+                <td class="response">Taking off to 15 meters....</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>lnad</td>
+                <td><em>lnad the drone</em></td>
+                <td><span class="command">LAND</span></td>
+                <td><span class="command">LAND</span></td>
+                <td class="response">Landing the drone.
+Ground speed: 0 m/s, Altitude: 0 m. Landing confirmed....</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>retun</td>
+                <td><em>retun to launch</em></td>
+                <td><span class="command">RTL</span></td>
+                <td><span class="command">RTL</span></td>
+                <td class="response">Returning to launch....</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr class="category"><td colspan="7">Typo-Move</td></tr>
+<tr>
+                <td></td>
+                <td>moe</td>
+                <td><em>moe north 20m</em></td>
+                <td><span class="command">MOVE_DIRECTION</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">I can only move in cardinal directions: north, south, east, or west. Please specify one of these dir...</td>
+                <td><span class="fail-badge">✗ FAIL</span></td>
+            </tr>
+<tr><td colspan="7" class="error">→ Expected: MOVE_DIRECTION, Got: None
+Response: 'I can only move in cardinal directions: north, south, east, or west. Please spec...'</td></tr>
+<tr>
+                <td></td>
+                <td>mov</td>
+                <td><em>mov south 30 meters</em></td>
+                <td><span class="command">MOVE_DIRECTION</span></td>
+                <td><span class="command">ERROR</span></td>
+                <td class="response">Flying to coordinates: -127.385492, 34.636158 at 0 meters....</td>
+                <td><span class="fail-badge">✗ FAIL</span></td>
+            </tr>
+<tr><td colspan="7" class="error">→ Expected: MOVE_DIRECTION, Got: ERROR
+Response: 'Flying to coordinates: -127.385492, 34.636158 at 0 meters....'</td></tr>
+<tr class="category"><td colspan="7">Typo-Alt</td></tr>
+<tr>
+                <td></td>
+                <td>increse</td>
+                <td><em>increse altitude by 20m</em></td>
+                <td><span class="command">ALTITUDE_CHANGE</span></td>
+                <td><span class="command">ALTITUDE_CHANGE</span></td>
+                <td class="response">Increasing altitude by 20 meters....</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>decrese</td>
+                <td><em>decrese altitude by 10m</em></td>
+                <td><span class="command">ALTITUDE_CHANGE</span></td>
+                <td><span class="command">ALTITUDE_CHANGE</span></td>
+                <td class="response">Decreasing altitude by 10 meters....</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>goup</td>
+                <td><em>goup 15 meters</em></td>
+                <td><span class="command">ALTITUDE_CHANGE</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">I can only move in cardinal directions: north, south, east, or west. Please specify one of these dir...</td>
+                <td><span class="fail-badge">✗ FAIL</span></td>
+            </tr>
+<tr><td colspan="7" class="error">→ Expected: ALTITUDE_CHANGE, Got: None
+Response: 'I can only move in cardinal directions: north, south, east, or west. Please spec...'</td></tr>
+<tr>
+                <td></td>
+                <td>clim</td>
+                <td><em>clim 12m</em></td>
+                <td><span class="command">ALTITUDE_CHANGE</span></td>
+                <td><span class="command">ALTITUDE_CHANGE</span></td>
+                <td class="response">Increasing altitude by 12 meters....</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr class="category"><td colspan="7">Typo-Mode</td></tr>
+<tr>
+                <td></td>
+                <td>mod</td>
+                <td><em>change mod to guided</em></td>
+                <td><span class="command">CHANGE_MODE</span></td>
+                <td><span class="command">CHANGE_MODE</span></td>
+                <td class="response">Changing mode to GUIDED....</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>loiter mod</td>
+                <td><em>switch to loiter mod</em></td>
+                <td><span class="command">CHANGE_MODE</span></td>
+                <td><span class="command">CHANGE_MODE</span></td>
+                <td class="response">Changing mode to LOITER....</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr class="category"><td colspan="7">Typo-Nav</td></tr>
+<tr>
+                <td></td>
+                <td>go hom</td>
+                <td><em>go hom</em></td>
+                <td><span class="command">RTL</span></td>
+                <td><span class="command">GOTO_HOME</span></td>
+                <td class="response">Flying to home....</td>
+                <td><span class="fail-badge">✗ FAIL</span></td>
+            </tr>
+<tr><td colspan="7" class="error">→ Expected: RTL, Got: GOTO_HOME
+Response: 'Flying to home....'</td></tr>
+<tr>
+                <td></td>
+                <td>goto home</td>
+                <td><em>goto home</em></td>
+                <td><span class="command">GOTO_HOME</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">Flying to coordinates: latitude, longitude at X meters.
+Please specify the desired altitude or coord...</td>
+                <td><span class="fail-badge">✗ FAIL</span></td>
+            </tr>
+<tr><td colspan="7" class="error">→ Expected: GOTO_HOME, Got: None
+Response: 'Flying to coordinates: latitude, longitude at X meters.
+Please specify the desir...'</td></tr>
+<tr>
+                <td></td>
+                <td>fly too</td>
+                <td><em>fly too 37.7749, -122.4194</em></td>
+                <td><span class="command">GOTO</span></td>
+                <td><span class="command">GOTO</span></td>
+                <td class="response">Flying to coordinates: 37.7749, -122.4194 at 50 meters....</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr class="category"><td colspan="7">Typo-Num</td></tr>
+<tr>
+                <td></td>
+                <td>15m</td>
+                <td><em>takeoff to 15m</em></td>
+                <td><span class="command">TAKEOFF</span></td>
+                <td><span class="command">TAKEOFF</span></td>
+                <td class="response">Taking off to 15 meters....</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>20meters</td>
+                <td><em>move north 20meters</em></td>
+                <td><span class="command">MOVE_DIRECTION</span></td>
+                <td><span class="command">MOVE_DIRECTION</span></td>
+                <td class="response">Moving north 20 meters....</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>10 m</td>
+                <td><em>go up 10 m</em></td>
+                <td><span class="command">ALTITUDE_CHANGE</span></td>
+                <td><span class="command">ALTITUDE_CHANGE</span></td>
+                <td class="response">Increasing altitude by 10 meters....</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>space</td>
+                <td><em>fly east 50m </em></td>
+                <td><span class="command">MOVE_DIRECTION</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">Flying to coordinates: lat, lon at 50 meters in the east direction....</td>
+                <td><span class="fail-badge">✗ FAIL</span></td>
+            </tr>
+<tr><td colspan="7" class="error">→ Expected: MOVE_DIRECTION, Got: None
+Response: 'Flying to coordinates: lat, lon at 50 meters in the east direction....'</td></tr>
+<tr class="category"><td colspan="7">Ambiguous</td></tr>
+<tr>
+                <td></td>
+                <td>go up (no dist)</td>
+                <td><em>go up</em></td>
+                <td><span class="command">Ask</span></td>
+                <td><span class="command">ALTITUDE_CHANGE</span></td>
+                <td class="response">Increasing altitude by 10 meters....</td>
+                <td><span class="fail-badge">✗ FAIL</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>move north (no dist)</td>
+                <td><em>move north</em></td>
+                <td><span class="command">Ask</span></td>
+                <td><span class="command">MOVE_DIRECTION</span></td>
+                <td class="response">Moving north 20 meters. Please specify the number of meters you would like to move....</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>takeoff (no alt)</td>
+                <td><em>takeoff</em></td>
+                <td><span class="command">TAKEOFF or Ask</span></td>
+                <td><span class="command">TAKEOFF</span></td>
+                <td class="response">Taking off to 15 meters....</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>forward</td>
+                <td><em>move forward 20m</em></td>
+                <td><span class="command">Reject</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">I can only move in cardinal directions: north, south, east, or west. Please specify one of these dir...</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>backward</td>
+                <td><em>go backward 10m</em></td>
+                <td><span class="command">Reject</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">I can only move in cardinal directions: north, south, east, or west. Please specify one of these dir...</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>left</td>
+                <td><em>fly left 15m</em></td>
+                <td><span class="command">Reject</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">I can only move in cardinal directions: north, south, east, or west. Please specify one of these dir...</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>right</td>
+                <td><em>go right 20m</em></td>
+                <td><span class="command">Reject</span></td>
+                <td><span class="command">MOVE_DIRECTION</span></td>
+                <td class="response">Moving east 20 meters....</td>
+                <td><span class="fail-badge">✗ FAIL</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>a little higher</td>
+                <td><em>a little higher</em></td>
+                <td><span class="command">Ask</span></td>
+                <td><span class="command">ALTITUDE_CHANGE</span></td>
+                <td class="response">Increasing altitude by 10 meters....</td>
+                <td><span class="fail-badge">✗ FAIL</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>slightly left</td>
+                <td><em>slightly to the left</em></td>
+                <td><span class="command">Reject</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">I can only move in cardinal directions: north, south, east, or west. Please specify one of these dir...</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>closer</td>
+                <td><em>move closer</em></td>
+                <td><span class="command">Ask</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">I can only move in cardinal directions: north, south, east, or west. Please specify one of these dir...</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>fly there</td>
+                <td><em>fly there</em></td>
+                <td><span class="command">Ask</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">I can only move in cardinal directions: north, south, east, or west. Please specify one of these dir...</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>that place</td>
+                <td><em>go to that place</em></td>
+                <td><span class="command">Ask</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">I can only move in cardinal directions: north, south, east, or west. Please specify one of these dir...</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>that thing</td>
+                <td><em>do that thing</em></td>
+                <td><span class="command">Ask</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">It seems there might be some confusion with your request. Could you please specify what action you w...</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>repeat last</td>
+                <td><em>repeat last command</em></td>
+                <td><span class="command">Reject</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">I can only provide telemetry data and I have already provided the current telemetry details. If you ...</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>do it again</td>
+                <td><em>do it again</em></td>
+                <td><span class="command">Ask/Reject</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">I'm here to help! Could you please specify what action you'd like me to take? Whether it's moving th...</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>same as before</td>
+                <td><em>same as before</em></td>
+                <td><span class="command">Reject</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">Understood! I'll maintain the same safety and connection status parameters we had previously.
+
+CONNE...</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>undo</td>
+                <td><em>undo</em></td>
+                <td><span class="command">Not supported</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">I see you're requesting an action that isn't currently available in the list of commands I can provi...</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>cancel</td>
+                <td><em>cancel that</em></td>
+                <td><span class="command">Ask</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">Understood. If you have any questions or need assistance with something else, feel free to ask! I'm ...</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr class="category"><td colspan="7">Compound</td></tr>
+<tr>
+                <td></td>
+                <td>arm and takeoff</td>
+                <td><em>arm and takeoff to 20 meters</em></td>
+                <td><span class="command">ARM or Reject</span></td>
+                <td><span class="command">ARM</span></td>
+                <td class="response">Arming the drone now.
+Taking off to 20 meters....</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>land then disarm</td>
+                <td><em>land then disarm</em></td>
+                <td><span class="command">LAND or Reject</span></td>
+                <td><span class="command">DISARM</span></td>
+                <td class="response">Flying to home...
+Landing the drone.
+Disarming the drone....</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>mode and mission</td>
+                <td><em>change to auto and start mission</em></td>
+                <td><span class="command">CHANGE_MODE or Reject</span></td>
+                <td><span class="command">CHANGE_MODE</span></td>
+                <td class="response">Changing mode to AUTO.
+Starting your mission in AUTO mode. Is there anything specific you need me to...</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>up then north</td>
+                <td><em>go up 10 then north 50</em></td>
+                <td><span class="command">ALTITUDE_CHANGE or Reject</span></td>
+                <td><span class="command">ALTITUDE_CHANGE</span></td>
+                <td class="response">Increasing altitude by 10 meters.
+Flying to coordinates: lat, lon at 10 meters....</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>3 commands</td>
+                <td><em>arm, takeoff, goto</em></td>
+                <td><span class="command">ARM or Reject</span></td>
+                <td><span class="command">ARM</span></td>
+                <td class="response">Arming the drone now.
+Taking off to 100 meters.
+Flying to coordinates: 37.7749, -122.4194 at 100 met...</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>arm if battery</td>
+                <td><em>arm if battery >80%</em></td>
+                <td><span class="command">Conditional</span></td>
+                <td><span class="command">ARM</span></td>
+                <td class="response">Getting parameter BATT_CAPACITY...
+Setting parameter BATT_CAPACITY to Y.
+Arming the drone now....</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>land when</td>
+                <td><em>land when alt=5m</em></td>
+                <td><span class="command">Conditional</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">I can't directly control the drone's altitude or landing based on a specific altitude in this comman...</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr class="category"><td colspan="7">Safety</td></tr>
+<tr>
+                <td></td>
+                <td>10000m</td>
+                <td><em>takeoff to 10000 meters</em></td>
+                <td><span class="command">ERROR</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">I can only move in specified distances and altitudes with direct commands. Please specify a valid al...</td>
+                <td><span class="fail-badge">✗ FAIL</span></td>
+            </tr>
+<tr><td colspan="7" class="error">→ Expected: ERROR, Got: None
+Response: 'I can only move in specified distances and altitudes with direct commands. Pleas...'</td></tr>
+<tr>
+                <td></td>
+                <td>50km</td>
+                <td><em>move north 50000 meters</em></td>
+                <td><span class="command">ERROR</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">I can only move in cardinal directions: north, south, east, or west. Please specify one of these dir...</td>
+                <td><span class="fail-badge">✗ FAIL</span></td>
+            </tr>
+<tr><td colspan="7" class="error">→ Expected: ERROR, Got: None
+Response: 'I can only move in cardinal directions: north, south, east, or west. Please spec...'</td></tr>
+<tr>
+                <td></td>
+                <td>space</td>
+                <td><em>climb to space</em></td>
+                <td><span class="command">ERROR</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">I can only move in cardinal directions: north, south, east, or west. Please specify one of these dir...</td>
+                <td><span class="fail-badge">✗ FAIL</span></td>
+            </tr>
+<tr><td colspan="7" class="error">→ Expected: ERROR, Got: None
+Response: 'I can only move in cardinal directions: north, south, east, or west. Please spec...'</td></tr>
+<tr>
+                <td></td>
+                <td>as high as possible</td>
+                <td><em>go as high as possible</em></td>
+                <td><span class="command">Mention limit</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">I can help you go up to a certain altitude. Could you specify how much higher you'd like to fly? For...</td>
+                <td><span class="fail-badge">✗ FAIL</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>disarm in air</td>
+                <td><em>disarm while in air</em></td>
+                <td><span class="command">Warn</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">I'm sorry, but I can't disarm the drone mid-flight directly from this system. Please return to land ...</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>takeoff w/o arm</td>
+                <td><em>takeoff without arming</em></td>
+                <td><span class="command">Mention arming</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">I'm sorry, but I can't take you up on that request. For safety reasons, the drone must be armed befo...</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>land but stay</td>
+                <td><em>land but stay at 100m</em></td>
+                <td><span class="command">Reject</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">I can only move to specific coordinates for landing. Please specify the latitude and longitude where...</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>takeoff and land</td>
+                <td><em>takeoff and land</em></td>
+                <td><span class="command">Handle</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">I'm afraid I can't directly take you up on that request. Flying a drone involves several safety prec...</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>EMERGENCY LAND</td>
+                <td><em>EMERGENCY LAND NOW</em></td>
+                <td><span class="command">LAND</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">I'm sorry, I cannot execute emergency commands directly in this context as it could lead to unsafe s...</td>
+                <td><span class="fail-badge">✗ FAIL</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>ABORT</td>
+                <td><em>ABORT ABORT</em></td>
+                <td><span class="command">Respond</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">I'm sorry, I can't assist with that request as it's not a valid command for my capabilities. If you ...</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>something wrong</td>
+                <td><em>something's wrong</em></td>
+                <td><span class="command">Ask</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">I'm sorry to hear that something is wrong. Could you please provide more details about what seems in...</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>help</td>
+                <td><em>help</em></td>
+                <td><span class="command">Respond</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">I can help you control your drone or answer questions about its status. What would you like to do?...</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr class="category"><td colspan="7">Pilot</td></tr>
+<tr>
+                <td></td>
+                <td>five-zero</td>
+                <td><em>taking it up to five-zero</em></td>
+                <td><span class="command">Unclear</span></td>
+                <td><span class="command">ALTITUDE_CHANGE</span></td>
+                <td class="response">Increasing altitude by 50 meters....</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>bingo fuel</td>
+                <td><em>bingo fuel, RTL</em></td>
+                <td><span class="command">RTL</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">I can only move in cardinal directions: north, south, east, or west. Please specify one of these dir...</td>
+                <td><span class="fail-badge">✗ FAIL</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>going hot</td>
+                <td><em>going hot</em></td>
+                <td><span class="command">Unclear</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">I can only move in cardinal directions: north, south, east, or west. Please specify one of these dir...</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>positive rate</td>
+                <td><em>positive rate, gear up</em></td>
+                <td><span class="command">N/A</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">I can only provide telemetry data or help with flight commands like moving the drone to a specific l...</td>
+                <td><span class="pass-badge">✓ PASS</span></td>
+            </tr>
+<tr>
+                <td></td>
+                <td>winchester</td>
+                <td><em>winchester, coming home</em></td>
+                <td><span class="command">Interpret</span></td>
+                <td><span class="command">None</span></td>
+                <td class="response">I can only move in cardinal directions: north, south, east, or west. Please specify one of these dir...</td>
                 <td><span class="pass-badge">✓ PASS</span></td>
             </tr>
 
