@@ -6,11 +6,10 @@ Control your ArduPilot drone with natural language. Talk to your drone like a co
 
 ## What You Need
 
-**This backend requires the compatible Mission Planner fork:**
-- Mission Planner Fork: https://github.com/deepak61296/MissionPlanner
-
-**This Mission Planner fork requires this backend:**
-- AI Backend: https://github.com/deepak61296/ArduPilot-AI-Backend
+- **Mission Planner Compatibility:** This backend **only works** with this Mission Planner fork: https://github.com/deepak61296/MissionPlanner
+- **This Mission Planner fork requires this backend:** https://github.com/deepak61296/ap_offline_chat_tool
+- **Vehicle Support:** Currently supports **Copter only** (Plane and Rover support coming soon)
+- **License:** GPL-3.0 (same as ArduPilot)
 
 Both must be installed and running together.
 
@@ -50,10 +49,10 @@ conda --version
 
 ### 3. Setup AI Backend
 
-```cmd
-# Clone repo
-git clone https://github.com/deepak61296/ArduPilot-AI-Backend.git
-cd ArduPilot-AI-Backend\ap_offline_chat_tool
+```bash
+# Clone this repo
+git clone https://github.com/deepak61296/ap_offline_chat_tool.git
+cd ap_offline_chat_tool
 
 # Create environment
 conda create -n ap_chat_tools python=3.10 -y
@@ -111,11 +110,13 @@ git clone https://github.com/deepak61296/MissionPlanner.git
 
 ## Test Results
 
-**Accuracy:** 76.8% (116/151 tests passing)  
-**Model:** qwen2.5:3b (3B parameters, 2GB)  
-**Note:** Excellent for a small local model running offline!
+**Comprehensive Test Suite:** 151 tests covering commands, natural language, edge cases, and safety
 
-See `tests/test_report.html` for detailed results.
+- **Pass Rate:** 78.8% (119/151 tests passing)
+- **Model:** qwen2.5:3b (3 billion parameters)
+- **Note:** This is excellent accuracy considering the rigorous test suite on such a small model
+
+See `test_report.html` for detailed results.
 
 ## Troubleshooting
 
@@ -206,7 +207,7 @@ This project is licensed under GPL-3 to maintain compatibility with ArduPilot.
 - **Mission Planner Fork:** https://github.com/deepak61296/MissionPlanner
 - **ArduPilot:** https://ardupilot.org
 - **Ollama:** https://ollama.com
-- **Issues:** https://github.com/deepak61296/ArduPilot-AI-Backend/issues
+- **Issues:** https://github.com/deepak61296/ap_offline_chat_tool/issues
 
 ---
 
