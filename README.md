@@ -11,6 +11,10 @@ This backend enables natural language interaction with your ArduPilot drone thro
 - "what's my altitude?" → Queries telemetry and responds
 - "move forward 5 meters" → Sends movement command
 
+## 🎥 Demo Video
+
+See it in action: [Watch Demo](https://github.com/deepak61296/MissionPlanner/assets/demo.mkv)
+
 ## 📦 Quick Start - Mission Planner Integration
 
 **Download Mission Planner with AI Chat:**  
