@@ -1,214 +1,105 @@
-# ArduPilot AI Backend
+# ArduPilot AI Chat - Offline Backend
 
-Control your ArduPilot drone with natural language. Talk to your drone like a co-pilot.
+AI-powered chat assistant for ArduPilot drones using local LLM (no internet required).
 
-> **⚠️ IMPORTANT:** This software is provided "as is" under GPL-3.0 license with **absolutely no warranty**. Currently tested **only on SITL** (Software In The Loop simulation), **not real hardware**. Use at your own risk.
+## ⚠️ Warnings
 
-## What You Need
+- **SITL only** - Not tested on real hardware
+- **Copter only** - Plane/Rover not supported yet
+- **No warranty** - Use at your own risk (GPL-3.0)
 
-- **Mission Planner Compatibility:** This backend **only works** with this Mission Planner fork: https://github.com/deepak61296/MissionPlanner
-- **This Mission Planner fork requires this backend:** https://github.com/deepak61296/ap_offline_chat_tool
-- **Vehicle Support:** Currently supports **Copter only** (Plane and Rover support coming soon)
-- **License:** GPL-3.0 (same as ArduPilot)
+## 📦 Mission Planner Integration
 
-Both must be installed and running together.
+**Download Mission Planner with AI Chat:**
+https://github.com/deepak61296/MissionPlanner/releases/tag/ai_backend
 
-## Requirements
+Extract and run `MissionPlanner.exe`, then press **Ctrl+L** for AI Chat.
 
-- **Windows 10/11** (Linux support coming soon)
-- **GPU:** NVIDIA GPU recommended (works on CPU too)
-- **Vehicle:** Copter only (Plane/Rover coming soon)
-
-## Quick Setup
+## 🚀 Quick Start
 
 ### 1. Install Ollama
 
-Download and install: https://ollama.com
+Download and install: https://ollama.com/download
 
-**Start Ollama service:**
-```cmd
-ollama serve
-```
-
-Then pull the model (in a new terminal):
-```cmd
+After installation, open terminal and pull the model:
+```bash
 ollama pull qwen2.5:3b
 ```
 
-### 2. Install Miniconda (if needed)
-
-**Check if you have conda:**
-```cmd
-conda --version
-```
-
-**If not installed:**
-1. Download: https://docs.conda.io/en/latest/miniconda.html
-2. Run installer (Miniconda3-latest-Windows-x86_64.exe)
-3. Restart terminal
-
-### 3. Setup AI Backend
+### 2. Clone and Setup
 
 ```bash
-# Clone this repo
 git clone https://github.com/deepak61296/ap_offline_chat_tool.git
 cd ap_offline_chat_tool
 
-# Create environment
-conda create -n ap_chat_tools python=3.10 -y
-conda activate ap_chat_tools
-
-# Install dependencies
-pip install -r backend\requirements.txt
-
-# Start backend
-scripts\start_backend.bat
+# Windows
+conda create -n ardupilot_ai python=3.10 -y
+conda activate ardupilot_ai
+pip install -r requirements.txt
 ```
 
-Backend runs on `http://localhost:5000`
+### 3. Start Backend
 
-### 4. Get Mission Planner
-
-**Option A: Download .exe (Recommended)**
-
-Download from: https://github.com/deepak61296/MissionPlanner/releases
-
-**Option B: Build from Source**
-
-```cmd
-git clone https://github.com/deepak61296/MissionPlanner.git
-# Follow build instructions in Mission Planner repo
-```
-
-### 5. Use AI Chat
-
-1. Make sure backend is running (step 3)
-2. Open Mission Planner
-3. Press **Ctrl+L** to open AI Chat
-4. Start chatting!
-
-## Usage
-
-### Agent Mode - Control Drone
-```
-"arm the drone"
-"takeoff to 15 meters"
-"move north 20 meters"
-"increase altitude by 10m"
-"change mode to loiter"
-"land"
-```
-
-### Ask Mode - Get Telemetry & Info
-```
-"what's my battery status?"
-"what is my current altitude?"
-"show me yaw heading"
-"what's my roll and pitch?"
-"where am I?"
-```
-
-## Test Results
-
-**Comprehensive Test Suite:** 151 tests covering commands, natural language, edge cases, and safety
-
-- **Pass Rate:** 78.8% (119/151 tests passing)
-- **Model:** qwen2.5:3b (3 billion parameters)
-- **Note:** This is excellent accuracy considering the rigorous test suite on such a small model
-
-See `test_report.html` for detailed results.
-
-## Troubleshooting
-
-**Backend won't start?**
-```cmd
-# 1. Make sure Ollama is running
+```bash
+# Windows - Start Ollama first
 ollama serve
 
-# 2. Check model is downloaded (in new terminal)
-ollama list
-
-# 3. Activate conda environment
-conda activate ap_chat_tools
-
-# 4. Pull model if missing
-ollama pull qwen2.5:3b
+# In another terminal
+cd ap_offline_chat_tool
+conda activate ardupilot_ai
+python -m backend.api_server
 ```
 
-**Mission Planner can't connect?**
-- Backend must be running on port 5000
-- Look for "AI Backend connected ✓" in chat window
-- Check firewall isn't blocking localhost:5000
+Backend runs at: http://localhost:5000
 
-**Commands not working?**
-- Use **Agent mode** (not Ask mode) for commands
-- Use direct commands: "arm the drone" ✓
-- Don't ask questions: "can you arm?" ✗
+### 4. Use with Mission Planner
 
-## Project Structure
+1. Download Mission Planner: https://github.com/deepak61296/MissionPlanner/releases/tag/ai_backend
+2. Run `MissionPlanner.exe`
+3. Press **Ctrl+L** to open AI Chat
+4. Connect to SITL or simulator
+5. Chat with your drone!
 
-```
-ap_offline_chat_tool/
-├── backend/
-│   ├── api_server.py       # HTTP API server
-│   ├── commands.py         # Command extraction
-│   ├── prompts.py          # AI prompts
-│   ├── config.py           # Configuration
-│   └── telemetry_data.py   # Telemetry formatting
-├── scripts/
-│   ├── start_backend.bat           # Main startup
-│   ├── start_backend_cpu.bat       # CPU-only mode
-│   └── start_backend_lowpower.bat  # Low-power mode
-├── tests/
-│   ├── test_comprehensive.py   # 170+ tests
-│   └── test_report.html        # Latest results
-└── docs/                       # Documentation
-```
+## 💬 Example Commands
 
-## Running Tests
+**Agent Mode** (sends commands):
+- "arm the drone and take off to 10 meters"
+- "move forward 5 meters"
+- "land now"
 
-```cmd
-# Activate environment
-conda activate ap_chat_tools
+**Ask Mode** (queries telemetry):
+- "what's my battery level?"
+- "how high am I flying?"
+- "what mode am I in?"
 
-# Run tests
-scripts\run_comprehensive_tests.bat
+## 🧪 Testing
 
-# View results
-# Open tests\test_report.html in browser
+**Current accuracy:** 78.8% on 151 rigorous test cases
+
+Run tests:
+```bash
+cd tests
+run_comprehensive_tests.bat
 ```
 
-## What's Supported
+See `tests/README_TESTS.md` for details.
 
-- **Vehicle:** Copter only
-- **OS:** Windows only
-- **Testing:** SITL only (not tested on real hardware)
-- **Commands:** ARM, DISARM, TAKEOFF, LAND, RTL, movement, altitude, mode changes
+## 📋 Requirements
 
-## Roadmap
+- Windows 10/11
+- 8GB RAM minimum
+- GPU recommended (works on CPU too)
+- Ollama installed
+- Python 3.10+
 
-- [ ] Real hardware testing
-- [ ] Plane and Rover support
-- [ ] Linux support
-- [ ] Fine-tuned model (90%+ accuracy)
-- [ ] Waypoint and mission commands
-- [ ] QGroundControl integration
-
-## License
-
-**GPL-3.0** - See LICENSE file
-
-This project is licensed under GPL-3 to maintain compatibility with ArduPilot.
-
-**NO WARRANTY:** This software comes with absolutely no warranty. Use at your own risk.
-
-## Links
+## 🔗 Links
 
 - **Mission Planner Fork:** https://github.com/deepak61296/MissionPlanner
-- **ArduPilot:** https://ardupilot.org
-- **Ollama:** https://ollama.com
-- **Issues:** https://github.com/deepak61296/ap_offline_chat_tool/issues
+- **Latest Release:** https://github.com/deepak61296/MissionPlanner/releases/tag/ai_backend
+- **Report Issues:** https://github.com/deepak61296/ap_offline_chat_tool/issues
 
----
+## 📄 License
 
-**Made for the ArduPilot community**
+GPL-3.0 (for ArduPilot compatibility)
+
+**NO WARRANTY - Use at your own risk. This is experimental software.**
