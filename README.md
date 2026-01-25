@@ -2,13 +2,6 @@
 
 AI-powered chat assistant for ArduPilot drones using local LLM (runs offline, no internet required).
 
-## ⚠️ Important Warnings
-
-- **SITL only** - Not tested on real hardware
-- **Copter only** - Plane/Rover not supported yet  
-- **No warranty** - Use at your own risk (GPL-3.0 license)
-- **Experimental** - This is a proof-of-concept project
-
 ## What is This?
 
 This backend enables natural language interaction with your ArduPilot drone through a local AI model. It processes voice-like commands and queries without requiring an internet connection.
@@ -75,10 +68,10 @@ cd ap_offline_chat_tool
 
 ```bash
 # Create environment with Python 3.10
-conda create -n ardupilot_ai python=3.10 -y
+conda create -n ai_backend python=3.10 -y
 
 # Activate environment
-conda activate ardupilot_ai
+conda activate ai_backend
 ```
 
 **Note:** You'll need to activate this environment every time you start the backend.
@@ -101,7 +94,7 @@ Leave this running.
 
 **Terminal 2 - Start Backend:**
 ```bash
-conda activate ardupilot_ai
+conda activate ai_backend
 cd ap_offline_chat_tool
 python -m backend.api_server
 ```
@@ -228,7 +221,7 @@ See `tests/README_TESTS.md` for details.
 **Check:**
 1. Is Ollama running? (`ollama serve` in terminal)
 2. Is backend running? (`python -m backend.api_server`)
-3. Is conda environment activated? (`conda activate ardupilot_ai`)
+3. Is conda environment activated? (`conda activate ai_backend`)
 4. Backend should show "Running on http://127.0.0.1:5000"
 
 **Test manually:**
@@ -272,8 +265,8 @@ Edit `backend/api_server.py` and set `debug=True` in `app.run()`
 
 ### Slow responses
 
-**CPU mode is slow** (10-30 seconds per response). Solutions:
-- Use GPU if available
+**CPU mode is slower than GPU** (4-10 seconds per response depending on processor). Solutions:
+- Use GPU if available (NVIDIA recommended)
 - Use smaller model: `ollama pull qwen2.5:1.5b`
 - Reduce conversation history in config
 
@@ -285,7 +278,7 @@ Edit `backend/api_server.py` and set `debug=True` in `app.run()`
 cd ap_offline_chat_tool
 
 # Make sure environment is activated
-conda activate ardupilot_ai
+conda activate ai_backend
 
 # Reinstall dependencies
 pip install -r requirements.txt --force-reinstall
@@ -306,7 +299,7 @@ pip install -r requirements.txt --force-reinstall
 scripts\start_backend_cpu.bat
 ```
 
-This works but is slower (10-30s per response).
+This works but is slower (4-10 seconds per response depending on your processor).
 
 ### Using different models
 
@@ -346,8 +339,10 @@ ollama pull qwen2.5:1.5b
 - **Ollama:** https://ollama.com
 - **Miniconda:** https://docs.anaconda.com/miniconda/
 
-## 📄 License
+## ⚠️ Important Notes
 
-GPL-3.0 (for ArduPilot compatibility)
+- **Testing:** Currently tested on SITL only - not tested on real hardware
+- **Vehicle Support:** Copter only (Plane/Rover support coming soon)
+- **License:** GPL-3.0 (for ArduPilot compatibility)
 
-**NO WARRANTY** - This is experimental software. Use at your own risk.
+Use responsibly and always test in simulation first.
