@@ -179,6 +179,7 @@ See `backend/commands.py` for full list.
 | "arm the drone" | Arms motors |
 | "take off to 15 meters" | Takes off to 15m |
 | "move forward 10 meters" | Moves forward 10m |
+| "set param disarm_delay to 50" | Sets DISARM_DELAY parameter to 50 |
 | "fly to home" | Returns to launch point |
 | "land now" | Lands at current position |
 | "disarm" | Disarms motors |
