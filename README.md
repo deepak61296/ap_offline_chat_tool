@@ -13,7 +13,7 @@ This backend enables natural language interaction with your ArduPilot drone thro
 
 ## 🎥 Demo Video
 
-See it in action: [Watch Demo](https://github.com/deepak61296/MissionPlanner/assets/demo.mkv)
+[Watch Demo Video](https://github.com/deepak61296/ap_offline_chat_tool/raw/main/demo.mkv) (16 MB .mkv file)
 
 ## 📦 Quick Start - Mission Planner Integration
 
