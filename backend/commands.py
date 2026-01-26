@@ -300,11 +300,11 @@ def extract_lua_script(ai_response: str) -> Optional[Dict[str, Any]]:
     Looks for ```lua code blocks and basic validation
     Returns: {"type": "LUA_SCRIPT", "params": {"code": "...", "description": "..."}} or None
     """
-    # Look for ```lua code blocks
-    lua_match = re.search(r'```lua\n(.*?)\n```', ai_response, re.DOTALL)
+    # Look for ```lua code blocks - handle different newline formats
+    lua_match = re.search(r'```lua\s+(.*?)\s+```', ai_response, re.DOTALL)
     if not lua_match:
         # Try without language specifier
-        lua_match = re.search(r'```\n(.*?)\n```', ai_response, re.DOTALL)
+        lua_match = re.search(r'```\s+(.*?)\s+```', ai_response, re.DOTALL)
         if not lua_match:
             return None
     
