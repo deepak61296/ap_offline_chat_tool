@@ -23,8 +23,8 @@ from backend.config import (
     API_HOST, API_PORT, API_DEBUG,
     DEFAULT_MODEL, LOG_LEVEL, LOG_FORMAT
 )
-from backend.prompts import get_agent_prompt, get_ask_prompt
-from backend.commands import extract_command, validate_command
+from backend.prompts import get_agent_prompt, get_ask_prompt, get_script_prompt
+from backend.commands import extract_command, validate_command, extract_lua_script
 from backend.telemetry_data import format_telemetry_for_prompt
 
 # Configure logging
@@ -74,7 +74,7 @@ def health_check():
         'status': 'healthy',
         'service': 'ArduPilot AI Backend',
         'version': '2.1.0',
-        'features': ['agent_mode', 'ask_mode', 'telemetry', 'parameters', 'movement']
+        'features': ['agent_mode', 'ask_mode', 'script_mode', 'telemetry', 'parameters', 'movement']
     }), 200
 
 
@@ -91,7 +91,7 @@ def get_status():
             'default_model': DEFAULT_MODEL,
             'available_models': available_models,
             'backend': 'Ollama',
-            'modes': ['agent', 'ask'],
+            'modes': ['agent', 'ask', 'script'],
             'connection': 'ready',
             'features': {
                 'commands': ['ARM', 'DISARM', 'TAKEOFF', 'LAND', 'RTL', 'CHANGE_MODE', 'GOTO', 'MOVE_DIRECTION'],
@@ -172,9 +172,9 @@ def chat():
                 'error': 'Empty message'
             }), 400
         
-        # Get mode (agent or ask)
+        # Get mode (agent, ask, or script)
         mode = data.get('mode', 'agent').lower()
-        if mode not in ['agent', 'ask']:
+        if mode not in ['agent', 'ask', 'script']:
             mode = 'agent'
         
         # Get model
@@ -199,9 +199,12 @@ def chat():
         # Select prompt based on mode
         if mode == 'agent':
             system_prompt = get_agent_prompt(connection_status, telemetry_section)
-        else:  # ask mode
+        elif mode == 'ask':
             # Ask mode - no RAG, just use prompt
             system_prompt = get_ask_prompt(connection_status, telemetry_section, "")
+        else:  # script mode
+            system_prompt = get_script_prompt(connection_status, telemetry_section)
+
         
         # Call Ollama API with CPU/GPU configuration
         from backend.config import OLLAMA_NUM_CTX, OLLAMA_NUM_GPU
@@ -220,7 +223,7 @@ def chat():
         
         ai_response = response['message']['content'].strip()
         
-        # Extract command ONLY in agent mode
+        # Extract command based on mode
         command = None
         if mode == 'agent':
             command = extract_command(ai_response)
@@ -232,6 +235,11 @@ def chat():
                     command = {"type": "ERROR", "params": {"message": error_msg}}
                 else:
                     logger.info(f"Command detected: {command['type']}")
+        elif mode == 'script':
+            # Extract Lua script in script mode
+            command = extract_lua_script(ai_response)
+            if command:
+                logger.info(f"Lua script extracted: {command.get('params', {}).get('description', 'unknown')}")
         
         return jsonify({
             'success': True,
@@ -274,7 +282,7 @@ if __name__ == '__main__':
     print("ArduPilot AI Backend - HTTP API Server v2.1")
     print("=" * 70)
     print(f"Default Model: {DEFAULT_MODEL}")
-    print(f"Modes: Agent (commands) | Ask (read-only)")
+    print(f"Modes: Agent (commands) | Ask (read-only) | Script (Lua generation)")
     print(f"Server running on: http://{API_HOST}:{API_PORT}")
     print("=" * 70)
     print("Endpoints:")
