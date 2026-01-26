@@ -292,3 +292,78 @@ def validate_command(command: Dict[str, Any]) -> tuple[bool, Optional[str]]:
             return False, f"Unsupported mode: {mode}"
     
     return True, None
+
+
+def extract_lua_script(ai_response: str) -> Optional[Dict[str, Any]]:
+    """
+    Extract Lua script from AI response in Script mode
+    Looks for ```lua code blocks and basic validation
+    Returns: {"type": "LUA_SCRIPT", "params": {"code": "...", "description": "..."}} or None
+    """
+    # Look for ```lua code blocks
+    lua_match = re.search(r'```lua\n(.*?)\n```', ai_response, re.DOTALL)
+    if not lua_match:
+        # Try without language specifier
+        lua_match = re.search(r'```\n(.*?)\n```', ai_response, re.DOTALL)
+        if not lua_match:
+            return None
+    
+    lua_code = lua_match.group(1).strip()
+    
+    # Basic validation
+    if not lua_code:
+        return None
+    
+    # Check for required structure: update() function and return statement
+    has_update_function = re.search(r'function\s+update\s*\(', lua_code)
+    has_return_statement = re.search(r'return\s+update', lua_code)
+    
+    if not has_update_function:
+        return {
+            "type": "ERROR",
+            "params": {"message": "Lua script must include an update() function"}
+        }
+    
+    if not has_return_statement:
+        return {
+            "type": "ERROR",
+            "params": {"message": "Lua script must return update() to start execution"}
+        }
+    
+    # Check for balanced end statements (basic syntax check)
+    function_count = len(re.findall(r'\bfunction\s+', lua_code))
+    if_count = len(re.findall(r'\bif\s+', lua_code))
+    for_count = len(re.findall(r'\bfor\s+', lua_code))
+    while_count = len(re.findall(r'\bwhile\s+', lua_code))
+    
+    # Count 'end' statements
+    end_count = len(re.findall(r'\bend\b', lua_code))
+    expected_ends = function_count + if_count + for_count + while_count
+    
+    if end_count != expected_ends:
+        return {
+            "type": "ERROR",
+            "params": {
+                "message": f"Lua syntax error: Found {end_count} 'end' statements, expected {expected_ends}"
+            }
+        }
+    
+    # Extract description from comments at the top (first line starting with --)
+    description_match = re.search(r'^--\s*(.+)$', lua_code, re.MULTILINE)
+    description = description_match.group(1).strip() if description_match else "Custom Lua script"
+    
+    # Generate a suggested filename
+    # Convert description to lowercase, replace spaces with underscores, remove special chars
+    filename_base = re.sub(r'[^\w\s-]', '', description.lower())
+    filename_base = re.sub(r'[-\s]+', '_', filename_base)[:50]  # Max 50 chars
+    suggested_filename = f"{filename_base}.lua" if filename_base else "custom_script.lua"
+    
+    return {
+        "type": "LUA_SCRIPT",
+        "params": {
+            "code": lua_code,
+            "description": description,
+            "suggested_filename": suggested_filename,
+            "line_count": len(lua_code.split('\n'))
+        }
+    }
