@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-ArduPilot AI Backend - HTTP API Server v2.1
+ArduPilot AI Backend - HTTP API Server v2.3
 Mission Planner Integration with Agent/Ask Modes
 
 Refactored with modular structure:
@@ -8,9 +8,12 @@ Refactored with modular structure:
 - prompts.py: AI prompts for Agent/Ask modes
 - commands.py: Command extraction and validation
 - telemetry_data.py: Telemetry formatting
+- template_injector_v2.py: Ultimate template library (31 patterns!)
+- lua_postprocessor.py: Post-processing for LLM-generated Lua
 
 Agent Mode: Execute commands (ARM, TAKEOFF, LAND, MOVE, PARAMS, etc.)
 Ask Mode: Read-only telemetry queries
+Script Mode: Template-first Lua generation (31 templates + LLM fallback)
 """
 
 from flask import Flask, request, jsonify
@@ -26,6 +29,8 @@ from backend.config import (
 from backend.prompts import get_agent_prompt, get_ask_prompt, get_script_prompt
 from backend.commands import extract_command, validate_command, extract_lua_script
 from backend.telemetry_data import format_telemetry_for_prompt
+from backend.template_injector_v2 import generate_from_template
+from backend.lua_postprocessor import postprocess_lua_script
 
 # Configure logging
 logging.basicConfig(
@@ -38,7 +43,7 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 CORS(app)
 
-logger.info("AI Backend API Server v2.1 initialized")
+logger.info("AI Backend API Server v2.3 initialized (31 ULTIMATE templates)")
 
 
 def is_telemetry_valid(telemetry):
@@ -73,8 +78,10 @@ def health_check():
     return jsonify({
         'status': 'healthy',
         'service': 'ArduPilot AI Backend',
-        'version': '2.1.0',
-        'features': ['agent_mode', 'ask_mode', 'script_mode', 'telemetry', 'parameters', 'movement']
+        'version': '2.3.0',
+        'features': ['agent_mode', 'ask_mode', 'script_mode', 'telemetry', 'parameters', 'movement'],
+        'templates': 31,
+        'template_system': 'v3_ultimate'
     }), 200
 
 
@@ -177,8 +184,10 @@ def chat():
         if mode not in ['agent', 'ask', 'script']:
             mode = 'agent'
         
-        # Get model
-        model = data.get('model', DEFAULT_MODEL)
+        # Get model - use SCRIPT_MODEL for script mode, DEFAULT_MODEL for others
+        from backend.config import SCRIPT_MODEL
+        default_for_mode = SCRIPT_MODEL if mode == 'script' else DEFAULT_MODEL
+        model = data.get('model', default_for_mode)
         
         # Get telemetry
         telemetry = data.get('telemetry', {})
@@ -196,6 +205,12 @@ def chat():
         
         logger.info(f"Processing message in {mode} mode: {user_message} (Connected: {is_connected})")
         
+        # Initialize variables
+        ai_response = None
+        command = None
+        template_code = None
+        system_prompt = None
+
         # Select prompt based on mode
         if mode == 'agent':
             system_prompt = get_agent_prompt(connection_status, telemetry_section)
@@ -203,43 +218,95 @@ def chat():
             # Ask mode - no RAG, just use prompt
             system_prompt = get_ask_prompt(connection_status, telemetry_section, "")
         else:  # script mode
-            system_prompt = get_script_prompt(connection_status, telemetry_section)
+            # Try template injection first (fast, guaranteed correct)
+            template_code, template_used = generate_from_template(user_message)
 
-        
-        # Call Ollama API with CPU/GPU configuration
-        from backend.config import OLLAMA_NUM_CTX, OLLAMA_NUM_GPU
-        
-        response = ollama.chat(
-            model=model,
-            messages=[
-                {'role': 'system', 'content': system_prompt},
-                {'role': 'user', 'content': user_message}
-            ],
-            options={
-                'num_ctx': OLLAMA_NUM_CTX,
-                'num_gpu': OLLAMA_NUM_GPU
-            }
-        )
-        
-        ai_response = response['message']['content'].strip()
-        
-        # Extract command based on mode
-        command = None
-        if mode == 'agent':
-            command = extract_command(ai_response)
-            if command:
-                # Validate command
-                is_valid, error_msg = validate_command(command)
-                if not is_valid:
-                    logger.warning(f"Invalid command: {error_msg}")
-                    command = {"type": "ERROR", "params": {"message": error_msg}}
-                else:
-                    logger.info(f"Command detected: {command['type']}")
-        elif mode == 'script':
-            # Extract Lua script in script mode
+            if template_code:
+                # Template match! Use it directly (skip LLM!)
+                logger.info(f"✓ Template matched: {template_used}")
+                ai_response = f"I'll create that script for you:\n\n```lua\n{template_code}\n```\n\nThis script uses the proven {template_used} pattern from ArduPilot examples."
+                command = {
+                    "type": "LUA_SCRIPT",
+                    "params": {
+                        "code": template_code,
+                        "description": user_message[:100],
+                        "source": "template",
+                        "template_used": template_used
+                    }
+                }
+            else:
+                # No template match - use LLM
+                logger.info("No template match - using LLM generation")
+                system_prompt = get_script_prompt(connection_status, telemetry_section)
+
+
+        # Call Ollama API (only if not using template)
+        if mode == 'script' and not template_code:
+            # LLM generation for script mode
+            from backend.config import OLLAMA_NUM_CTX, OLLAMA_NUM_GPU
+
+            response = ollama.chat(
+                model=model,
+                messages=[
+                    {'role': 'system', 'content': system_prompt},
+                    {'role': 'user', 'content': user_message}
+                ],
+                options={
+                    'num_ctx': OLLAMA_NUM_CTX,
+                    'num_gpu': OLLAMA_NUM_GPU,
+                    'temperature': 0.05,  # Low temperature for consistent code
+                }
+            )
+
+            ai_response = response['message']['content'].strip()
+
+            # Extract and post-process Lua script
             command = extract_lua_script(ai_response)
-            if command:
+            if command and command.get("type") == "LUA_SCRIPT":
+                # Apply post-processing to fix common mistakes
+                original_code = command["params"]["code"]
+                processed_code, fixes_applied = postprocess_lua_script(original_code)
+
+                if fixes_applied:
+                    logger.info(f"Post-processing applied: {', '.join(fixes_applied)}")
+                    command["params"]["code"] = processed_code
+                    command["params"]["source"] = "llm_postprocessed"
+                    command["params"]["fixes"] = fixes_applied
+                else:
+                    command["params"]["source"] = "llm"
+
                 logger.info(f"Lua script extracted: {command.get('params', {}).get('description', 'unknown')}")
+
+        elif mode != 'script':
+            # Agent/Ask mode - call LLM normally
+            from backend.config import OLLAMA_NUM_CTX, OLLAMA_NUM_GPU
+
+            response = ollama.chat(
+                model=model,
+                messages=[
+                    {'role': 'system', 'content': system_prompt},
+                    {'role': 'user', 'content': user_message}
+                ],
+                options={
+                    'num_ctx': OLLAMA_NUM_CTX,
+                    'num_gpu': OLLAMA_NUM_GPU
+                }
+            )
+
+            ai_response = response['message']['content'].strip()
+
+            # Extract command
+            command = None
+            if mode == 'agent':
+                command = extract_command(ai_response)
+                if command:
+                    # Validate command
+                    is_valid, error_msg = validate_command(command)
+                    if not is_valid:
+                        logger.warning(f"Invalid command: {error_msg}")
+                        command = {"type": "ERROR", "params": {"message": error_msg}}
+                    else:
+                        logger.info(f"Command detected: {command['type']}")
         
         return jsonify({
             'success': True,
