@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 Entry point for ArduPilot AI Backend Server
-Handles module imports correctly
+Cross-platform: Windows and Linux compatible
+Supports: Mission Planner, MAVProxy, QGroundControl, Standalone
 """
 
 import sys
@@ -13,35 +14,49 @@ sys.path.insert(0, str(current_dir))
 
 # Now import and run the server
 from backend.api_server import app
-from backend.config import API_HOST, API_PORT, API_DEBUG, DEFAULT_MODEL
+from backend.config import (
+    API_HOST, API_PORT, API_DEBUG, DEFAULT_MODEL,
+    BACKEND_VERSION, OPERATION_MODE, APPROVAL_MODE
+)
+
+# Check pymavlink availability
+try:
+    from backend.mavlink_manager import PYMAVLINK_AVAILABLE
+except ImportError:
+    PYMAVLINK_AVAILABLE = False
 
 if __name__ == '__main__':
     print("=" * 70)
-    print("ArduPilot AI Backend - HTTP API Server v2.2")
+    print(f"ArduPilot AI Backend - HTTP API Server v{BACKEND_VERSION}")
     print("=" * 70)
-    print(f"Default Model: {DEFAULT_MODEL}")
-    print(f"Modes: Agent (commands) | Ask (read-only) | Script (Lua generation)")
-    print(f"Server running on: http://{API_HOST}:{API_PORT}")
+    print(f"Operation Mode: {OPERATION_MODE}")
+    print(f"Approval Mode:  {APPROVAL_MODE}")
+    print(f"Default Model:  {DEFAULT_MODEL}")
+    print(f"pymavlink:      {'Available' if PYMAVLINK_AVAILABLE else 'Not installed'}")
+    print("=" * 70)
+    print("Modes:")
+    print("  Agent  - Execute commands (ARM, TAKEOFF, LAND, etc.)")
+    print("  Ask    - Read-only telemetry queries")
+    print("  Script - Lua script generation (31 templates)")
     print("=" * 70)
     print("Endpoints:")
-    print("  GET  /health  - Health check")
-    print("  GET  /status  - Backend status")
-    print("  GET  /models  - Available models")
-    print("  POST /chat    - Send message (with mode)")
+    print("  GET  /health      - Health check")
+    print("  GET  /status      - Backend status + models")
+    print("  GET  /models      - Available Ollama models")
+    print("  POST /chat        - AI chat (main endpoint)")
+    print("  GET  /telemetry   - Current telemetry (standalone)")
+    print("  POST /connect     - Connect to vehicle (standalone)")
+    print("  POST /disconnect  - Disconnect from vehicle")
+    print("  POST /command     - Execute command (standalone)")
     print("=" * 70)
-    print("Script Mode Features (V2 EXPANDED):")
-    print("  - Template injection (21 proven patterns)")
-    print("    * Basic monitoring (5 patterns)")
-    print("    * Autonomous actions (2 patterns)")
-    print("    * Arming checks (3 patterns)")
-    print("    * Logging (SD card + dataflash)")
-    print("    * Multi-sensor (AND/OR logic)")
-    print("    * Safety (geofence, vibration, EKF)")
-    print("    * Parameters & state machines")
-    print("  - LLM generation (qwen2.5-coder:7b)")
-    print("  - Post-processing (auto-fix common errors)")
+    print("Supported GCS:")
+    print("  - Mission Planner (integrated)")
+    print("  - MAVProxy (--ai_backend_enable)")
+    print("  - QGroundControl (integrated)")
+    print("  - Standalone (direct MAVLink)")
     print("=" * 70)
-    print("Press Ctrl+C to stop the server")
+    print(f"Server: http://{API_HOST}:{API_PORT}")
+    print("Press Ctrl+C to stop")
     print("=" * 70)
 
     app.run(
