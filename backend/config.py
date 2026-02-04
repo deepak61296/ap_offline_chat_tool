@@ -20,10 +20,11 @@ API_PORT = 5000
 API_DEBUG = False
 
 # Model Configuration
-# Currently focused on qwen2.5:3b for stability
-# Other models can be added later after thorough testing
+# qwen2.5:3b for fast Agent/Ask mode responses
+# qwen2.5-coder:7b for better Script mode code quality
 DEFAULT_MODEL = 'qwen2.5:3b'
-SUPPORTED_MODEL = 'qwen2.5:3b'  # Only this model is tested and supported
+SCRIPT_MODEL = 'qwen2.5-coder:7b'  # Better for code generation
+SUPPORTED_MODELS = ['qwen2.5:3b', 'qwen2.5-coder:7b']
 
 # CPU/GPU Configuration
 USE_GPU = not args.no_gpu
