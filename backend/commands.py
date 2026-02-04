@@ -300,11 +300,11 @@ def extract_lua_script(ai_response: str) -> Optional[Dict[str, Any]]:
     Looks for ```lua code blocks and basic validation
     Returns: {"type": "LUA_SCRIPT", "params": {"code": "...", "description": "..."}} or None
     """
-    # Look for ```lua code blocks - handle different newline formats
-    lua_match = re.search(r'```lua\s+(.*?)\s+```', ai_response, re.DOTALL)
+    # Look for ```lua code blocks - handle all whitespace variations
+    lua_match = re.search(r'```lua\s*(.*?)\s*```', ai_response, re.DOTALL)
     if not lua_match:
         # Try without language specifier
-        lua_match = re.search(r'```\s+(.*?)\s+```', ai_response, re.DOTALL)
+        lua_match = re.search(r'```\s*(.*?)\s*```', ai_response, re.DOTALL)
         if not lua_match:
             return None
     
@@ -328,24 +328,6 @@ def extract_lua_script(ai_response: str) -> Optional[Dict[str, Any]]:
         return {
             "type": "ERROR",
             "params": {"message": "Lua script must return update() to start execution"}
-        }
-    
-    # Check for balanced end statements (basic syntax check)
-    function_count = len(re.findall(r'\bfunction\s+', lua_code))
-    if_count = len(re.findall(r'\bif\s+', lua_code))
-    for_count = len(re.findall(r'\bfor\s+', lua_code))
-    while_count = len(re.findall(r'\bwhile\s+', lua_code))
-    
-    # Count 'end' statements
-    end_count = len(re.findall(r'\bend\b', lua_code))
-    expected_ends = function_count + if_count + for_count + while_count
-    
-    if end_count != expected_ends:
-        return {
-            "type": "ERROR",
-            "params": {
-                "message": f"Lua syntax error: Found {end_count} 'end' statements, expected {expected_ends}"
-            }
         }
     
     # Extract description from comments at the top (first line starting with --)
