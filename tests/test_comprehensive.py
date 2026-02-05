@@ -57,6 +57,9 @@ class ComprehensiveTestSuite:
         self.results: List[TestResult] = []
         self.start_time = None
         self.end_time = None
+        self.total_tests = 170  # Approximate total tests
+        self.tests_completed = 0
+        self.avg_time_per_test = 0.5  # Initial estimate (seconds)
         
     def print_header(self, text: str):
         print(f"\n{Colors.BOLD}{Colors.BLUE}{'='*80}{Colors.RESET}")
@@ -64,11 +67,8 @@ class ComprehensiveTestSuite:
         print(f"{Colors.BOLD}{Colors.BLUE}{'='*80}{Colors.RESET}\n")
     
     def print_test(self, test_name: str, passed: bool, details: str = ""):
-        status = f"{Colors.GREEN}✓{Colors.RESET}" if passed else f"{Colors.RED}✗{Colors.RESET}"
-        print(f"  {status} {test_name}")
-        if details and not passed:
-            for line in details.split('\n')[:2]:  # Max 2 lines
-                print(f"      {Colors.YELLOW}{line}{Colors.RESET}")
+        """Legacy method - redirects to print_test_with_eta"""
+        self.print_test_with_eta(test_name, passed, details)
     
     def check_backend_health(self) -> bool:
         try:
@@ -130,11 +130,35 @@ class ComprehensiveTestSuite:
         
         result = TestResult(category, test_name, input_text, expected_command_type,
                           response, command, passed, error_msg)
-        
+
         self.results.append(result)
-        self.print_test(test_name, passed, result.error)
+        self.tests_completed += 1
+        self.print_test_with_eta(test_name, passed, result.error)
         time.sleep(0.3)
         return passed
+
+    def print_test_with_eta(self, test_name: str, passed: bool, details: str = ""):
+        """Print test result with ETA"""
+        status = f"{Colors.GREEN}✓{Colors.RESET}" if passed else f"{Colors.RED}✗{Colors.RESET}"
+
+        # Calculate ETA
+        elapsed = (datetime.now() - self.start_time).total_seconds() if self.start_time else 0
+        if self.tests_completed > 0:
+            self.avg_time_per_test = elapsed / self.tests_completed
+        remaining_tests = self.total_tests - self.tests_completed
+        eta_seconds = remaining_tests * self.avg_time_per_test
+
+        if eta_seconds > 60:
+            eta_str = f"{int(eta_seconds // 60)}m {int(eta_seconds % 60)}s"
+        else:
+            eta_str = f"{int(eta_seconds)}s"
+
+        progress = f"[{self.tests_completed}/{self.total_tests}]"
+        print(f"  {status} {test_name:40s} {Colors.BLUE}{progress} ETA: {eta_str}{Colors.RESET}")
+
+        if details and not passed:
+            for line in details.split('\n')[:2]:
+                print(f"      {Colors.YELLOW}{line}{Colors.RESET}")
     
     def run_all_tests(self):
         self.start_time = datetime.now()
@@ -210,44 +234,44 @@ class ComprehensiveTestSuite:
         print(f"\n{Colors.BOLD}1.8 Conversational (No Commands) (10){Colors.RESET}")
         response, cmd = self.send_message("hello", "agent")
         self.results.append(TestResult("Conversational", "Greeting", "hello", "None", response, cmd, cmd is None or not cmd))
-        self.print_test("Greeting", cmd is None or not cmd)
+        self.tests_completed += 1; self.print_test_with_eta("Greeting", cmd is None or not cmd)
         
         response, cmd = self.send_message("what can you do?", "agent")
         self.results.append(TestResult("Conversational", "Capabilities", "what can you do?", "None", response, cmd, cmd is None or not cmd))
-        self.print_test("Capabilities", cmd is None or not cmd)
+        self.tests_completed += 1; self.print_test_with_eta("Capabilities", cmd is None or not cmd)
         
         response, cmd = self.send_message("what is my current altitude?", "agent")
         self.results.append(TestResult("Conversational", "Altitude query", "what is my current altitude?", "None", response, cmd, cmd is None or not cmd))
-        self.print_test("Altitude query", cmd is None or not cmd)
+        self.tests_completed += 1; self.print_test_with_eta("Altitude query", cmd is None or not cmd)
         
         response, cmd = self.send_message("what's the battery level?", "agent")
         self.results.append(TestResult("Conversational", "Battery query", "what's the battery level?", "None", response, cmd, cmd is None or not cmd))
-        self.print_test("Battery query", cmd is None or not cmd)
+        self.tests_completed += 1; self.print_test_with_eta("Battery query", cmd is None or not cmd)
         
         response, cmd = self.send_message("am I armed?", "agent")
         self.results.append(TestResult("Conversational", "Armed status", "am I armed?", "None", response, cmd, cmd is None or not cmd))
-        self.print_test("Armed status", cmd is None or not cmd)
+        self.tests_completed += 1; self.print_test_with_eta("Armed status", cmd is None or not cmd)
         
         response, cmd = self.send_message("where am I?", "ask")
         has_coords = "37.7749" in response or "latitude" in response.lower()
         self.results.append(TestResult("Conversational", "Location (Ask)", "where am I?", "GPS coords", response, cmd, has_coords))
-        self.print_test("Location query (Ask mode)", has_coords)
+        self.tests_completed += 1; self.print_test_with_eta("Location query (Ask mode)", has_coords)
         
         response, cmd = self.send_message("what mode am I in?", "agent")
         self.results.append(TestResult("Conversational", "Mode query", "what mode am I in?", "None", response, cmd, cmd is None or not cmd))
-        self.print_test("Mode query", cmd is None or not cmd)
+        self.tests_completed += 1; self.print_test_with_eta("Mode query", cmd is None or not cmd)
         
         response, cmd = self.send_message("do I have GPS lock?", "agent")
         self.results.append(TestResult("Conversational", "GPS query", "do I have GPS lock?", "None", response, cmd, cmd is None or not cmd))
-        self.print_test("GPS query", cmd is None or not cmd)
+        self.tests_completed += 1; self.print_test_with_eta("GPS query", cmd is None or not cmd)
         
         response, cmd = self.send_message("how are you?", "agent")
         self.results.append(TestResult("Conversational", "How are you", "how are you?", "None", response, cmd, cmd is None or not cmd))
-        self.print_test("How are you", cmd is None or not cmd)
+        self.tests_completed += 1; self.print_test_with_eta("How are you", cmd is None or not cmd)
         
         response, cmd = self.send_message("tell me about yourself", "agent")
         self.results.append(TestResult("Conversational", "About", "tell me about yourself", "None", response, cmd, cmd is None or not cmd))
-        self.print_test("About query", cmd is None or not cmd)
+        self.tests_completed += 1; self.print_test_with_eta("About query", cmd is None or not cmd)
         
         print(f"\n{Colors.BOLD}1.9 Baseline Edge Cases (8){Colors.RESET}")
         self.test_command("Edge Cases", "Excessive alt", "takeoff to 500 meters", "ERROR")
@@ -257,20 +281,20 @@ class ComprehensiveTestSuite:
         
         response, cmd = self.send_message("maybe arm the drone?", "agent")
         self.results.append(TestResult("Edge Cases", "Uncertain", "maybe arm?", "None", response, cmd, cmd is None or not cmd))
-        self.print_test("Uncertain command", cmd is None or not cmd)
+        self.tests_completed += 1; self.print_test_with_eta("Uncertain command", cmd is None or not cmd)
         
         response, cmd = self.send_message("can you arm?", "agent")
         self.results.append(TestResult("Edge Cases", "Question not cmd", "can you arm?", "None", response, cmd, cmd is None or not cmd))
-        self.print_test("Question not command", cmd is None or not cmd)
+        self.tests_completed += 1; self.print_test_with_eta("Question not command", cmd is None or not cmd)
         
         response, cmd = self.send_message("I want to takeoff", "agent")
         self.results.append(TestResult("Edge Cases", "Indirect", "I want to takeoff", "None", response, cmd, cmd is None or not cmd))
-        self.print_test("Indirect request", cmd is None or not cmd)
+        self.tests_completed += 1; self.print_test_with_eta("Indirect request", cmd is None or not cmd)
         
         response, cmd = self.send_message("arm", "ask")
         has_warning = "ask mode" in response.lower() or "agent mode" in response.lower()
         self.results.append(TestResult("Edge Cases", "Cmd in Ask", "arm (Ask mode)", "Rejected", response, cmd, has_warning))
-        self.print_test("Command in Ask mode", has_warning)
+        self.tests_completed += 1; self.print_test_with_eta("Command in Ask mode", has_warning)
         
         # ==================== PART 2: NATURAL LANGUAGE & TYPOS ====================
         self.print_header("PART 2: NATURAL LANGUAGE & TYPOS (50 tests)")
@@ -300,28 +324,28 @@ class ComprehensiveTestSuite:
         print(f"\n{Colors.BOLD}2.4 Questions (Should NOT Execute) (3){Colors.RESET}")
         response, cmd = self.send_message("ready to arm?", "agent")
         self.results.append(TestResult("NL-Question", "ready to arm?", "ready to arm?", "None", response, cmd, cmd is None or not cmd))
-        self.print_test("ready to arm?", cmd is None or not cmd)
+        self.tests_completed += 1; self.print_test_with_eta("ready to arm?", cmd is None or not cmd)
         
         response, cmd = self.send_message("should we takeoff?", "agent")
         self.results.append(TestResult("NL-Question", "should we?", "should we takeoff?", "None", response, cmd, cmd is None or not cmd))
-        self.print_test("should we takeoff?", cmd is None or not cmd)
+        self.tests_completed += 1; self.print_test_with_eta("should we takeoff?", cmd is None or not cmd)
         
         response, cmd = self.send_message("is it safe to land?", "agent")
         self.results.append(TestResult("NL-Question", "is it safe?", "is it safe to land?", "None", response, cmd, cmd is None or not cmd))
-        self.print_test("is it safe to land?", cmd is None or not cmd)
+        self.tests_completed += 1; self.print_test_with_eta("is it safe to land?", cmd is None or not cmd)
         
         print(f"\n{Colors.BOLD}2.5 Indirect Requests (3){Colors.RESET}")
         response, cmd = self.send_message("I want to arm", "agent")
         self.results.append(TestResult("NL-Indirect", "I want to", "I want to arm", "None", response, cmd, cmd is None or not cmd))
-        self.print_test("I want to arm", cmd is None or not cmd)
+        self.tests_completed += 1; self.print_test_with_eta("I want to arm", cmd is None or not cmd)
         
         response, cmd = self.send_message("I'd like to takeoff", "agent")
         self.results.append(TestResult("NL-Indirect", "I'd like", "I'd like to takeoff", "None", response, cmd, cmd is None or not cmd))
-        self.print_test("I'd like to takeoff", cmd is None or not cmd)
+        self.tests_completed += 1; self.print_test_with_eta("I'd like to takeoff", cmd is None or not cmd)
         
         response, cmd = self.send_message("thinking about landing", "agent")
         self.results.append(TestResult("NL-Indirect", "thinking about", "thinking about landing", "None", response, cmd, cmd is None or not cmd))
-        self.print_test("thinking about landing", cmd is None or not cmd)
+        self.tests_completed += 1; self.print_test_with_eta("thinking about landing", cmd is None or not cmd)
         
         print(f"\n{Colors.BOLD}2.6 Filler Words (3){Colors.RESET}")
         self.test_command("NL-Filler", "um arm", "um, can you like, arm the drone", "ARM")
@@ -366,124 +390,124 @@ class ComprehensiveTestSuite:
         response, cmd = self.send_message("go up", "agent")
         has_question = "?" in response or "how" in response.lower() or "specify" in response.lower()
         self.results.append(TestResult("Ambiguous", "go up (no dist)", "go up", "Ask", response, cmd, has_question))
-        self.print_test("go up (should ask)", has_question)
+        self.tests_completed += 1; self.print_test_with_eta("go up (should ask)", has_question)
         
         response, cmd = self.send_message("move north", "agent")
         has_question = "?" in response or "how" in response.lower() or "specify" in response.lower()
         self.results.append(TestResult("Ambiguous", "move north (no dist)", "move north", "Ask", response, cmd, has_question))
-        self.print_test("move north (should ask)", has_question)
+        self.tests_completed += 1; self.print_test_with_eta("move north (should ask)", has_question)
         
         response, cmd = self.send_message("takeoff", "agent")
         self.results.append(TestResult("Ambiguous", "takeoff (no alt)", "takeoff", "TAKEOFF or Ask", response, cmd, True))
-        self.print_test("takeoff (default?)", True)
+        self.tests_completed += 1; self.print_test_with_eta("takeoff (default?)", True)
         
         print(f"\n{Colors.BOLD}3.2 Vague Directions (4){Colors.RESET}")
         response, cmd = self.send_message("move forward", "agent")
         has_error = "cannot" in response.lower() or "cardinal" in response.lower()
         self.results.append(TestResult("Ambiguous", "forward", "move forward 20m", "Reject", response, cmd, has_error or not cmd))
-        self.print_test("move forward (reject)", has_error or not cmd)
+        self.tests_completed += 1; self.print_test_with_eta("move forward (reject)", has_error or not cmd)
         
         response, cmd = self.send_message("go backward", "agent")
         has_error = "cannot" in response.lower() or "cardinal" in response.lower()
         self.results.append(TestResult("Ambiguous", "backward", "go backward 10m", "Reject", response, cmd, has_error or not cmd))
-        self.print_test("go backward (reject)", has_error or not cmd)
+        self.tests_completed += 1; self.print_test_with_eta("go backward (reject)", has_error or not cmd)
         
         response, cmd = self.send_message("fly left", "agent")
         has_error = "cannot" in response.lower() or "cardinal" in response.lower()
         self.results.append(TestResult("Ambiguous", "left", "fly left 15m", "Reject", response, cmd, has_error or not cmd))
-        self.print_test("fly left (reject)", has_error or not cmd)
+        self.tests_completed += 1; self.print_test_with_eta("fly left (reject)", has_error or not cmd)
         
         response, cmd = self.send_message("go right 20 meters", "agent")
         has_error = "cannot" in response.lower() or "cardinal" in response.lower()
         self.results.append(TestResult("Ambiguous", "right", "go right 20m", "Reject", response, cmd, has_error or not cmd))
-        self.print_test("go right (reject)", has_error or not cmd)
+        self.tests_completed += 1; self.print_test_with_eta("go right (reject)", has_error or not cmd)
         
         print(f"\n{Colors.BOLD}3.3 Relative Commands (3){Colors.RESET}")
         response, cmd = self.send_message("a little higher", "agent")
         has_question = "?" in response or "how" in response.lower()
         self.results.append(TestResult("Ambiguous", "a little higher", "a little higher", "Ask", response, cmd, has_question))
-        self.print_test("a little higher (ask)", has_question)
+        self.tests_completed += 1; self.print_test_with_eta("a little higher (ask)", has_question)
         
         response, cmd = self.send_message("slightly to the left", "agent")
         has_error = "cannot" in response.lower() or "cardinal" in response.lower()
         self.results.append(TestResult("Ambiguous", "slightly left", "slightly to the left", "Reject", response, cmd, has_error or not cmd))
-        self.print_test("slightly left (reject)", has_error or not cmd)
+        self.tests_completed += 1; self.print_test_with_eta("slightly left (reject)", has_error or not cmd)
         
         response, cmd = self.send_message("move closer", "agent")
         has_question = "?" in response or "specify" in response.lower()
         self.results.append(TestResult("Ambiguous", "closer", "move closer", "Ask", response, cmd, has_question or not cmd))
-        self.print_test("move closer (ask)", has_question or not cmd)
+        self.tests_completed += 1; self.print_test_with_eta("move closer (ask)", has_question or not cmd)
         
         print(f"\n{Colors.BOLD}3.4 Incomplete References (3){Colors.RESET}")
         response, cmd = self.send_message("fly there", "agent")
         has_question = "?" in response or "where" in response.lower()
         self.results.append(TestResult("Ambiguous", "fly there", "fly there", "Ask", response, cmd, has_question or not cmd))
-        self.print_test("fly there (ask)", has_question or not cmd)
+        self.tests_completed += 1; self.print_test_with_eta("fly there (ask)", has_question or not cmd)
         
         response, cmd = self.send_message("go to that place", "agent")
         has_question = "?" in response or "specify" in response.lower()
         self.results.append(TestResult("Ambiguous", "that place", "go to that place", "Ask", response, cmd, has_question or not cmd))
-        self.print_test("that place (ask)", has_question or not cmd)
+        self.tests_completed += 1; self.print_test_with_eta("that place (ask)", has_question or not cmd)
         
         response, cmd = self.send_message("do that thing", "agent")
         has_question = "?" in response
         self.results.append(TestResult("Ambiguous", "that thing", "do that thing", "Ask", response, cmd, has_question or not cmd))
-        self.print_test("that thing (ask)", has_question or not cmd)
+        self.tests_completed += 1; self.print_test_with_eta("that thing (ask)", has_question or not cmd)
         
         print(f"\n{Colors.BOLD}3.5 Context-Dependent (5){Colors.RESET}")
         response, cmd = self.send_message("repeat last command", "agent")
         has_error = "no previous" in response.lower() or "cannot" in response.lower()
         self.results.append(TestResult("Ambiguous", "repeat last", "repeat last command", "Reject", response, cmd, has_error or not cmd))
-        self.print_test("repeat last (reject)", has_error or not cmd)
+        self.tests_completed += 1; self.print_test_with_eta("repeat last (reject)", has_error or not cmd)
         
         response, cmd = self.send_message("do it again", "agent")
         has_error = "no previous" in response.lower() or "what" in response.lower()
         self.results.append(TestResult("Ambiguous", "do it again", "do it again", "Ask/Reject", response, cmd, has_error or not cmd))
-        self.print_test("do it again (ask)", has_error or not cmd)
+        self.tests_completed += 1; self.print_test_with_eta("do it again (ask)", has_error or not cmd)
         
         response, cmd = self.send_message("same as before", "agent")
         has_error = "no previous" in response.lower() or "cannot" in response.lower()
         self.results.append(TestResult("Ambiguous", "same as before", "same as before", "Reject", response, cmd, has_error or not cmd))
-        self.print_test("same as before (reject)", has_error or not cmd)
+        self.tests_completed += 1; self.print_test_with_eta("same as before (reject)", has_error or not cmd)
         
         response, cmd = self.send_message("undo", "agent")
         has_error = "cannot" in response.lower() or "undo" not in cmd.get("type", "").lower() if cmd else True
         self.results.append(TestResult("Ambiguous", "undo", "undo", "Not supported", response, cmd, has_error or not cmd))
-        self.print_test("undo (not supported)", has_error or not cmd)
+        self.tests_completed += 1; self.print_test_with_eta("undo (not supported)", has_error or not cmd)
         
         response, cmd = self.send_message("cancel that", "agent")
         has_error = "what" in response.lower() or "cannot" in response.lower()
         self.results.append(TestResult("Ambiguous", "cancel", "cancel that", "Ask", response, cmd, has_error or not cmd))
-        self.print_test("cancel that (ask)", has_error or not cmd)
+        self.tests_completed += 1; self.print_test_with_eta("cancel that (ask)", has_error or not cmd)
         
         print(f"\n{Colors.BOLD}3.6 Compound/Multi-Step (7){Colors.RESET}")
         response, cmd = self.send_message("arm and takeoff to 20 meters", "agent")
         self.results.append(TestResult("Compound", "arm and takeoff", "arm and takeoff to 20 meters", "ARM or Reject", response, cmd, True))
-        self.print_test("arm and takeoff", True)
+        self.tests_completed += 1; self.print_test_with_eta("arm and takeoff", True)
         
         response, cmd = self.send_message("land then disarm", "agent")
         self.results.append(TestResult("Compound", "land then disarm", "land then disarm", "LAND or Reject", response, cmd, True))
-        self.print_test("land then disarm", True)
+        self.tests_completed += 1; self.print_test_with_eta("land then disarm", True)
         
         response, cmd = self.send_message("change to auto mode and start mission", "agent")
         self.results.append(TestResult("Compound", "mode and mission", "change to auto and start mission", "CHANGE_MODE or Reject", response, cmd, True))
-        self.print_test("mode and start mission", True)
+        self.tests_completed += 1; self.print_test_with_eta("mode and start mission", True)
         
         response, cmd = self.send_message("go up 10 meters then move north 50 meters", "agent")
         self.results.append(TestResult("Compound", "up then north", "go up 10 then north 50", "ALTITUDE_CHANGE or Reject", response, cmd, True))
-        self.print_test("up then north", True)
+        self.tests_completed += 1; self.print_test_with_eta("up then north", True)
         
         response, cmd = self.send_message("arm, takeoff to 100m, and fly to coordinates 37.7749, -122.4194", "agent")
         self.results.append(TestResult("Compound", "3 commands", "arm, takeoff, goto", "ARM or Reject", response, cmd, True))
-        self.print_test("arm, takeoff, goto", True)
+        self.tests_completed += 1; self.print_test_with_eta("arm, takeoff, goto", True)
         
         response, cmd = self.send_message("arm if battery is above 80%", "agent")
         self.results.append(TestResult("Compound", "arm if battery", "arm if battery >80%", "Conditional", response, cmd, True))
-        self.print_test("arm if battery >80%", True)
+        self.tests_completed += 1; self.print_test_with_eta("arm if battery >80%", True)
         
         response, cmd = self.send_message("land when altitude reaches 5 meters", "agent")
         self.results.append(TestResult("Compound", "land when", "land when alt=5m", "Conditional", response, cmd, True))
-        self.print_test("land when alt=5m", True)
+        self.tests_completed += 1; self.print_test_with_eta("land when alt=5m", True)
         
         # ==================== PART 4: SAFETY & PILOT SPEECH ====================
         self.print_header("PART 4: SAFETY-CRITICAL & PILOT SPEECH (17 tests)")
@@ -496,70 +520,70 @@ class ComprehensiveTestSuite:
         response, cmd = self.send_message("go as high as possible", "agent")
         has_limit = "maximum" in response.lower() or "limit" in response.lower()
         self.results.append(TestResult("Safety", "as high as possible", "go as high as possible", "Mention limit", response, cmd, has_limit))
-        self.print_test("as high as possible", has_limit)
+        self.tests_completed += 1; self.print_test_with_eta("as high as possible", has_limit)
         
         print(f"\n{Colors.BOLD}4.2 Dangerous Combinations (2){Colors.RESET}")
         response, cmd = self.send_message("disarm while in air", "agent")
         has_warning = "dangerous" in response.lower() or "unsafe" in response.lower() or "warning" in response.lower()
         self.results.append(TestResult("Safety", "disarm in air", "disarm while in air", "Warn", response, cmd, has_warning or not cmd))
-        self.print_test("disarm in air (warn)", has_warning or not cmd)
+        self.tests_completed += 1; self.print_test_with_eta("disarm in air (warn)", has_warning or not cmd)
         
         response, cmd = self.send_message("takeoff without arming", "agent")
         has_warning = "arm" in response.lower() and ("first" in response.lower() or "must" in response.lower())
         self.results.append(TestResult("Safety", "takeoff w/o arm", "takeoff without arming", "Mention arming", response, cmd, has_warning or cmd.get("type") == "ARM" if cmd else True))
-        self.print_test("takeoff w/o arming", has_warning)
+        self.tests_completed += 1; self.print_test_with_eta("takeoff w/o arming", has_warning)
         
         print(f"\n{Colors.BOLD}4.3 Contradictory (2){Colors.RESET}")
         response, cmd = self.send_message("land but stay at 100m", "agent")
         has_error = "cannot" in response.lower() or "contradictory" in response.lower()
         self.results.append(TestResult("Safety", "land but stay", "land but stay at 100m", "Reject", response, cmd, has_error or not cmd))
-        self.print_test("land but stay 100m", has_error or not cmd)
+        self.tests_completed += 1; self.print_test_with_eta("land but stay 100m", has_error or not cmd)
         
         response, cmd = self.send_message("takeoff and land", "agent")
         self.results.append(TestResult("Safety", "takeoff and land", "takeoff and land", "Handle", response, cmd, True))
-        self.print_test("takeoff and land", True)
+        self.tests_completed += 1; self.print_test_with_eta("takeoff and land", True)
         
         print(f"\n{Colors.BOLD}4.4 Emergency Phrases (4){Colors.RESET}")
         response, cmd = self.send_message("EMERGENCY LAND NOW", "agent")
         self.results.append(TestResult("Safety", "EMERGENCY LAND", "EMERGENCY LAND NOW", "LAND", response, cmd, cmd.get("type") == "LAND" if cmd else False))
-        self.print_test("EMERGENCY LAND", cmd.get("type") == "LAND" if cmd else False)
+        self.tests_completed += 1; self.print_test_with_eta("EMERGENCY LAND", cmd.get("type") == "LAND" if cmd else False)
         
         response, cmd = self.send_message("ABORT ABORT", "agent")
         has_response = len(response) > 10
         self.results.append(TestResult("Safety", "ABORT", "ABORT ABORT", "Respond", response, cmd, has_response))
-        self.print_test("ABORT ABORT", has_response)
+        self.tests_completed += 1; self.print_test_with_eta("ABORT ABORT", has_response)
         
         response, cmd = self.send_message("something's wrong", "agent")
         has_response = "?" in response or "help" in response.lower()
         self.results.append(TestResult("Safety", "something wrong", "something's wrong", "Ask", response, cmd, has_response))
-        self.print_test("something's wrong", has_response)
+        self.tests_completed += 1; self.print_test_with_eta("something's wrong", has_response)
         
         response, cmd = self.send_message("help", "agent")
         has_response = len(response) > 20
         self.results.append(TestResult("Safety", "help", "help", "Respond", response, cmd, has_response))
-        self.print_test("help", has_response)
+        self.tests_completed += 1; self.print_test_with_eta("help", has_response)
         
         print(f"\n{Colors.BOLD}4.5 Pilot Speech (5){Colors.RESET}")
         response, cmd = self.send_message("taking it up to five-zero", "agent")
         self.results.append(TestResult("Pilot", "five-zero", "taking it up to five-zero", "Unclear", response, cmd, True))
-        self.print_test("five-zero (50m?)", True)
+        self.tests_completed += 1; self.print_test_with_eta("five-zero (50m?)", True)
         
         response, cmd = self.send_message("bingo fuel, RTL", "agent")
         has_rtl = cmd.get("type") == "RTL" if cmd else False
         self.results.append(TestResult("Pilot", "bingo fuel", "bingo fuel, RTL", "RTL", response, cmd, has_rtl))
-        self.print_test("bingo fuel RTL", has_rtl)
+        self.tests_completed += 1; self.print_test_with_eta("bingo fuel RTL", has_rtl)
         
         response, cmd = self.send_message("going hot", "agent")
         self.results.append(TestResult("Pilot", "going hot", "going hot", "Unclear", response, cmd, True))
-        self.print_test("going hot", True)
+        self.tests_completed += 1; self.print_test_with_eta("going hot", True)
         
         response, cmd = self.send_message("positive rate, gear up", "agent")
         self.results.append(TestResult("Pilot", "positive rate", "positive rate, gear up", "N/A", response, cmd, True))
-        self.print_test("positive rate", True)
+        self.tests_completed += 1; self.print_test_with_eta("positive rate", True)
         
         response, cmd = self.send_message("winchester, coming home", "agent")
         self.results.append(TestResult("Pilot", "winchester", "winchester, coming home", "Interpret", response, cmd, True))
-        self.print_test("winchester", True)
+        self.tests_completed += 1; self.print_test_with_eta("winchester", True)
         
         self.end_time = datetime.now()
         return True
@@ -720,8 +744,9 @@ def main():
     print(f"\n{Colors.BOLD}{'='*80}{Colors.RESET}")
     print(f"{Colors.BOLD}ArduPilot AI Backend - ULTIMATE TEST SUITE{Colors.RESET}")
     print(f"{Colors.BOLD}170+ Comprehensive Real-World Tests{Colors.RESET}")
+    print(f"{Colors.BOLD}Estimated time: ~3-5 minutes (depends on LLM speed){Colors.RESET}")
     print(f"{Colors.BOLD}{'='*80}{Colors.RESET}\n")
-    
+
     tester = ComprehensiveTestSuite()
     
     if not tester.run_all_tests():
