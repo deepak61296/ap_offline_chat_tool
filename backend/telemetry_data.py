@@ -178,37 +178,66 @@ class TelemetryData:
 
 def format_telemetry_for_prompt(telemetry: Dict[str, Any]) -> str:
     """
-    Format telemetry data into a human-readable string for AI context
+    Format telemetry data into a human-readable string for AI context.
+    Handles missing fields gracefully for different GCS sources.
     """
     lines = []
-    
-    if "battery" in telemetry:
+
+    if "battery" in telemetry and telemetry["battery"]:
         b = telemetry["battery"]
-        lines.append(f"Battery: {b['voltage']:.1f}V, {b['current']:.1f}A, {b['remaining']}% remaining")
-    
-    if "gps" in telemetry:
+        voltage = b.get('voltage', 0)
+        current = b.get('current', 0)
+        remaining = b.get('remaining', 0)
+        lines.append(f"Battery: {voltage:.1f}V, {current:.1f}A, {remaining}% remaining")
+
+    if "gps" in telemetry and telemetry["gps"]:
         g = telemetry["gps"]
-        lines.append(f"GPS: {g['satellites']} satellites, {g['fix_type']}, Alt: {g['altitude']:.1f}m")
-    
-    if "attitude" in telemetry:
+        satellites = g.get('satellites', 0)
+        fix_type = g.get('fix_type', 'Unknown')
+        altitude = g.get('altitude', 0)
+        lat = g.get('latitude', 0)
+        lon = g.get('longitude', 0)
+        lines.append(f"GPS: {satellites} satellites, {fix_type}, Lat: {lat:.6f}, Lon: {lon:.6f}, Alt: {altitude:.1f}m")
+
+    if "position" in telemetry and telemetry["position"]:
+        p = telemetry["position"]
+        lat = p.get('latitude', 0)
+        lon = p.get('longitude', 0)
+        alt = p.get('altitude', 0)
+        rel_alt = p.get('relative_altitude', alt)
+        lines.append(f"Position: Lat: {lat:.6f}, Lon: {lon:.6f}, Alt: {rel_alt:.1f}m (relative)")
+
+    if "attitude" in telemetry and telemetry["attitude"]:
         a = telemetry["attitude"]
-        lines.append(f"Attitude: Roll {a['roll']:.1f}, Pitch {a['pitch']:.1f}, Yaw {a['yaw']:.1f}")
-    
-    if "speed" in telemetry:
+        roll = a.get('roll', 0)
+        pitch = a.get('pitch', 0)
+        yaw = a.get('yaw', 0)
+        lines.append(f"Attitude: Roll {roll:.1f}, Pitch {pitch:.1f}, Yaw {yaw:.1f}")
+
+    if "speed" in telemetry and telemetry["speed"]:
         s = telemetry["speed"]
-        lines.append(f"Speed: Ground {s['ground_speed']:.1f} m/s, Climb {s['climb_rate']:.1f} m/s")
-    
-    if "status" in telemetry:
+        ground_speed = s.get('ground_speed', 0)
+        climb_rate = s.get('climb_rate', 0)
+        lines.append(f"Speed: Ground {ground_speed:.1f} m/s, Climb {climb_rate:.1f} m/s")
+
+    if "status" in telemetry and telemetry["status"]:
         st = telemetry["status"]
-        armed_str = "ARMED" if st["armed"] else "DISARMED"
-        lines.append(f"Status: {st['mode']}, {armed_str}")
-    
-    if "mission" in telemetry:
+        mode = st.get('mode', 'Unknown')
+        armed = st.get('armed', False)
+        armed_str = "ARMED" if armed else "DISARMED"
+        lines.append(f"Status: {mode}, {armed_str}")
+
+    if "mission" in telemetry and telemetry["mission"]:
         m = telemetry["mission"]
-        lines.append(f"Mission: WP {m['current_waypoint']}/{m['total_waypoints']}, {m['distance_to_waypoint']:.0f}m away")
-    
-    if "home" in telemetry:
+        current_wp = m.get('current_waypoint', 0)
+        total_wp = m.get('total_waypoints', 0)
+        dist = m.get('distance_to_waypoint', 0)
+        lines.append(f"Mission: WP {current_wp}/{total_wp}, {dist:.0f}m away")
+
+    if "home" in telemetry and telemetry["home"]:
         h = telemetry["home"]
-        lines.append(f"Home: {h['distance_from_home']:.0f}m away, bearing {h['bearing_from_home']:.0f}")
-    
+        dist = h.get('distance_from_home', 0)
+        bearing = h.get('bearing_from_home', 0)
+        lines.append(f"Home: {dist:.0f}m away, bearing {bearing:.0f}")
+
     return "\n".join(lines) if lines else "No telemetry data available"
