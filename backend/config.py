@@ -136,6 +136,9 @@ COMMAND_RISK_LEVELS = {
     "GOTO_HOME": "high",
     "MOVE_DIRECTION": "high",
     "ALTITUDE_CHANGE": "high",
+    "SET_SPEED": "medium",
+    "SET_YAW": "medium",
+    "LUA_SCRIPT": "high",
     "REBOOT": "critical",
 }
 

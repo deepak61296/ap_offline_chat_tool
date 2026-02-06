@@ -28,9 +28,10 @@ import time
 # Import our modules
 from backend.config import (
     API_HOST, API_PORT, API_DEBUG,
-    DEFAULT_MODEL, LOG_LEVEL, LOG_FORMAT,
+    DEFAULT_MODEL, SCRIPT_MODEL, LOG_LEVEL, LOG_FORMAT,
     STANDALONE_MODE, MAVLINK_CONNECTION, MAVLINK_BAUD,
-    OPERATION_MODE, BACKEND_VERSION, COMMAND_RISK_LEVELS, APPROVAL_MODE
+    OPERATION_MODE, BACKEND_VERSION, COMMAND_RISK_LEVELS, APPROVAL_MODE,
+    OLLAMA_NUM_CTX, OLLAMA_NUM_GPU
 )
 from backend.prompts import get_agent_prompt, get_ask_prompt, get_script_prompt
 from backend.commands import extract_command, validate_command, extract_lua_script
@@ -365,7 +366,6 @@ def chat():
             mode = 'agent'
         
         # Get model - use SCRIPT_MODEL for script mode, DEFAULT_MODEL for others
-        from backend.config import SCRIPT_MODEL
         default_for_mode = SCRIPT_MODEL if mode == 'script' else DEFAULT_MODEL
         model = data.get('model', default_for_mode)
         
@@ -423,8 +423,6 @@ def chat():
         # Call Ollama API (only if not using template)
         if mode == 'script' and not template_code:
             # LLM generation for script mode
-            from backend.config import OLLAMA_NUM_CTX, OLLAMA_NUM_GPU
-
             response = ollama.chat(
                 model=model,
                 messages=[
@@ -459,8 +457,6 @@ def chat():
 
         elif mode != 'script':
             # Agent/Ask mode - call LLM normally
-            from backend.config import OLLAMA_NUM_CTX, OLLAMA_NUM_GPU
-
             response = ollama.chat(
                 model=model,
                 messages=[
