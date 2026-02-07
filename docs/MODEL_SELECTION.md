@@ -224,6 +224,5 @@ curl -X POST http://localhost:5000/chat \
 
 ## Related Documentation
 
-- [Model Comparison](MODEL_COMPARISON.md) - Benchmark results
 - [Architecture](ARCHITECTURE.md) - How models integrate with backend
-- [Configuration](../backend/config.py) - Full configuration options
+- [Installation Guide](INSTALL_WINDOWS.md) - Setup instructions

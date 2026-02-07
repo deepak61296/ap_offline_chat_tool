@@ -15,8 +15,6 @@ Complete documentation for the ArduPilot AI Backend project.
 
 ### Configuration
 - **[Model Selection](MODEL_SELECTION.md)** - Choosing and configuring LLM models
-- **[Model Comparison](MODEL_COMPARISON.md)** - Performance benchmarks across models
-- **[Interactive Model Switching](INTERACTIVE_MODEL_SWITCHING.md)** - Runtime model changes
 
 ### Integration
 - **[Mission Planner Setup](README_MISSION_PLANNER.md)** - Mission Planner integration guide
@@ -98,32 +96,13 @@ Mission Planner integration reference:
 
 ### MODEL_SELECTION.md
 LLM model configuration:
-- Supported models (qwen, llama, mistral families)
+- Supported models (qwen, llama families)
 - Model size vs performance tradeoffs
-- VRAM requirements
+- GPU/CPU requirements
 - Configuration file editing
-- Runtime model switching
+- Troubleshooting
 
 **Audience:** Users optimizing performance or working with limited hardware
-
-### MODEL_COMPARISON.md
-Empirical performance data:
-- Response time benchmarks
-- Accuracy metrics
-- Resource usage (CPU, RAM, VRAM)
-- Command extraction success rates
-- Recommendations by use case
-
-**Audience:** Users choosing optimal model configuration
-
-### INTERACTIVE_MODEL_SWITCHING.md
-Runtime model management:
-- Switching models without backend restart
-- Configuration via API calls
-- Per-mode model settings (Agent vs Ask vs Script)
-- Performance impact of switching
-
-**Audience:** Advanced users, developers testing multiple models
 
 ## Documentation Standards
 
