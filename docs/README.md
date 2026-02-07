@@ -144,24 +144,4 @@ All documentation follows these guidelines:
 
 ## Contributing to Documentation
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) section on documentation for:
-- Writing style guide
-- Adding new documents
-- Updating existing documentation
-- Screenshot guidelines
-- Diagram creation tools
-
-## Documentation TODO
-
-Planned documentation improvements:
-
-- [ ] Linux/macOS installation guides
-- [ ] QGroundControl integration guide (when available)
-- [ ] API reference with all endpoints
-- [ ] Command reference with parameter details
-- [ ] Lua scripting guide for Script mode
-- [ ] Safety configuration customization
-- [ ] Multi-vehicle setup guide
-- [ ] Performance tuning guide
-- [ ] Troubleshooting FAQ
-- [ ] Video tutorial transcripts
+See [CONTRIBUTING.md](CONTRIBUTING.md) for documentation guidelines.

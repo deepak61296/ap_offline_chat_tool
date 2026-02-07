@@ -1,9 +1,7 @@
 """
 MAVLink Connection Manager
 Direct connection to ArduPilot via pymavlink
-Works standalone or alongside any GCS (Mission Planner, MAVProxy, QGC)
-
-Cross-platform: Windows and Linux compatible
+Works standalone or alongside GCS
 """
 
 import threading

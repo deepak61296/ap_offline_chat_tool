@@ -1,8 +1,6 @@
 """
 ArduPilot AI Backend Package
-Multi-GCS Support: Mission Planner, MAVProxy, QGroundControl, Standalone
-
-Cross-platform: Windows and Linux compatible
+Supports Mission Planner and MAVProxy
 """
 
 __version__ = '2.4.0'

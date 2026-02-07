@@ -2,8 +2,7 @@
 Configuration settings for ArduPilot AI Backend
 Centralized configuration for API server, models, and safety limits
 
-Cross-platform: Windows and Linux compatible
-Supports: Mission Planner, MAVProxy, QGroundControl, Standalone
+Supports Mission Planner and MAVProxy
 """
 
 import argparse

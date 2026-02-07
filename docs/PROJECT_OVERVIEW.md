@@ -280,13 +280,6 @@ cd MissionPlanner
 - ✓ Safety checks and risk levels
 - ✓ Comprehensive test suite
 
-**Planned Features:**
-- QGroundControl integration
-- Voice input support
-- Multi-vehicle coordination
-- Flight plan generation
-- Automated test flight scripts
-
 ## Documentation
 
 - **README.md** - Quick start and setup instructions

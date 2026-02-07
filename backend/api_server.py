@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 ArduPilot AI Backend - HTTP API Server v2.4
-Multi-GCS Support: Mission Planner, MAVProxy, QGroundControl, Standalone
+Supports Mission Planner and MAVProxy
 
 Cross-platform: Windows and Linux compatible
 

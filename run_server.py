@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """
 Entry point for ArduPilot AI Backend Server
-Cross-platform: Windows and Linux compatible
-Supports: Mission Planner, MAVProxy, QGroundControl, Standalone
+Supports Mission Planner and MAVProxy
 """
 
 import sys

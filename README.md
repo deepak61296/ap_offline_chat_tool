@@ -16,7 +16,8 @@ land
 
 ## Demo
 
-[Watch Demo Video](demos/demo_mavproxy_agent_mode.mkv) - MAVProxy Agent Mode demonstration
+**MAVProxy:** [Watch Demo](demos/mavproxy_demo.mkv)
+**Mission Planner:** [Watch Demo](demos/mission_planner_demo.mkv)
 
 ## How It Works
 
@@ -192,10 +193,11 @@ mavproxy.py --master=udp:127.0.0.1:14550 --console --ai-backend
 ai_backend enable      # Enable natural language
 ai_backend disable     # Disable
 ai_backend status      # Show connection status
-ai_backend url <URL>   # Set backend URL
 ai_backend safe        # Enable y/n confirmation
 ai_backend unsafe      # Disable confirmations
 ```
+
+Backend URL auto-connects to http://localhost:5000
 
 ---
 
@@ -368,13 +370,10 @@ ardupilot-ai-backend/
 └── requirements.txt
 ```
 
-## Documentation
+## Project Structure
 
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** - System design and data flow
-- **[COMPATIBILITY.md](COMPATIBILITY.md)** - Version compatibility across repos
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** - How to contribute / developer setup
-- **[integrations/mavproxy/](integrations/mavproxy/)** - MAVProxy integration docs
-- **[integrations/mission_planner/](integrations/mission_planner/)** - Mission Planner integration docs
+- **[integrations/mavproxy/](integrations/mavproxy/)** - MAVProxy module
+- **[integrations/mission_planner/](integrations/mission_planner/)** - Mission Planner plugin files
 
 ---
 
@@ -438,8 +437,8 @@ pip install -r requirements.txt --force-reinstall
 
 ## Notes
 
-- Tested on SITL and real hardware (Copter)
-- Copter only for now (Plane/Rover support planned)
-- License: GPL-3.0 (ArduPilot compatible)
+- Tested on SITL and real hardware
+- Supports ArduCopter
+- License: GPL-3.0
 
-Use responsibly. Always test in simulation first.
+Always test in simulation first.
