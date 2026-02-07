@@ -605,7 +605,7 @@ namespace MissionPlanner.GCSViews
                     else
                     {
                         // Fallback to default models
-                        modelComboBox.Items.AddRange(new object[] { "qwen2.5:3b", "qwen2.5:7b", "qwen2.5:14b" });
+                        modelComboBox.Items.AddRange(new object[] { "qwen2.5:3b", "qwen2.5-coder:7b" });
                         modelComboBox.SelectedIndex = 0;
                         UpdateConnectionStatus(false);
                     }
@@ -614,7 +614,7 @@ namespace MissionPlanner.GCSViews
             catch
             {
                 // Fallback to default models if Ollama is not running
-                modelComboBox.Items.AddRange(new object[] { "qwen2.5:3b", "qwen2.5:7b", "qwen2.5:14b" });
+                modelComboBox.Items.AddRange(new object[] { "qwen2.5:3b", "qwen2.5-coder:7b" });
                 modelComboBox.SelectedIndex = 0;
                 UpdateConnectionStatus(false);
             }
