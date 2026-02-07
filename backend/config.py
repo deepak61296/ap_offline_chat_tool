@@ -33,10 +33,8 @@ API_PORT = 5000
 API_DEBUG = False
 
 # Model Configuration
-# qwen2.5:3b for fast Agent/Ask mode responses
-# qwen2.5-coder:7b for better Script mode code quality
-DEFAULT_MODEL = 'qwen2.5:3b'
-SCRIPT_MODEL = 'qwen2.5-coder:7b'  # Better for code generation
+DEFAULT_MODEL = 'qwen2.5-coder:3b'
+SCRIPT_MODEL = 'qwen2.5-coder:7b'
 SUPPORTED_MODELS = ['qwen2.5:3b', 'qwen2.5-coder:7b']
 
 # CPU/GPU Configuration

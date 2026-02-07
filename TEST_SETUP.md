@@ -21,7 +21,7 @@ cd C:\Projects\ardupilot-ai-backend
 pip install -r requirements.txt
 
 # Verify installation
-python -c "import flask; import requests; print('Dependencies OK')"
+python -c "import flask; import ollama; import pymavlink; print('Dependencies OK')"
 ```
 
 ## 2. Start Backend
@@ -62,9 +62,12 @@ cp integrations/mavproxy/mavproxy_ai_backend.py <MAVProxy_path>/modules/
 ### Start SITL and MAVProxy
 
 ```bash
-# Terminal 1: Start ArduPilot SITL
+# Terminal 1: Start ArduPilot SITL with MAVProxy
 cd ~/ardupilot/ArduCopter
 sim_vehicle.py --console --map
+
+# Or start MAVProxy separately
+mavproxy.py --master=tcp:127.0.0.1:5760 --console --map
 
 # Terminal 2: Start backend (if not running)
 conda activate ardupilot_ai
