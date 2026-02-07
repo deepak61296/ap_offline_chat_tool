@@ -1,10 +1,6 @@
 # Model Selection Guide
 
-This guide explains how to choose and configure LLM models for the ArduPilot AI Backend.
-
-## Recommended Models
-
-The backend uses Ollama for local LLM inference. Different models work better for different tasks:
+The backend uses qwen2.5-coder models via Ollama for local LLM inference.
 
 ### Default Configuration
 
@@ -31,51 +27,19 @@ ollama pull qwen2.5-coder:7b
 ollama list
 ```
 
-## Alternative Models
+## Supported Models
 
-### Smaller Models (Lower Resource Requirements)
+Only **qwen2.5-coder** models are currently supported:
 
-**qwen2.5-coder:1.5b**
-- Size: 1.0 GB
-- Speed: Very fast (<1s)
-- Accuracy: Good for simple commands
-- Use case: Low-power systems, quick testing
-
-```bash
-ollama pull qwen2.5-coder:1.5b
-```
-
-**llama3.2:3b**
-- Size: 2.0 GB
+**qwen2.5-coder:3b** (Default for Agent/Ask modes)
+- Size: 1.9 GB
 - Speed: Fast (1-2s)
-- Accuracy: Good general performance
-- Use case: Alternative to qwen for variety
+- Recommended for command extraction
 
-```bash
-ollama pull llama3.2:3b
-```
-
-### Larger Models (Better Accuracy)
-
-**qwen2.5-coder:14b**
-- Size: 9.0 GB
-- Speed: Slow (4-8s)
-- Accuracy: Excellent
-- Use case: Complex script generation, high accuracy needs
-
-```bash
-ollama pull qwen2.5-coder:14b
-```
-
-**llama3.1:8b**
+**qwen2.5-coder:7b** (Default for Script mode)
 - Size: 4.7 GB
 - Speed: Medium (2-4s)
-- Accuracy: Very good
-- Use case: Better natural language understanding
-
-```bash
-ollama pull llama3.1:8b
-```
+- Recommended for Lua script generation
 
 ## Changing Models
 
@@ -110,16 +74,12 @@ Currently not supported. Edit config.py instead.
 
 ## Performance Comparison
 
-| Model | Size | RAM Usage | Speed | Accuracy | Best For |
-|-------|------|-----------|-------|----------|----------|
-| qwen2.5-coder:1.5b | 1.0 GB | 3 GB | ★★★★★ | ★★★☆☆ | Low-power systems |
-| qwen2.5-coder:3b | 1.9 GB | 5 GB | ★★★★☆ | ★★★★☆ | Default choice |
-| llama3.2:3b | 2.0 GB | 5 GB | ★★★★☆ | ★★★★☆ | Alternative |
-| qwen2.5-coder:7b | 4.7 GB | 10 GB | ★★★☆☆ | ★★★★★ | Script generation |
-| llama3.1:8b | 4.7 GB | 10 GB | ★★★☆☆ | ★★★★★ | Complex queries |
-| qwen2.5-coder:14b | 9.0 GB | 16 GB | ★★☆☆☆ | ★★★★★ | Maximum accuracy |
+| Model | Size | RAM Usage | Speed | Best For |
+|-------|------|-----------|-------|----------|
+| qwen2.5-coder:3b | 1.9 GB | 8 GB | Fast (1-2s) | Agent/Ask modes |
+| qwen2.5-coder:7b | 4.7 GB | 12 GB | Medium (2-4s) | Script generation |
 
-Speed ratings based on typical inference time (CPU mode).
+Speed ratings based on typical CPU inference time.
 
 ## GPU Acceleration
 
@@ -145,14 +105,12 @@ Or start backend with flag:
 python -m backend.api_server --no-gpu
 ```
 
-## System Requirements by Model
+## System Requirements
 
 | Model | Min RAM | Recommended RAM | GPU VRAM (optional) |
 |-------|---------|-----------------|---------------------|
-| 1.5b | 4 GB | 8 GB | 2 GB |
-| 3b | 8 GB | 12 GB | 4 GB |
-| 7b | 12 GB | 16 GB | 8 GB |
-| 14b | 16 GB | 24 GB | 16 GB |
+| qwen2.5-coder:3b | 8 GB | 12 GB | 4 GB |
+| qwen2.5-coder:7b | 12 GB | 16 GB | 8 GB |
 
 ## Troubleshooting
 
@@ -168,23 +126,15 @@ ollama pull qwen2.5-coder:3b
 
 ```bash
 # Error: OOM or system freezes
-# Solution 1: Use smaller model
-ollama pull qwen2.5-coder:1.5b
-
-# Solution 2: Reduce context window in backend/config.py
+# Solution: Reduce context window in backend/config.py
 OLLAMA_NUM_CTX = 2048  # Default is 4096
 ```
 
 ### Slow Responses
 
 ```bash
-# Solution 1: Use GPU if available
-# (Automatic, just ensure CUDA is installed)
-
-# Solution 2: Use smaller model
-ollama pull qwen2.5-coder:1.5b
-
-# Solution 3: Reduce context window
+# Solution 1: Use GPU if available (automatic if CUDA installed)
+# Solution 2: Reduce context window in backend/config.py
 OLLAMA_NUM_CTX = 2048
 ```
 
@@ -217,10 +167,9 @@ curl -X POST http://localhost:5000/chat \
 
 ## Best Practices
 
-1. **Development:** Use `qwen2.5-coder:3b` for fast iteration
-2. **Production:** Use `qwen2.5-coder:7b` for better accuracy
-3. **Low-power:** Use `qwen2.5-coder:1.5b` for constrained systems
-4. **Testing:** Always test model changes with full test suite
+1. Use `qwen2.5-coder:3b` for Agent/Ask modes (fast command extraction)
+2. Use `qwen2.5-coder:7b` for Script mode (better code generation)
+3. Always test in simulation (SITL) before real hardware
 
 ## Related Documentation
 

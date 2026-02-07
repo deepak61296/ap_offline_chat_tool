@@ -96,13 +96,12 @@ Mission Planner integration reference:
 
 ### MODEL_SELECTION.md
 LLM model configuration:
-- Supported models (qwen, llama families)
-- Model size vs performance tradeoffs
-- GPU/CPU requirements
+- Supported models (qwen2.5-coder:3b and qwen2.5-coder:7b)
+- System requirements
 - Configuration file editing
 - Troubleshooting
 
-**Audience:** Users optimizing performance or working with limited hardware
+**Audience:** Users setting up or configuring the backend
 
 ## Documentation Standards
 
