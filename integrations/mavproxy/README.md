@@ -59,6 +59,24 @@ ai_backend safe
 - Python `requests` library
 - Backend server running
 
+## Files
+
+| File | Description |
+|------|-------------|
+| `mavproxy_ai_backend.py` | Main module (drop into MAVProxy modules folder) |
+| `mavproxy_ai_flag.patch` | Optional patch to add `--ai-backend` flag to mavproxy.py |
+
+The patch adds `--ai-backend` CLI flag for auto-loading the module on startup:
+```bash
+mavproxy.py --master=udp:127.0.0.1:14550 --ai-backend
+```
+
+Without the patch, just load manually:
+```
+module load ai_backend
+ai_backend enable
+```
+
 ## Notes
 
 Module intercepts input before MAVProxy processes it. Regular MAVProxy commands still work normally.
