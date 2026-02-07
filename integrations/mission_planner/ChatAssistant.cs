@@ -594,8 +594,14 @@ namespace MissionPlanner.GCSViews
                             string modelName = model.name.ToString();
                             modelComboBox.Items.Add(modelName);
                         }
-                        
-                        if (modelComboBox.Items.Count > 0)
+
+                        // Set default to qwen2.5:3b if available, otherwise first item
+                        int defaultIndex = modelComboBox.Items.IndexOf("qwen2.5:3b");
+                        if (defaultIndex >= 0)
+                        {
+                            modelComboBox.SelectedIndex = defaultIndex;
+                        }
+                        else if (modelComboBox.Items.Count > 0)
                         {
                             modelComboBox.SelectedIndex = 0;
                         }
