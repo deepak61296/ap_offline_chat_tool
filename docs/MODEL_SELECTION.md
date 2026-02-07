@@ -1,203 +1,229 @@
 # Model Selection Guide
 
-## Available Models
+This guide explains how to choose and configure LLM models for the ArduPilot AI Backend.
 
-The ArduPilot AI Assistant supports multiple AI models via Ollama. You can select which model to use via command-line arguments.
+## Recommended Models
 
-### Recommended Models
+The backend uses Ollama for local LLM inference. Different models work better for different tasks:
 
-#### 1. **Qwen 2.5 (3B)** - Default ⭐
+### Default Configuration
+
+**Agent/Ask Modes:**
+- Model: `qwen2.5-coder:3b`
+- Size: 1.9 GB
+- Speed: Fast (1-2s responses)
+- Best for: Command extraction and telemetry queries
+
+**Script Mode:**
+- Model: `qwen2.5-coder:7b`
+- Size: 4.7 GB
+- Speed: Medium (2-4s responses)
+- Best for: Lua script generation
+
+### Installation
+
 ```bash
-python main.py --model qwen2.5:3b
-# or simply
-python main.py
+# Install both recommended models
+ollama pull qwen2.5-coder:3b
+ollama pull qwen2.5-coder:7b
+
+# Verify installation
+ollama list
 ```
 
-**Specifications:**
-- Accuracy: **96.1%**
-- Response Time: ~2.5s
-- Model Size: 1.9 GB
-- Best For: Production use, high accuracy
+## Alternative Models
 
-**Pros:**
-- Highest accuracy
-- Excellent natural language understanding
-- Handles all command variations
-- No preprocessing needed
+### Smaller Models (Lower Resource Requirements)
 
-**Cons:**
-- Slower than legacy model
-- Larger model size
+**qwen2.5-coder:1.5b**
+- Size: 1.0 GB
+- Speed: Very fast (<1s)
+- Accuracy: Good for simple commands
+- Use case: Low-power systems, quick testing
 
----
-
-#### 2. **Gemma 3 (4B)** - Alternative
 ```bash
-python main.py --model gemma3:4b
+ollama pull qwen2.5-coder:1.5b
 ```
 
-**Specifications:**
-- Accuracy: **96.1%**
-- Response Time: ~4.5s
-- Model Size: 2.5 GB
-- Best For: Alternative to Qwen
+**llama3.2:3b**
+- Size: 2.0 GB
+- Speed: Fast (1-2s)
+- Accuracy: Good general performance
+- Use case: Alternative to qwen for variety
 
-**Pros:**
-- Same accuracy as Qwen
-- Good natural language understanding
-
-**Cons:**
-- Slower than Qwen
-- Larger model size
-
----
-
-#### 3. **ArduPilot Stage 1** - Legacy
 ```bash
-python main.py --model ardupilot-stage1
+ollama pull llama3.2:3b
 ```
 
-**Specifications:**
-- Accuracy: **85%**
-- Response Time: ~0.4s
-- Model Size: 552 MB
-- Best For: Resource-constrained environments
+### Larger Models (Better Accuracy)
 
-**Pros:**
-- Very fast
-- Small model size
-- Low resource usage
+**qwen2.5-coder:14b**
+- Size: 9.0 GB
+- Speed: Slow (4-8s)
+- Accuracy: Excellent
+- Use case: Complex script generation, high accuracy needs
 
-**Cons:**
-- Lower accuracy
-- Requires preprocessing layer
-- Limited natural language understanding
-
----
-
-## Usage Examples
-
-### Basic Usage (Default Model)
 ```bash
-# Uses qwen2.5:3b by default
-python main.py
+ollama pull qwen2.5-coder:14b
 ```
 
-### Select Specific Model
-```bash
-# Use Gemma 3
-python main.py --model gemma3:4b
+**llama3.1:8b**
+- Size: 4.7 GB
+- Speed: Medium (2-4s)
+- Accuracy: Very good
+- Use case: Better natural language understanding
 
-# Use legacy model
-python main.py --model ardupilot-stage1
+```bash
+ollama pull llama3.1:8b
 ```
 
-### List Available Models
-```bash
-# See all installed Ollama models
-python main.py --list-models
+## Changing Models
+
+### Method 1: Edit Configuration File
+
+Edit `backend/config.py`:
+
+```python
+# Agent and Ask modes
+DEFAULT_MODEL = "qwen2.5-coder:3b"  # Change to your preferred model
+
+# Script mode
+SCRIPT_MODEL = "qwen2.5-coder:7b"   # Change to your preferred model
+
+# Ollama settings
+OLLAMA_BASE_URL = "http://localhost:11434"
+OLLAMA_NUM_CTX = 4096              # Context window size
+OLLAMA_NUM_GPU = -1                # -1 for auto, 0 for CPU only
 ```
 
-### Combine with Other Options
+After editing, restart the backend:
 ```bash
-# Custom connection + model
-python main.py --connection tcp:192.168.1.100:5760 --model qwen2.5:3b
-
-# Verbose mode with specific model
-python main.py --model gemma3:4b --verbose
+# Stop backend (Ctrl+C)
+# Start again
+conda activate ardupilot_ai
+python -m backend.api_server
 ```
 
----
+### Method 2: Command Line Flags
 
-## Installing Models
+Currently not supported. Edit config.py instead.
 
-### Install Qwen 2.5 (Default)
+## Performance Comparison
+
+| Model | Size | RAM Usage | Speed | Accuracy | Best For |
+|-------|------|-----------|-------|----------|----------|
+| qwen2.5-coder:1.5b | 1.0 GB | 3 GB | ★★★★★ | ★★★☆☆ | Low-power systems |
+| qwen2.5-coder:3b | 1.9 GB | 5 GB | ★★★★☆ | ★★★★☆ | Default choice |
+| llama3.2:3b | 2.0 GB | 5 GB | ★★★★☆ | ★★★★☆ | Alternative |
+| qwen2.5-coder:7b | 4.7 GB | 10 GB | ★★★☆☆ | ★★★★★ | Script generation |
+| llama3.1:8b | 4.7 GB | 10 GB | ★★★☆☆ | ★★★★★ | Complex queries |
+| qwen2.5-coder:14b | 9.0 GB | 16 GB | ★★☆☆☆ | ★★★★★ | Maximum accuracy |
+
+Speed ratings based on typical inference time (CPU mode).
+
+## GPU Acceleration
+
+If you have an NVIDIA GPU with CUDA support, Ollama will automatically use it for 2-3x speedup.
+
+**Check GPU usage:**
 ```bash
-ollama pull qwen2.5:3b
+# While backend is running
+nvidia-smi
+
+# Look for ollama process using GPU memory
 ```
 
-### Install Gemma 3
-```bash
-ollama pull gemma3:4b
+**Force CPU-only mode:**
+
+Edit `backend/config.py`:
+```python
+OLLAMA_NUM_GPU = 0  # Disable GPU
 ```
 
-### Install Legacy Model
+Or start backend with flag:
 ```bash
-ollama pull deepakpopli/ardupilot-stage1
+python -m backend.api_server --no-gpu
 ```
 
----
+## System Requirements by Model
 
-## Model Comparison
-
-| Model | Accuracy | Speed | Size | RAM | Best For |
-|-------|----------|-------|------|-----|----------|
-| **Qwen 2.5** | 96.1% | 2.5s | 1.9GB | ~3GB | Production |
-| **Gemma 3** | 96.1% | 4.5s | 2.5GB | ~4GB | Alternative |
-| **Stage 1** | 85% | 0.4s | 552MB | ~1GB | Edge devices |
-
----
-
-## Switching Models
-
-You can switch models at any time by:
-
-1. **Command Line:**
-   ```bash
-   python main.py --model <model-name>
-   ```
-
-2. **Environment Variable (Future):**
-   ```bash
-   export ARDUPILOT_MODEL=qwen2.5:3b
-   python main.py
-   ```
-
-3. **Configuration File (Future):**
-   ```yaml
-   # config.yaml
-   model: qwen2.5:3b
-   ```
-
----
+| Model | Min RAM | Recommended RAM | GPU VRAM (optional) |
+|-------|---------|-----------------|---------------------|
+| 1.5b | 4 GB | 8 GB | 2 GB |
+| 3b | 8 GB | 12 GB | 4 GB |
+| 7b | 12 GB | 16 GB | 8 GB |
+| 14b | 16 GB | 24 GB | 16 GB |
 
 ## Troubleshooting
 
 ### Model Not Found
-```bash
-# List installed models
-ollama list
 
-# Pull missing model
-ollama pull qwen2.5:3b
+```bash
+# Error: Model 'qwen2.5-coder:3b' not found
+# Solution: Pull the model
+ollama pull qwen2.5-coder:3b
 ```
 
-### Model Too Slow
-- Try legacy model: `--model ardupilot-stage1`
-- Ensure Ollama is using GPU acceleration
-- Check system resources
+### Out of Memory
 
-### Low Accuracy
-- Use Qwen 2.5 or Gemma 3 for best accuracy
-- Legacy model has 85% accuracy (expected)
+```bash
+# Error: OOM or system freezes
+# Solution 1: Use smaller model
+ollama pull qwen2.5-coder:1.5b
 
----
+# Solution 2: Reduce context window in backend/config.py
+OLLAMA_NUM_CTX = 2048  # Default is 4096
+```
 
-## Performance Tips
+### Slow Responses
 
-1. **For Best Accuracy:** Use `qwen2.5:3b` (default)
-2. **For Speed:** Use `ardupilot-stage1` (legacy)
-3. **For Balance:** Use `qwen2.5:3b` with GPU acceleration
+```bash
+# Solution 1: Use GPU if available
+# (Automatic, just ensure CUDA is installed)
 
----
+# Solution 2: Use smaller model
+ollama pull qwen2.5-coder:1.5b
 
-## Future Models
+# Solution 3: Reduce context window
+OLLAMA_NUM_CTX = 2048
+```
 
-We're continuously evaluating new models. Check the documentation for updates on:
-- Qwen 2.5 (7B) - Higher accuracy
-- Llama 3 variants
-- Custom fine-tuned models
+## Model Testing
 
----
+Test a model before committing:
 
-**Default Recommendation:** Stick with `qwen2.5:3b` for the best experience!
+```bash
+# Start Ollama
+ollama serve
+
+# Test model directly
+ollama run qwen2.5-coder:3b "Extract command: arm the drone"
+
+# Should respond with something like:
+# "Arming the drone now."
+```
+
+Then verify with backend:
+```bash
+# Start backend
+conda activate ardupilot_ai
+python -m backend.api_server
+
+# Test via API
+curl -X POST http://localhost:5000/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "arm the drone", "mode": "agent"}'
+```
+
+## Best Practices
+
+1. **Development:** Use `qwen2.5-coder:3b` for fast iteration
+2. **Production:** Use `qwen2.5-coder:7b` for better accuracy
+3. **Low-power:** Use `qwen2.5-coder:1.5b` for constrained systems
+4. **Testing:** Always test model changes with full test suite
+
+## Related Documentation
+
+- [Model Comparison](MODEL_COMPARISON.md) - Benchmark results
+- [Architecture](ARCHITECTURE.md) - How models integrate with backend
+- [Configuration](../backend/config.py) - Full configuration options

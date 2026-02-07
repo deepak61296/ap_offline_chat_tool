@@ -54,15 +54,16 @@ Three modes:
 
 ```bash
 # Install Ollama (https://ollama.com/download)
-ollama pull qwen2.5:3b
+ollama pull qwen2.5-coder:3b
+ollama pull qwen2.5-coder:7b
 
 # Clone and setup
 git clone https://github.com/deepak61296/ardupilot-ai-backend.git
 cd ardupilot-ai-backend
 
 # Create environment
-conda create -n ai_backend python=3.10 -y
-conda activate ai_backend
+conda create -n ardupilot_ai python=3.10 -y
+conda activate ardupilot_ai
 pip install -r requirements.txt
 
 # Start backend
@@ -208,7 +209,7 @@ curl http://localhost:5000/health
 
 Expected:
 ```json
-{"status": "ok", "model": "qwen2.5:3b"}
+{"status": "ok", "model": "qwen2.5-coder:3b"}
 ```
 
 ### Step 2: Test Chat API Directly
@@ -280,7 +281,7 @@ land
 ### Full Test Suite (151 tests)
 
 ```bash
-conda activate ai_backend
+conda activate ardupilot_ai
 cd ardupilot-ai-backend
 python -m pytest tests/test_comprehensive.py -v
 ```
@@ -388,7 +389,7 @@ curl http://localhost:11434/api/tags
 ollama list
 
 # Check Python environment
-conda activate ai_backend
+conda activate ardupilot_ai
 pip install -r requirements.txt --force-reinstall
 ```
 
@@ -399,7 +400,7 @@ pip install -r requirements.txt --force-reinstall
 
 ### Slow responses
 - GPU mode is much faster than CPU
-- Try smaller model: `ollama pull qwen2.5:1.5b`
+- Try smaller model: `ollama pull qwen2.5-coder:1.5b`
 - Edit `backend/config.py` to change `DEFAULT_MODEL`
 
 ### Port 5000 in use

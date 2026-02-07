@@ -1,150 +1,87 @@
-# Interactive Model Switching - Quick Guide
+# Interactive Model Switching
 
-## ✨ New Feature: Switch Models On-The-Fly!
+## Overview
 
-You can now change AI models **during runtime** without restarting the application!
+This document explains how to change AI models at runtime without restarting the backend server.
 
-### Usage
+## Current Implementation
 
-**View Current Model:**
-```
-/model
-```
+**Status:** Not currently supported via command-line interface.
 
-Output:
-```
-Current Model: qwen2.5:3b
+To switch models, you must:
+1. Stop the backend server (Ctrl+C)
+2. Edit `backend/config.py`
+3. Restart the backend server
 
-Available Models:
-  • qwen2.5:3b (default) - 96% accuracy, 2.5s response
-  • gemma3:4b - 96% accuracy, 4.5s response
-  • ardupilot-stage1 (legacy) - 85% accuracy, 0.4s response
+## Configuration File Method
 
-Usage: /model <model-name>
-Example: /model gemma3:4b
-```
+Edit `backend/config.py`:
 
-**Switch Model:**
-```
-/model gemma3:4b
+```python
+# Agent and Ask modes
+DEFAULT_MODEL = "qwen2.5-coder:3b"  # Change this
+
+# Script mode
+SCRIPT_MODEL = "qwen2.5-coder:7b"   # Change this
 ```
 
-Output:
-```
-Switching model...
-From: qwen2.5:3b
-To: gemma3:4b
-✓ Model switched to gemma3:4b
-Conversation history preserved
-```
-
-### Examples
-
-**Switch to Gemma 3:**
-```
-You: /model gemma3:4b
-✓ Model switched to gemma3:4b
-
-You: arm and takeoff to 15m
-[Using Gemma 3 now]
-```
-
-**Switch to Legacy Model:**
-```
-You: /model ardupilot-stage1
-✓ Model switched to ardupilot-stage1
-
-You: check battery
-[Using legacy model now]
-```
-
-**Switch Back to Default:**
-```
-You: /model qwen2.5:3b
-✓ Model switched to qwen2.5:3b
-```
-
-### All Special Commands
-
-- `/help` or `/h` - Show available functions
-- `/status` or `/s` - Get drone status
-- **`/model [name]`** - Switch AI model ⭐ NEW!
-- `/reset` or `/r` - Clear conversation history
-- `/quit` or `/q` - Exit application
-
-### Benefits
-
-1. **No Restart Needed** - Switch models instantly
-2. **Compare Performance** - Test different models on same commands
-3. **Optimize for Task** - Use fast model for simple tasks, accurate for complex
-4. **Conversation Preserved** - History maintained across switches
-5. **Easy Discovery** - Just type `/model` to see options
-
-### Use Cases
-
-**Performance Testing:**
-```
-/model qwen2.5:3b
-arm and takeoff to 20m
-[Note response time]
-
-/model gemma3:4b
-arm and takeoff to 20m
-[Compare response time]
-```
-
-**Resource Optimization:**
-```
-# Use fast model for simple commands
-/model ardupilot-stage1
-check battery
-get position
-
-# Switch to accurate model for complex operations
-/model qwen2.5:3b
-create mission and add waypoints
-```
-
-**Model Comparison:**
-```
-/model qwen2.5:3b
-hover for 5 seconds
-[Test accuracy]
-
-/model gemma3:4b
-hover for 5 seconds
-[Compare accuracy]
-```
-
-### Error Handling
-
-**Model Not Found:**
-```
-You: /model invalid-model
-✗ Failed to switch model: Model not found
-Make sure the model is installed: ollama pull <model-name>
-```
-
-**Solution:**
+Restart backend:
 ```bash
-# Install missing model
-ollama pull gemma3:4b
-
-# Then try again
-/model gemma3:4b
+# Terminal with backend running: Ctrl+C to stop
+conda activate ardupilot_ai
+python -m backend.api_server
 ```
 
-### Tips
+## Available Models
 
-1. **Start with default** - Qwen 2.5 is optimized for best accuracy
-2. **Test before switching** - Use `/model` to see current model
-3. **Install first** - Make sure model is installed before switching
-4. **Compare performance** - Try different models for your use case
+See [MODEL_SELECTION.md](MODEL_SELECTION.md) for full list of supported models.
 
----
+**Quick reference:**
+- `qwen2.5-coder:1.5b` - Smallest, fastest
+- `qwen2.5-coder:3b` - Default, balanced
+- `qwen2.5-coder:7b` - Best for scripts
+- `qwen2.5-coder:14b` - Largest, most accurate
 
-**Quick Reference:**
-- `/model` - Show current model and options
-- `/model qwen2.5:3b` - Switch to Qwen (default, 96% accuracy)
-- `/model gemma3:4b` - Switch to Gemma (96% accuracy, slower)
-- `/model ardupilot-stage1` - Switch to legacy (85% accuracy, fast)
+## Per-Mode Configuration
+
+The backend supports different models for different modes:
+
+**Agent/Ask Mode Model:**
+```python
+DEFAULT_MODEL = "qwen2.5-coder:3b"
+```
+
+**Script Mode Model:**
+```python
+SCRIPT_MODEL = "qwen2.5-coder:7b"
+```
+
+This allows using a faster model for command extraction and a more powerful model for code generation.
+
+## Verifying Model Change
+
+After restarting with new model:
+
+```bash
+curl http://localhost:5000/health
+```
+
+Check response for current model name.
+
+## Future Enhancement
+
+**Planned:** Runtime model switching via API endpoint or command-line flag.
+
+Example (not yet implemented):
+```bash
+# Future API (not available yet)
+curl -X POST http://localhost:5000/config \
+  -H "Content-Type: application/json" \
+  -d '{"model": "qwen2.5-coder:7b"}'
+```
+
+## Related Documentation
+
+- [MODEL_SELECTION.md](MODEL_SELECTION.md) - Choosing models
+- [MODEL_COMPARISON.md](MODEL_COMPARISON.md) - Performance benchmarks
+- [ARCHITECTURE.md](ARCHITECTURE.md) - System design

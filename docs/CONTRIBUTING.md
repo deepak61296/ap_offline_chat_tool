@@ -19,8 +19,8 @@ The main repo (`ardupilot-ai-backend`) contains copies of integration files in `
 ```bash
 git clone https://github.com/deepak61296/ardupilot-ai-backend.git
 cd ardupilot-ai-backend
-conda create -n ai_backend python=3.10 -y
-conda activate ai_backend
+conda create -n ardupilot_ai python=3.10 -y
+conda activate ardupilot_ai
 pip install -r requirements.txt
 
 # Start
@@ -208,7 +208,7 @@ Update `COMPATIBILITY.md` with new commit hashes.
 ## Running Tests
 
 ```bash
-conda activate ai_backend
+conda activate ardupilot_ai
 python -m pytest tests/test_comprehensive.py -v
 ```
 

@@ -6,7 +6,7 @@ Comprehensive test suite for validating AI command extraction and response gener
 
 ## Main Test File
 
-**`test_comprehensive.py`** - Complete test suite with 170+ tests
+**`test_comprehensive.py`** - Complete test suite with 151 tests
 
 ### Test Categories
 
@@ -31,7 +31,7 @@ scripts\run_comprehensive_tests.bat
 ## Latest Results
 
 **Pass Rate:** 76.8% (116/151 tests passing)
-**Model:** qwen2.5:3b (3 billion parameters)
+**Model:** qwen2.5-coder:3b (3 billion parameters)
 
 This is excellent accuracy considering:
 - Rigorous test suite with edge cases

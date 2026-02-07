@@ -27,10 +27,10 @@ Track which versions of forks work with which backend versions.
 git clone https://github.com/deepak61296/ardupilot-ai-backend.git
 cd ardupilot-ai-backend
 git checkout feature/modular-gcs-backend  # Latest
-conda create -n ap_ai python=3.11
-conda activate ap_ai
+conda create -n ardupilot_ai python=3.10
+conda activate ardupilot_ai
 pip install -r requirements.txt
-python run_server.py
+python -m backend.api_server
 ```
 
 ### MAVProxy Integration

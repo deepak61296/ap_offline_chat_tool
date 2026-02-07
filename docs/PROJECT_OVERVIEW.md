@@ -185,7 +185,7 @@ module load ai_backend
 ```bash
 git clone https://github.com/deepak61296/MAVProxy.git
 cd MAVProxy
-git checkout feature/ai-backend
+git checkout feature/ai-backend-integration
 pip install -e .
 mavproxy.py --ai-backend
 ```
@@ -303,7 +303,7 @@ cd MissionPlanner
 - Contains backend server and integration copies
 
 **Integration Forks:**
-- https://github.com/deepak61296/MAVProxy (feature/ai-backend branch)
+- https://github.com/deepak61296/MAVProxy (feature/ai-backend-integration branch)
 - https://github.com/deepak61296/MissionPlanner (feature/script-mode-clean branch)
 
 ## Getting Started

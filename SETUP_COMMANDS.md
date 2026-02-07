@@ -62,14 +62,14 @@ python -c "import flask; import requests; print('Dependencies OK')"
 
 ### 4. Create Conda Environment (Option 2 - From Existing)
 
-If you already have `ai_backend` environment and want a fresh start:
+If you already have `ardupilot_ai` environment and want a fresh start:
 
 ```bash
 # Deactivate current environment (if active)
 conda deactivate
 
 # Remove old environment
-conda env remove -n ai_backend
+conda env remove -n ardupilot_ai
 
 # Create new environment
 conda create -n ardupilot_ai python=3.10 -y
@@ -88,7 +88,7 @@ If you want to keep your existing environment but update it:
 
 ```bash
 # Activate environment
-conda activate ai_backend
+conda activate ardupilot_ai
 
 # Update all packages
 cd C:\Projects\ardupilot-ai-backend
@@ -476,7 +476,7 @@ If nothing works, nuclear option:
 
 # Remove conda environment
 conda env remove -n ardupilot_ai
-conda env remove -n ai_backend
+conda env remove -n ardupilot_ai
 
 # Recreate environment
 conda create -n ardupilot_ai python=3.10 -y

@@ -4,10 +4,8 @@
 
 This guide provides step-by-step instructions for installing the ArduPilot Offline AI Assistant on Windows systems.
 
-> **⚠️ IMPORTANT DISCLAIMER**  
-> This is a **Stage 1 prototype** for testing and development purposes only.  
-> **DO NOT use with real drones in production environments.**  
-> Use at your own risk. Always test in simulation (SITL) first.
+> **⚠️ IMPORTANT**
+> Always test thoroughly in simulation (SITL) before using with real hardware.
 
 ## Prerequisites
 
@@ -48,10 +46,10 @@ Miniconda provides a lightweight Python environment manager for Windows.
 # Open PowerShell or Command Prompt
 
 # Create environment with Python 3.10
-conda create -n ai_backend python=3.10 -y
+conda create -n ardupilot_ai python=3.10 -y
 
 # Activate environment
-conda activate ai_backend
+conda activate ardupilot_ai
 
 # Verify Python version
 python --version
@@ -85,7 +83,7 @@ cd ardupilot-ai-backend
 
 ```powershell
 # Make sure environment is activated
-conda activate ai_backend
+conda activate ardupilot_ai
 
 # Navigate to project directory
 cd C:\Users\YourUsername\Documents\ardupilot-ai-backend
@@ -121,7 +119,8 @@ Ollama hosts the AI model locally on Windows.
 
 ```powershell
 # Pull the fine-tuned model (552MB download)
-ollama pull deepakpopli/ardupilot-stage1
+ollama pull qwen2.5-coder:3b
+ollama pull qwen2.5-coder:7b
 
 # Verify model is available
 ollama list
@@ -138,10 +137,11 @@ Demo mode works without ArduPilot SITL - perfect for testing the AI assistant.
 cd C:\Users\YourUsername\Documents\ardupilot-ai-backend
 
 # Activate environment
-conda activate ai_backend
+conda activate ardupilot_ai
 
 # Run demo
-python examples\demo.py
+# Test the API
+curl http://localhost:5000/health
 ```
 
 **Try these commands:**
@@ -192,10 +192,10 @@ Run the test suite to verify everything works:
 
 ```powershell
 # Activate environment
-conda activate ai_backend
+conda activate ardupilot_ai
 
 # Run tests
-python tests\test_suite.py
+python tests\test_comprehensive.py
 
 # Expected output:
 # Total Tests: 20
@@ -237,14 +237,15 @@ ping ollama.com
 # Allow Ollama through firewall if prompted
 
 # Try pulling again
-ollama pull deepakpopli/ardupilot-stage1
+ollama pull qwen2.5-coder:3b
+ollama pull qwen2.5-coder:7b
 ```
 
 ### Import errors
 
 ```powershell
 # Reinstall dependencies
-conda activate ai_backend
+conda activate ardupilot_ai
 pip install --force-reinstall -r requirements.txt
 ```
 
@@ -259,13 +260,14 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 ```powershell
 # Activate environment
-conda activate ai_backend
+conda activate ardupilot_ai
 
 # Run demo mode
-python examples\demo.py
+# Test the API
+curl http://localhost:5000/health
 
 # Run tests
-python tests\test_suite.py
+python tests\test_comprehensive.py
 
 # Deactivate environment
 conda deactivate
@@ -301,4 +303,4 @@ conda deactivate
 
 ---
 
-**Remember**: This is a Stage 1 prototype. Always test in simulation before real flights!
+**Remember**: Always test thoroughly in simulation before real flights!
