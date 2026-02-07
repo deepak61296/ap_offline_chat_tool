@@ -163,7 +163,7 @@ app.run(host='0.0.0.0', port=5000)  # Change port here
 ### Project Structure
 
 ```
-ap_offline_chat_tool/
+ardupilot-ai-backend/
  api_server.py          # Main Flask API server
  requirements.txt       # Python dependencies
  src/

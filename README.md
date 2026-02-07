@@ -13,7 +13,7 @@ This backend enables natural language interaction with your ArduPilot drone thro
 
 ## 🎥 Demo Video
 
-[Watch Demo Video](https://github.com/deepak61296/ap_offline_chat_tool/raw/main/demo.mkv) (16 MB .mkv file)
+[Watch Demo Video](https://github.com/deepak61296/ardupilot-ai-backend/raw/main/demo.mkv) (16 MB .mkv file)
 
 ## 📦 Quick Start - Mission Planner Integration
 
@@ -64,8 +64,8 @@ This downloads a 2GB model (one-time download).
 ### Step 3: Clone Repository
 
 ```bash
-git clone https://github.com/deepak61296/ap_offline_chat_tool.git
-cd ap_offline_chat_tool
+git clone https://github.com/deepak61296/ardupilot-ai-backend.git
+cd ardupilot-ai-backend
 ```
 
 ### Step 4: Create Conda Environment
@@ -99,7 +99,7 @@ Leave this running.
 **Terminal 2 - Start Backend:**
 ```bash
 conda activate ai_backend
-cd ap_offline_chat_tool
+cd ardupilot-ai-backend
 python -m backend.api_server
 ```
 
@@ -114,7 +114,7 @@ Backend ready!
 ## 📁 Project Structure
 
 ```
-ap_offline_chat_tool/
+ardupilot-ai-backend/
 ├── backend/
 │   ├── api_server.py      # Flask server (handles requests from GCS)
 │   ├── commands.py        # Command extraction and parsing
@@ -288,7 +288,7 @@ Edit `backend/api_server.py` and set `debug=True` in `app.run()`
 **Wrong directory or environment:**
 ```bash
 # Make sure you're in the right folder
-cd ap_offline_chat_tool
+cd ardupilot-ai-backend
 
 # Make sure environment is activated
 conda activate ai_backend
@@ -348,7 +348,7 @@ ollama pull qwen2.5:1.5b
 
 - **Mission Planner Fork:** https://github.com/deepak61296/MissionPlanner
 - **Latest Release:** https://github.com/deepak61296/MissionPlanner/releases/tag/ai_backend
-- **Report Issues:** https://github.com/deepak61296/ap_offline_chat_tool/issues
+- **Report Issues:** https://github.com/deepak61296/ardupilot-ai-backend/issues
 - **Ollama:** https://ollama.com
 - **Miniconda:** https://docs.anaconda.com/miniconda/
 

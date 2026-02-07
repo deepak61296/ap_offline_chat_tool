@@ -24,8 +24,8 @@ Track which versions of forks work with which backend versions.
 
 ### Backend
 ```bash
-git clone https://github.com/deepak61296/ap_offline_chat_tool.git
-cd ap_offline_chat_tool
+git clone https://github.com/deepak61296/ardupilot-ai-backend.git
+cd ardupilot-ai-backend
 git checkout feature/modular-gcs-backend  # Latest
 conda create -n ap_ai python=3.11
 conda activate ap_ai

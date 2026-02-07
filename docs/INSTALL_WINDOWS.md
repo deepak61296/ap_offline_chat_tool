@@ -69,17 +69,17 @@ python --version
 cd C:\Users\YourUsername\Documents
 
 # Clone repository
-git clone https://github.com/deepak61296/ap_offline_chat_tool.git
+git clone https://github.com/deepak61296/ardupilot-ai-backend.git
 
 # Enter directory
-cd ap_offline_chat_tool
+cd ardupilot-ai-backend
 ```
 
 **Option B: Download ZIP**
 
-1. Visit: https://github.com/deepak61296/ap_offline_chat_tool
+1. Visit: https://github.com/deepak61296/ardupilot-ai-backend
 2. Click "Code" → "Download ZIP"
-3. Extract to `C:\Users\YourUsername\Documents\ap_offline_chat_tool`
+3. Extract to `C:\Users\YourUsername\Documents\ardupilot-ai-backend`
 
 ### Step 4: Install Python Dependencies
 
@@ -88,7 +88,7 @@ cd ap_offline_chat_tool
 conda activate ap_chat_tools
 
 # Navigate to project directory
-cd C:\Users\YourUsername\Documents\ap_offline_chat_tool
+cd C:\Users\YourUsername\Documents\ardupilot-ai-backend
 
 # Install requirements
 pip install -r requirements.txt
@@ -135,7 +135,7 @@ Demo mode works without ArduPilot SITL - perfect for testing the AI assistant.
 
 ```powershell
 # Navigate to project directory
-cd C:\Users\YourUsername\Documents\ap_offline_chat_tool
+cd C:\Users\YourUsername\Documents\ardupilot-ai-backend
 
 # Activate environment
 conda activate ap_chat_tools
@@ -165,10 +165,10 @@ If demo mode works, your installation is successful!
 # Download from: https://www.docker.com/products/docker-desktop/
 
 # Build Docker image
-docker build -t ap_offline_chat_tool .
+docker build -t ardupilot-ai-backend .
 
 # Run with SITL (future feature)
-docker run -it --rm --privileged --network host ap_offline_chat_tool sitl
+docker run -it --rm --privileged --network host ardupilot-ai-backend sitl
 ```
 
 ### Option 2: WSL (Advanced)
@@ -297,7 +297,7 @@ conda deactivate
 
 ## Support
 
-- **Issues**: https://github.com/deepak61296/ap_offline_chat_tool/issues
+- **Issues**: https://github.com/deepak61296/ardupilot-ai-backend/issues
 - **Documentation**: [docs/](.)
 - **Windows Help**: [WINDOWS.md](WINDOWS.md)
 
