@@ -30,8 +30,8 @@ Mission Planner (C#) <--HTTP--> API Server (Python) <--> Ollama (Qwen 2.5)
 
 1. **Create Conda Environment**
    ```bash
-   conda create -n ap_chat_tools python=3.10
-   conda activate ap_chat_tools
+   conda create -n ai_backend python=3.10
+   conda activate ai_backend
    ```
 
 2. **Install Dependencies**
@@ -51,7 +51,7 @@ Mission Planner (C#) <--HTTP--> API Server (Python) <--> Ollama (Qwen 2.5)
 ### Start API Server
 
 ```bash
-conda activate ap_chat_tools
+conda activate ai_backend
 python api_server.py
 ```
 
@@ -244,7 +244,7 @@ See Mission Planner repository for C# integration code:
 
 **Solution**:
 ```bash
-conda activate ap_chat_tools
+conda activate ai_backend
 pip install flask flask-cors
 ```
 

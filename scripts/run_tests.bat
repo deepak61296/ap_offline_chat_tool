@@ -22,7 +22,7 @@ echo Backend is running - starting tests...
 echo.
 
 REM Activate conda environment
-call conda activate ap_chat_tools
+call conda activate ai_backend
 
 REM Run tests
 python tests\test_all_functions.py

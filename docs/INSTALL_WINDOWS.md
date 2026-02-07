@@ -48,10 +48,10 @@ Miniconda provides a lightweight Python environment manager for Windows.
 # Open PowerShell or Command Prompt
 
 # Create environment with Python 3.10
-conda create -n ap_chat_tools python=3.10 -y
+conda create -n ai_backend python=3.10 -y
 
 # Activate environment
-conda activate ap_chat_tools
+conda activate ai_backend
 
 # Verify Python version
 python --version
@@ -85,7 +85,7 @@ cd ardupilot-ai-backend
 
 ```powershell
 # Make sure environment is activated
-conda activate ap_chat_tools
+conda activate ai_backend
 
 # Navigate to project directory
 cd C:\Users\YourUsername\Documents\ardupilot-ai-backend
@@ -138,7 +138,7 @@ Demo mode works without ArduPilot SITL - perfect for testing the AI assistant.
 cd C:\Users\YourUsername\Documents\ardupilot-ai-backend
 
 # Activate environment
-conda activate ap_chat_tools
+conda activate ai_backend
 
 # Run demo
 python examples\demo.py
@@ -156,7 +156,7 @@ If demo mode works, your installation is successful!
 ## Optional: ArduPilot SITL Setup
 
 **⚠️ Note**: ArduPilot SITL on Windows requires WSL (Windows Subsystem for Linux) or Docker.  
-**Recommended**: Use Docker for SITL on Windows (see [DOCKER.md](DOCKER.md))
+**Recommended**: Use Docker for SITL on Windows
 
 ### Option 1: Docker (Recommended)
 
@@ -182,7 +182,7 @@ docker run -it --rm --privileged --network host ardupilot-ai-backend sitl
 2. **Install Ubuntu from Microsoft Store**
 
 3. **Follow Linux installation guide inside WSL**:
-   - See [INSTALL_LINUX.md](INSTALL_LINUX.md)
+   - Follow the ArduPilot SITL guide: https://ardupilot.org/dev/docs/sitl-simulator-software-in-the-loop.html
 
 **WSL Documentation**: https://learn.microsoft.com/en-us/windows/wsl/install
 
@@ -192,7 +192,7 @@ Run the test suite to verify everything works:
 
 ```powershell
 # Activate environment
-conda activate ap_chat_tools
+conda activate ai_backend
 
 # Run tests
 python tests\test_suite.py
@@ -244,7 +244,7 @@ ollama pull deepakpopli/ardupilot-stage1
 
 ```powershell
 # Reinstall dependencies
-conda activate ap_chat_tools
+conda activate ai_backend
 pip install --force-reinstall -r requirements.txt
 ```
 
@@ -259,7 +259,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 ```powershell
 # Activate environment
-conda activate ap_chat_tools
+conda activate ai_backend
 
 # Run demo mode
 python examples\demo.py
@@ -290,16 +290,14 @@ conda deactivate
 
 ## Next Steps
 
-- Read [COMMAND_REFERENCE.md](COMMAND_REFERENCE.md) for supported commands
-- See [QUICK_REFERENCE.md](QUICK_REFERENCE.md) for common usage patterns
-- Check [README.md](../README.md) for project overview
-- For SITL, see [DOCKER.md](DOCKER.md)
+- Check [README.md](../README.md) for supported commands and usage examples
+- See [ARCHITECTURE.md](../ARCHITECTURE.md) for system design
+- See [COMPATIBILITY.md](../COMPATIBILITY.md) for version info
 
 ## Support
 
 - **Issues**: https://github.com/deepak61296/ardupilot-ai-backend/issues
-- **Documentation**: [docs/](.)
-- **Windows Help**: [WINDOWS.md](WINDOWS.md)
+- **Documentation**: [README.md](../README.md)
 
 ---
 

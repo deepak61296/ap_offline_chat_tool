@@ -31,7 +31,7 @@ ollama create ardupilot-stage1 -f ardupilot-stage1.Modelfile
 
 ### Option 3: Train Your Own (Advanced)
 
-See [TRAINING_GUIDE.md](../docs/TRAINING_GUIDE.md) for instructions on training the model yourself.
+See the Ollama documentation for instructions on creating custom models: https://github.com/ollama/ollama/blob/main/docs/modelfile.md
 
 ## For Developers: Exporting Your Model
 
@@ -134,4 +134,4 @@ The model is based on Google's FunctionGemma (Apache 2.0 license) and fine-tuned
 
 ---
 
-**Need help?** See [INSTALLATION.md](../docs/INSTALLATION.md) or open an issue.
+**Need help?** See the [README](../README.md) or open an issue.

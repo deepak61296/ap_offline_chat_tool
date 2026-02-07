@@ -33,7 +33,7 @@ Start-Sleep -Seconds 3
 
 # Start AI Backend
 Write-Host "[4/4] Starting AI Backend..." -ForegroundColor Yellow
-$backendPath = "C:\Projects\ArduPilot-AI-Backend\ap_offline_chat_tool"
+$backendPath = "C:\Projects\ardupilot-ai-backend"
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd $backendPath; python -m backend.api_server"
 Write-Host "   ✓ Backend window opened`n" -ForegroundColor Green
 
