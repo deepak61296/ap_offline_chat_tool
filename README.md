@@ -16,7 +16,7 @@ land
 
 ## Demo
 
-[Watch Demo Video](https://github.com/deepak61296/ardupilot-ai-backend/raw/main/demo.mkv) (16 MB .mkv file)
+[Watch Demo Video](demos/demo_mavproxy_agent_mode.mkv) - MAVProxy Agent Mode demonstration
 
 ## How It Works
 
@@ -417,6 +417,14 @@ pip install -r requirements.txt --force-reinstall
 | GPU | None (CPU works) | NVIDIA GPU |
 | Storage | 5GB | 10GB |
 | Python | 3.10 | 3.10 or 3.11 |
+
+## Documentation
+
+- **[Project Overview](docs/PROJECT_OVERVIEW.md)** - Features, use cases, and detailed introduction
+- **[Architecture](docs/ARCHITECTURE.md)** - System design and technical deep-dive
+- **[Contributing Guide](docs/CONTRIBUTING.md)** - Developer workflow and coding standards
+- **[Compatibility Matrix](docs/COMPATIBILITY.md)** - Version requirements
+- **[Full Documentation Index](docs/README.md)** - All documentation
 
 ## Links
 
