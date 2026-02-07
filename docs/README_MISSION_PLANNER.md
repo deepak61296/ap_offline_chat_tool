@@ -24,7 +24,7 @@ Mission Planner (C#) <--HTTP--> API Server (Python) <--> Ollama (Qwen 2.5)
 
 1. **Miniconda** (Python 3.10)
 2. **Ollama** (v0.13.5+)
-3. **AI Model**: qwen2.5-coder:3b
+3. **AI Model**: qwen2.5:3b
 
 ### Setup Steps
 
@@ -43,7 +43,7 @@ Mission Planner (C#) <--HTTP--> API Server (Python) <--> Ollama (Qwen 2.5)
 3. **Install Ollama and Pull Model**
    ```bash
    # Install Ollama from https://ollama.ai
-   ollama pull qwen2.5-coder:3b
+   ollama pull qwen2.5:3b
    ```
 
 ## Usage
@@ -68,7 +68,7 @@ Health check endpoint
   "status": "healthy",
   "service": "ArduPilot AI Backend",
   "version": "1.0.0",
-  "model": "qwen2.5-coder:3b"
+  "model": "qwen2.5:3b"
 }
 ```
 
@@ -79,7 +79,7 @@ Get backend status and model information
 ```json
 {
   "status": "running",
-  "model": "qwen2.5-coder:3b",
+  "model": "qwen2.5:3b",
   "backend": "Ollama",
   "model_available": true,
   "connection": "ready",
@@ -146,7 +146,7 @@ r'\b(rtl|return to launch|return home)\b'
 
 Edit `api_server.py`:
 ```python
-MODEL_NAME = 'qwen2.5-coder:3b'  # Change to qwen2.5-coder:7b or other models
+MODEL_NAME = 'qwen2.5:3b'  # Change to qwen2.5-coder:7b or other models
 ```
 
 ### Port Configuration
@@ -250,11 +250,11 @@ pip install flask flask-cors
 
 ### Model Not Found
 
-**Issue**: `Model qwen2.5-coder:3b not found`
+**Issue**: `Model qwen2.5:3b not found`
 
 **Solution**:
 ```bash
-ollama pull qwen2.5-coder:3b
+ollama pull qwen2.5:3b
 ```
 
 ### Slow First Response
@@ -266,7 +266,7 @@ Subsequent queries are faster (2-5s)
 
 | Model | Size | Speed | Quality |
 |-------|------|-------|---------|
-| qwen2.5-coder:3b | 2GB | Fast (2-5s) | Good |
+| qwen2.5:3b | 2GB | Fast (2-5s) | Good |
 | qwen2.5-coder:7b | 4.7GB | Medium (5-10s) | Better |
 | qwen2.5-coder:14b | 9GB | Slow (10-20s) | Best |
 

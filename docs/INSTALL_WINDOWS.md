@@ -119,7 +119,7 @@ Ollama hosts the AI model locally on Windows.
 
 ```powershell
 # Pull the fine-tuned model (552MB download)
-ollama pull qwen2.5-coder:3b
+ollama pull qwen2.5:3b
 ollama pull qwen2.5-coder:7b
 
 # Verify model is available
@@ -237,7 +237,7 @@ ping ollama.com
 # Allow Ollama through firewall if prompted
 
 # Try pulling again
-ollama pull qwen2.5-coder:3b
+ollama pull qwen2.5:3b
 ollama pull qwen2.5-coder:7b
 ```
 

@@ -55,7 +55,7 @@ Three modes:
 
 ```bash
 # Install Ollama (https://ollama.com/download)
-ollama pull qwen2.5-coder:3b
+ollama pull qwen2.5:3b
 ollama pull qwen2.5-coder:7b
 
 # Clone and setup
@@ -211,7 +211,7 @@ curl http://localhost:5000/health
 
 Expected:
 ```json
-{"status": "ok", "model": "qwen2.5-coder:3b"}
+{"status": "ok", "model": "qwen2.5:3b"}
 ```
 
 ### Step 2: Test Chat API Directly

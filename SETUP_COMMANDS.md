@@ -25,7 +25,7 @@ ollama --version
 
 ```bash
 # Core model for Agent/Ask modes (fast, 3B parameters)
-ollama pull qwen2.5-coder:3b
+ollama pull qwen2.5:3b
 
 # Script mode model (better code generation, 7B parameters)
 ollama pull qwen2.5-coder:7b
@@ -37,7 +37,7 @@ ollama list
 Expected output:
 ```
 NAME                    ID              SIZE      MODIFIED
-qwen2.5-coder:3b        abc123def       1.9 GB    2 hours ago
+qwen2.5:3b        abc123def       1.9 GB    2 hours ago
 qwen2.5-coder:7b        xyz789ghi       4.7 GB    2 hours ago
 ```
 
@@ -152,7 +152,7 @@ Agent + Ask + Script Modes
 Starting backend on http://localhost:5000
 
 Loading models...
-✓ qwen2.5-coder:3b loaded
+✓ qwen2.5:3b loaded
 ✓ qwen2.5-coder:7b loaded
 Server running on http://localhost:5000
 Press Ctrl+C to stop
@@ -172,7 +172,7 @@ Expected response:
 {
   "status": "healthy",
   "ollama_status": "connected",
-  "models_loaded": ["qwen2.5-coder:3b", "qwen2.5-coder:7b"]
+  "models_loaded": ["qwen2.5:3b", "qwen2.5-coder:7b"]
 }
 ```
 
@@ -437,10 +437,10 @@ curl http://localhost:11434/api/tags
 ollama list
 
 # Test model inference
-ollama run qwen2.5-coder:3b "Hello, are you working?"
+ollama run qwen2.5:3b "Hello, are you working?"
 
 # Pull model if missing
-ollama pull qwen2.5-coder:3b
+ollama pull qwen2.5:3b
 ```
 
 ### Check Backend Logs
@@ -502,7 +502,7 @@ Create a `.env` file in project root for custom settings:
 # .env file
 OLLAMA_HOST=http://localhost:11434
 API_PORT=5000
-DEFAULT_MODEL=qwen2.5-coder:3b
+DEFAULT_MODEL=qwen2.5:3b
 SCRIPT_MODEL=qwen2.5-coder:7b
 LOG_LEVEL=INFO
 ```
@@ -542,7 +542,7 @@ ollama pull qwen2.5-coder:1.5b
 
 # Edit backend/config.py
 # DEFAULT_MODEL = "qwen2.5:1.5b"
-# SCRIPT_MODEL = "qwen2.5-coder:3b"  # Use 3B instead of 7B
+# SCRIPT_MODEL = "qwen2.5:3b"  # Use 3B instead of 7B
 
 # Restart backend
 python -m backend.api_server
@@ -552,7 +552,7 @@ python -m backend.api_server
 
 ```bash
 # Initial setup
-ollama pull qwen2.5-coder:3b qwen2.5-coder:7b
+ollama pull qwen2.5:3b qwen2.5-coder:7b
 conda create -n ardupilot_ai python=3.10 -y
 conda activate ardupilot_ai
 pip install -r requirements.txt

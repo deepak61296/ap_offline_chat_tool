@@ -96,7 +96,7 @@ Mission Planner integration reference:
 
 ### MODEL_SELECTION.md
 LLM model configuration:
-- Supported models (qwen2.5-coder:3b and qwen2.5-coder:7b)
+- Supported models (qwen2.5:3b and qwen2.5-coder:7b)
 - System requirements
 - Configuration file editing
 - Troubleshooting

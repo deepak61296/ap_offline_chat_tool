@@ -4,7 +4,7 @@
 
 ```bash
 # Install Ollama models
-ollama pull qwen2.5-coder:3b
+ollama pull qwen2.5:3b
 ollama pull qwen2.5-coder:7b
 
 # Verify models
@@ -43,7 +43,7 @@ Expected response:
 ```json
 {
   "status": "ok",
-  "model": "qwen2.5-coder:3b"
+  "model": "qwen2.5:3b"
 }
 ```
 

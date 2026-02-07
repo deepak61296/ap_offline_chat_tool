@@ -44,7 +44,7 @@ ArduPilot AI Backend enables natural language drone control through local LLMs.
                                  │
                     ┌────────────▼────────────┐
                     │   Ollama Service        │
-                    │   - qwen2.5-coder:3b    │
+                    │   - qwen2.5:3b    │
                     │   - qwen2.5-coder:7b    │
                     │   - Local inference     │
                     └────────────┬────────────┘

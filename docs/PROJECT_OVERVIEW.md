@@ -70,7 +70,7 @@ AI: Generates complete Lua script with ArduPilot API calls
 - Sentence Transformers (document search)
 
 **LLM Models:**
-- qwen2.5-coder:3b (agent/ask modes, fast responses)
+- qwen2.5:3b (agent/ask modes, fast responses)
 - qwen2.5-coder:7b (script mode, better code generation)
 
 **GCS Integration:**
@@ -303,7 +303,7 @@ cd MissionPlanner
 
 **1. Install Ollama and pull models:**
 ```bash
-ollama pull qwen2.5-coder:3b
+ollama pull qwen2.5:3b
 ollama pull qwen2.5-coder:7b
 ```
 

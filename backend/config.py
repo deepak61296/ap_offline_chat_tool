@@ -33,7 +33,7 @@ API_PORT = 5000
 API_DEBUG = False
 
 # Model Configuration
-DEFAULT_MODEL = 'qwen2.5-coder:3b'
+DEFAULT_MODEL = 'qwen2.5:3b'
 SCRIPT_MODEL = 'qwen2.5-coder:7b'
 SUPPORTED_MODELS = ['qwen2.5:3b', 'qwen2.5-coder:7b']
 
