@@ -142,3 +142,4 @@ Thumbs.db
 # Project specific
 *.backup
 test_formatting.py
+CONVERSATION_HISTORY.jsonl
