@@ -116,21 +116,29 @@ Backend ready!
 ```
 ap_offline_chat_tool/
 ├── backend/
-│   ├── api_server.py      # Flask server (handles requests from Mission Planner)
+│   ├── api_server.py      # Flask server (handles requests from GCS)
 │   ├── commands.py        # Command extraction and parsing
-│   ├── prompts.py         # AI prompts for Agent and Ask modes
+│   ├── prompts.py         # AI prompts for Agent/Ask/Script modes
 │   ├── config.py          # Configuration (model, API settings)
-│   └── __init__.py
+│   └── ...
+├── integrations/
+│   ├── mavproxy/          # MAVProxy module + install docs
+│   └── mission_planner/   # Mission Planner plugin files
 ├── tests/
 │   ├── test_comprehensive.py    # Main test suite (151 tests)
-│   ├── README_TESTS.md          # Test documentation
-│   └── run_comprehensive_tests.bat
-├── scripts/
-│   ├── start_backend.bat        # Quick start script
-│   └── start_backend_cpu.bat    # CPU-only mode
-├── requirements.txt        # Python dependencies
+│   └── README_TESTS.md          # Test documentation
+├── ARCHITECTURE.md        # System architecture docs
+├── COMPATIBILITY.md       # Version compatibility matrix
+├── requirements.txt       # Python dependencies
 └── README.md              # This file
 ```
+
+## 📚 Documentation
+
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - System design and data flow
+- **[COMPATIBILITY.md](COMPATIBILITY.md)** - Version compatibility and installation
+- **[integrations/mavproxy/](integrations/mavproxy/)** - MAVProxy module docs
+- **[integrations/mission_planner/](integrations/mission_planner/)** - Mission Planner plugin docs
 
 ## 🔧 How It Works
 
