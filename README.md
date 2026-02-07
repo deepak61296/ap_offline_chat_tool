@@ -1,361 +1,436 @@
-# ArduPilot AI Chat - Offline Backend
+# ArduPilot AI Backend
 
-AI-powered chat assistant for ArduPilot drones using local LLM (runs offline, no internet required).
+AI-powered natural language drone control using local LLMs. Runs fully offline.
 
-## What is This?
+Talk to your drone in plain English through MAVProxy or Mission Planner.
 
-This backend enables natural language interaction with your ArduPilot drone through a local AI model. It processes voice-like commands and queries without requiring an internet connection.
+**Examples:**
+```
+arm the drone
+takeoff to 10 meters
+move north 20 meters
+set speed to 5 m/s
+what's my battery?
+land
+```
 
-**Example conversations:**
-- "arm and take off to 10 meters" → Sends ARM + TAKEOFF commands
-- "what's my altitude?" → Queries telemetry and responds
-- "move forward 5 meters" → Sends movement command
-
-## 🎥 Demo Video
+## Demo
 
 [Watch Demo Video](https://github.com/deepak61296/ardupilot-ai-backend/raw/main/demo.mkv) (16 MB .mkv file)
 
-## 📦 Quick Start - Mission Planner Integration
+## How It Works
 
-**Download Mission Planner with AI Chat:**  
-https://github.com/deepak61296/MissionPlanner/releases/tag/ai_backend
-
-1. Extract ZIP and run `MissionPlanner.exe`
-2. Follow backend setup below
-3. Press **Ctrl+L** to open AI Chat
-4. Connect to SITL and start chatting!
-
-## 🚀 Backend Setup
-
-### Prerequisites
-
-- **Windows 10/11** (64-bit)
-- **8GB RAM minimum** (16GB recommended)
-- **GPU recommended** (NVIDIA preferred, works on CPU too)
-- **Python 3.10 or 3.11** (not 3.12+)
-
-### Step 1: Install Miniconda
-
-Download and install Miniconda:  
-https://docs.anaconda.com/miniconda/
-
-During installation:
-- ✅ Check "Add Miniconda to PATH"
-- ✅ Use all default options
-
-After installation, open a **new terminal** to verify:
-```bash
-conda --version
-# Should show: conda 24.x.x or similar
+```
+User (natural language)
+    |
+    v
+GCS (MAVProxy / Mission Planner)
+    |  HTTP POST /chat
+    v
+Backend Server (Flask)
+    |
+    v
+Local LLM (Ollama)
+    |
+    v
+Command Extraction (regex)
+    |
+    v
+GCS executes via MAVLink
 ```
 
-### Step 2: Install Ollama
+Three modes:
+- **Agent** - Execute commands (arm, takeoff, land, move, etc.)
+- **Ask** - Read-only telemetry queries
+- **Script** - Generate Lua scripts for the flight controller
 
-Download and install Ollama:  
-https://ollama.com/download
+---
 
-After installation, pull the AI model:
+## Quick Start
+
+### 1. Backend Setup
+
+**Prerequisites:** Python 3.10+, 8GB RAM min
+
 ```bash
+# Install Ollama (https://ollama.com/download)
 ollama pull qwen2.5:3b
-```
 
-This downloads a 2GB model (one-time download).
-
-### Step 3: Clone Repository
-
-```bash
+# Clone and setup
 git clone https://github.com/deepak61296/ardupilot-ai-backend.git
 cd ardupilot-ai-backend
-```
 
-### Step 4: Create Conda Environment
-
-```bash
-# Create environment with Python 3.10
+# Create environment
 conda create -n ai_backend python=3.10 -y
-
-# Activate environment
 conda activate ai_backend
-```
-
-**Note:** You'll need to activate this environment every time you start the backend.
-
-### Step 5: Install Dependencies
-
-```bash
 pip install -r requirements.txt
+
+# Start backend
+ollama serve                     # Terminal 1
+python -m backend.api_server     # Terminal 2
 ```
 
-This installs Flask, requests, and other required packages.
+Backend runs at **http://localhost:5000**
 
-### Step 6: Start Backend
+### 2. Connect a GCS
 
-**Terminal 1 - Start Ollama:**
+Choose **one** of these:
+
+---
+
+## GCS Integration: Mission Planner
+
+### Option A: Download Pre-built (Easiest)
+
+1. Download from [Mission Planner releases](https://github.com/deepak61296/MissionPlanner/releases/tag/ai_backend)
+2. Extract and run `MissionPlanner.exe`
+3. Connect to vehicle (SITL or real)
+4. Press **Ctrl+L** to open AI Chat
+5. Start typing commands
+
+### Option B: Build from Fork
+
 ```bash
-ollama serve
+git clone https://github.com/deepak61296/MissionPlanner.git
+cd MissionPlanner
+git checkout feature/script-mode-clean
+dotnet build MissionPlanner.csproj
 ```
-Leave this running.
 
-**Terminal 2 - Start Backend:**
+### Option C: Apply to Your Own MP Build (Advanced)
+
+Copy integration files from `integrations/mission_planner/` to your MP source:
+
+```
+integrations/mission_planner/ChatAssistant.cs         -> GCSViews/ChatAssistant.cs
+integrations/mission_planner/GCSViews/ChatAssistant.Designer.cs -> GCSViews/ChatAssistant.Designer.cs
+integrations/mission_planner/GCSViews/FlightData.cs   -> GCSViews/FlightData.cs
+integrations/mission_planner/GCSViews/ConfigurationView/ConfigRawParams.cs -> GCSViews/ConfigurationView/ConfigRawParams.cs
+integrations/mission_planner/AIBackendService.cs      -> AIBackendService.cs
+integrations/mission_planner/DroneCommandExecutor.cs  -> DroneCommandExecutor.cs
+```
+
+Then apply the build fix:
+```bash
+git apply integrations/mission_planner/csproj.patch
+dotnet build MissionPlanner.csproj
+```
+
+### Configure Backend URL
+
+Right-click the connection button in Mission Planner to set backend URL (default: `http://localhost:5000`).
+
+---
+
+## GCS Integration: MAVProxy
+
+### Option A: Use Our Fork (Recommended)
+
+```bash
+git clone https://github.com/deepak61296/MAVProxy.git
+cd MAVProxy
+git checkout feature/ai-backend-integration
+pip install -e .
+```
+
+Start MAVProxy:
+```bash
+mavproxy.py --master=udp:127.0.0.1:14550 --console
+```
+
+Then enable the AI module:
+```
+module load ai_backend
+ai_backend enable
+```
+
+Now type natural language directly:
+```
+arm the drone
+takeoff to 15 meters
+move north 30 meters
+change mode to loiter
+```
+
+### Option B: Drop Module into Existing MAVProxy
+
+Copy the module file from `integrations/mavproxy/`:
+
+**Windows:**
+```bash
+copy integrations\mavproxy\mavproxy_ai_backend.py %USERPROFILE%\AppData\Local\MAVProxy\modules\
+```
+
+**Linux/Mac:**
+```bash
+cp integrations/mavproxy/mavproxy_ai_backend.py ~/.local/lib/python3.*/site-packages/MAVProxy/modules/
+```
+
+Then load in MAVProxy:
+```
+module load ai_backend
+ai_backend enable
+```
+
+### Optional: --ai-backend Flag
+
+Apply the patch for auto-loading on startup:
+```bash
+cd /path/to/MAVProxy
+git apply /path/to/integrations/mavproxy/mavproxy_ai_flag.patch
+```
+
+Then start with:
+```bash
+mavproxy.py --master=udp:127.0.0.1:14550 --console --ai-backend
+```
+
+### MAVProxy Commands
+
+```
+ai_backend enable      # Enable natural language
+ai_backend disable     # Disable
+ai_backend status      # Show connection status
+ai_backend url <URL>   # Set backend URL
+ai_backend safe        # Enable y/n confirmation
+ai_backend unsafe      # Disable confirmations
+```
+
+---
+
+## Verification
+
+### Step 1: Check Backend Health
+
+```bash
+curl http://localhost:5000/health
+```
+
+Expected:
+```json
+{"status": "ok", "model": "qwen2.5:3b"}
+```
+
+### Step 2: Test Chat API Directly
+
+```bash
+curl -X POST http://localhost:5000/chat -H "Content-Type: application/json" -d "{\"message\": \"hello\", \"mode\": \"agent\"}"
+```
+
+Expected: JSON response with `"success": true` and a greeting.
+
+### Step 3: Test Command Extraction
+
+```bash
+curl -X POST http://localhost:5000/chat -H "Content-Type: application/json" -d "{\"message\": \"arm the drone\", \"mode\": \"agent\"}"
+```
+
+Expected: Response with `"command": {"type": "ARM", ...}`
+
+### Step 4: Test with MAVProxy + SITL
+
+**Terminal 1 - Start SITL:**
+```bash
+cd ArduCopter
+sim_vehicle.py --console --map
+```
+
+**Terminal 2 - Start MAVProxy with AI:**
+```bash
+mavproxy.py --master=udp:127.0.0.1:14550 --console
+module load ai_backend
+ai_backend enable
+ai_backend status
+```
+
+Expected: `Backend: Connected`
+
+**Test commands:**
+```
+arm the drone
+# -> "AI Backend: ARM command sent"
+
+takeoff to 10 meters
+# -> "AI Backend: TAKEOFF to 10m sent"
+
+move north 20 meters
+# -> "AI Backend: Moving north 20m"
+
+what is my altitude?
+# -> AI responds with current altitude
+
+land
+# -> "AI Backend: Mode LAND command sent"
+```
+
+### Step 5: Test with Mission Planner
+
+1. Start SITL: `sim_vehicle.py --console --map`
+2. Open Mission Planner, connect to `udp:127.0.0.1:14550`
+3. Press **Ctrl+L** to open AI Chat
+4. Type: `arm the drone` -> Should arm
+5. Type: `takeoff to 10 meters` -> Should take off
+6. Switch to **Ask Mode** and type: `what's my battery?` -> Should show voltage
+7. Switch to **Script Mode** and type: `print battery voltage every 5 seconds` -> Should generate Lua script
+
+---
+
+## Running Tests
+
+### Full Test Suite (151 tests)
+
 ```bash
 conda activate ai_backend
 cd ardupilot-ai-backend
-python -m backend.api_server
+python -m pytest tests/test_comprehensive.py -v
 ```
 
-Backend runs at: **http://localhost:5000**
-
-You should see:
-```
-INFO:werkzeug: * Running on http://127.0.0.1:5000
-Backend ready!
-```
-
-## 📁 Project Structure
-
-```
-ardupilot-ai-backend/
-├── backend/
-│   ├── api_server.py      # Flask server (handles requests from GCS)
-│   ├── commands.py        # Command extraction and parsing
-│   ├── prompts.py         # AI prompts for Agent/Ask/Script modes
-│   ├── config.py          # Configuration (model, API settings)
-│   └── ...
-├── integrations/
-│   ├── mavproxy/          # MAVProxy module + install docs
-│   └── mission_planner/   # Mission Planner plugin files
-├── tests/
-│   ├── test_comprehensive.py    # Main test suite (151 tests)
-│   └── README_TESTS.md          # Test documentation
-├── ARCHITECTURE.md        # System architecture docs
-├── COMPATIBILITY.md       # Version compatibility matrix
-├── requirements.txt       # Python dependencies
-└── README.md              # This file
-```
-
-## 📚 Documentation
-
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** - System design and data flow
-- **[COMPATIBILITY.md](COMPATIBILITY.md)** - Version compatibility and installation
-- **[integrations/mavproxy/](integrations/mavproxy/)** - MAVProxy module docs
-- **[integrations/mission_planner/](integrations/mission_planner/)** - Mission Planner plugin docs
-
-## 🔧 How It Works
-
-### Architecture
-
-```
-Mission Planner (Ctrl+L) 
-    ↓ HTTP Request
-Backend API Server (:5000)
-    ↓ Process message
-LLM (Ollama - qwen2.5:3b)
-    ↓ Generate response
-Command Parser
-    ↓ Extract commands
-Mission Planner (Execute)
-```
-
-### Two Modes
-
-**1. Agent Mode** (sends commands to drone)
-- Input: "take off to 10 meters"
-- LLM generates: "TAKEOFF altitude=10"
-- Backend extracts: `TAKEOFF 10`
-- Mission Planner executes command
-
-**2. Ask Mode** (queries telemetry)
-- Input: "what's my battery?"
-- Mission Planner sends current telemetry
-- LLM analyzes and responds: "Battery at 12.4V (87%)"
-- No commands sent
-
-### Command Extraction
-
-The backend uses regex patterns to extract commands from LLM responses:
-- `ARM` / `DISARM`
-- `TAKEOFF altitude=X`
-- `LAND`
-- `GOTO lat,lon,alt`
-- `MOVE_DIRECTION direction distance`
-- And more...
-
-See `backend/commands.py` for full list.
-
-## 💬 Usage Examples
-
-### Agent Mode (Command Execution)
-
-| You Say | Drone Does |
-|---------|-----------|
-| "arm the drone" | Arms motors |
-| "take off to 15 meters" | Takes off to 15m |
-| "move forward 10 meters" | Moves forward 10m |
-| "set param disarm_delay to 50" | Sets DISARM_DELAY parameter to 50 |
-| "fly to home" | Returns to launch point |
-| "land now" | Lands at current position |
-| "disarm" | Disarms motors |
-
-### Ask Mode (Telemetry Queries)
-
-| You Ask | Response |
-|---------|----------|
-| "what's my battery?" | "Battery at 12.4V (87%)" |
-| "how high am I?" | "Current altitude: 25.3 meters" |
-| "what mode am I in?" | "You're in GUIDED mode" |
-| "how fast am I going?" | "Ground speed: 3.2 m/s" |
-
-## 🧪 Testing
-
-Current test accuracy: **78.8%** on 151 rigorous test cases
-
-Run the test suite:
+Or use the batch script:
 ```bash
 cd tests
 run_comprehensive_tests.bat
 ```
 
-This opens an HTML report showing passed/failed tests.
+### Quick Backend Smoke Test
 
-**Test categories:**
-- Basic flight commands (ARM, TAKEOFF, LAND)
-- Movement commands (GOTO, MOVE_DIRECTION)
-- Altitude commands
-- Safety scenarios (rejecting dangerous requests)
-- Natural language variations
-- Typo tolerance
-
-See `tests/README_TESTS.md` for details.
-
-## 🔍 Troubleshooting
-
-### "Backend not available" in Mission Planner
-
-**Check:**
-1. Is Ollama running? (`ollama serve` in terminal)
-2. Is backend running? (`python -m backend.api_server`)
-3. Is conda environment activated? (`conda activate ai_backend`)
-4. Backend should show "Running on http://127.0.0.1:5000"
-
-**Test manually:**
 ```bash
+# Health check
 curl http://localhost:5000/health
-# Should return: {"status": "ok", "model": "qwen2.5:3b"}
+
+# Test endpoint
+curl http://localhost:5000/test
+
+# List models
+curl http://localhost:5000/models
 ```
 
-### "ollama: command not found"
+### Test Categories
 
-Ollama wasn't added to PATH. Fix:
-1. Reinstall Ollama
-2. Restart terminal
-3. Try: `where ollama` (should show path)
+| Category | What It Tests |
+|----------|--------------|
+| Flight commands | ARM, DISARM, TAKEOFF, LAND, RTL |
+| Movement | GOTO, MOVE north/south/east/west |
+| Altitude | Increase/decrease altitude mid-flight |
+| Speed/Yaw | SET_SPEED, SET_YAW/heading |
+| Parameters | GET_PARAM, SET_PARAM |
+| Mode changes | GUIDED, AUTO, LOITER, STABILIZE, etc. |
+| Safety | Rejecting dangerous/ambiguous requests |
+| Ask mode | Telemetry queries without execution |
+| Script mode | Lua script generation and validation |
+| Edge cases | Typos, casual language, missing params |
 
-### "conda: command not found"
+---
 
-Miniconda wasn't added to PATH. Fix:
-1. Reinstall Miniconda
-2. Check "Add to PATH" option
-3. Restart terminal
+## Supported Commands
 
-### Backend starts but no response
+| Command | Example | What Happens |
+|---------|---------|-------------|
+| ARM | "arm the drone" | Arms motors |
+| DISARM | "disarm" | Disarms motors |
+| TAKEOFF | "takeoff to 15m" | Takes off to altitude |
+| LAND | "land now" | Lands at current position |
+| RTL | "return home" | Returns to launch |
+| CHANGE_MODE | "switch to loiter" | Changes flight mode |
+| MOVE_DIRECTION | "move north 20m" | Moves in cardinal direction |
+| ALTITUDE_CHANGE | "go up 10 meters" | Changes altitude mid-flight |
+| SET_SPEED | "set speed to 5 m/s" | Changes ground speed |
+| SET_YAW | "face east" | Changes heading |
+| GOTO | "fly to 37.77, -122.41" | Goes to coordinates |
+| GET_PARAM | "what is BATT_CAPACITY?" | Reads parameter |
+| SET_PARAM | "set disarm_delay to 40" | Sets parameter |
+| REBOOT | "reboot" | Reboots flight controller |
 
-**Model not downloaded:**
-```bash
-ollama pull qwen2.5:3b
+---
+
+## Project Structure
+
+```
+ardupilot-ai-backend/
+├── backend/                       # Core backend server
+│   ├── api_server.py              # Flask HTTP API
+│   ├── commands.py                # Command extraction
+│   ├── prompts.py                 # AI system prompts
+│   ├── config.py                  # Settings and limits
+│   ├── telemetry_data.py          # Telemetry formatting
+│   ├── template_injector_v2.py    # Lua template library
+│   ├── lua_postprocessor.py       # Lua script fixes
+│   └── mavlink_manager.py         # Standalone MAVLink (optional)
+├── integrations/
+│   ├── mavproxy/                  # MAVProxy module (2 files)
+│   └── mission_planner/           # Mission Planner plugin (8 files)
+├── tests/
+│   ├── test_comprehensive.py      # 151 test cases
+│   └── test_model_comparison.py   # Model benchmarks
+├── ARCHITECTURE.md                # System design
+├── COMPATIBILITY.md               # Version matrix
+├── CONTRIBUTING.md                # Developer guide
+└── requirements.txt
 ```
 
-**Wrong model name in config:**
-Check `backend/config.py` - MODEL should be "qwen2.5:3b"
+## Documentation
 
-### Commands not executing
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - System design and data flow
+- **[COMPATIBILITY.md](COMPATIBILITY.md)** - Version compatibility across repos
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** - How to contribute / developer setup
+- **[integrations/mavproxy/](integrations/mavproxy/)** - MAVProxy integration docs
+- **[integrations/mission_planner/](integrations/mission_planner/)** - Mission Planner integration docs
 
-**Check console output** in backend terminal:
-- Look for errors in command extraction
-- Check if LLM response format is correct
+---
 
-**Enable debug logging:**
-Edit `backend/api_server.py` and set `debug=True` in `app.run()`
+## Troubleshooting
 
-### Slow responses
-
-**CPU mode is slower than GPU** (4-10 seconds per response depending on processor). Solutions:
-- Use GPU if available (NVIDIA recommended)
-- Use smaller model: `ollama pull qwen2.5:1.5b`
-- Reduce conversation history in config
-
-### Module import errors
-
-**Wrong directory or environment:**
+### Backend won't start
 ```bash
-# Make sure you're in the right folder
-cd ardupilot-ai-backend
+# Check Ollama is running
+curl http://localhost:11434/api/tags
 
-# Make sure environment is activated
+# Check model is downloaded
+ollama list
+
+# Check Python environment
 conda activate ai_backend
-
-# Reinstall dependencies
 pip install -r requirements.txt --force-reinstall
 ```
 
-### Port 5000 already in use
+### Commands not executing
+- Check backend terminal for errors
+- Verify backend is connected: `curl http://localhost:5000/health`
+- In MAVProxy: `ai_backend status` should show `Backend: Connected`
 
-**Change port in two places:**
+### Slow responses
+- GPU mode is much faster than CPU
+- Try smaller model: `ollama pull qwen2.5:1.5b`
+- Edit `backend/config.py` to change `DEFAULT_MODEL`
 
-1. `backend/config.py`: Change `API_PORT = 5000` to `API_PORT = 5001`
-2. Mission Planner AI settings: Change backend URL to `http://localhost:5001`
+### Port 5000 in use
+- Change in `backend/config.py`: `API_PORT = 5001`
+- Update GCS backend URL to `http://localhost:5001`
 
-## 🛠️ Development
+---
 
-### Running in CPU-only mode
-
-```bash
-scripts\start_backend_cpu.bat
-```
-
-This works but is slower (4-10 seconds per response depending on your processor).
-
-### Using different models
-
-Edit `backend/config.py`:
-```python
-MODEL = "qwen2.5:1.5b"  # Smaller, faster
-# or
-MODEL = "qwen2.5:7b"    # Larger, more accurate (requires more RAM)
-```
-
-Then pull the model:
-```bash
-ollama pull qwen2.5:1.5b
-```
-
-### Adding new commands
-
-1. Add pattern to `backend/commands.py`
-2. Add examples to test suite
-3. Update `backend/prompts.py` if needed
-
-## 📋 System Requirements
+## System Requirements
 
 | Component | Minimum | Recommended |
 |-----------|---------|-------------|
-| OS | Windows 10 | Windows 11 |
+| OS | Windows 10 / Ubuntu 20.04 | Windows 11 / Ubuntu 22.04 |
 | RAM | 8GB | 16GB |
 | GPU | None (CPU works) | NVIDIA GPU |
 | Storage | 5GB | 10GB |
 | Python | 3.10 | 3.10 or 3.11 |
 
-## 🔗 Links
+## Links
 
+- **MAVProxy Fork:** https://github.com/deepak61296/MAVProxy
 - **Mission Planner Fork:** https://github.com/deepak61296/MissionPlanner
-- **Latest Release:** https://github.com/deepak61296/MissionPlanner/releases/tag/ai_backend
-- **Report Issues:** https://github.com/deepak61296/ardupilot-ai-backend/issues
+- **MP Release:** https://github.com/deepak61296/MissionPlanner/releases/tag/ai_backend
+- **Issues:** https://github.com/deepak61296/ardupilot-ai-backend/issues
 - **Ollama:** https://ollama.com
-- **Miniconda:** https://docs.anaconda.com/miniconda/
+- **ArduPilot SITL:** https://ardupilot.org/dev/docs/sitl-simulator-software-in-the-loop.html
 
-## ⚠️ Important Notes
+## Notes
 
-- **Testing:** Currently tested on SITL only - not tested on real hardware
-- **Vehicle Support:** Copter only (Plane/Rover support coming soon)
-- **License:** GPL-3.0 (for ArduPilot compatibility)
+- Tested on SITL and real hardware (Copter)
+- Copter only for now (Plane/Rover support planned)
+- License: GPL-3.0 (ArduPilot compatible)
 
-Use responsibly and always test in simulation first.
+Use responsibly. Always test in simulation first.
