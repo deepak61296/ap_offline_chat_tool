@@ -1,13 +1,7 @@
-"""
-Template Injection System V2
-Expanded library with 20+ templates for common ArduPilot Lua patterns
-Based on real ArduPilot examples with 100% correct APIs
-"""
+"""Lua template library for common ArduPilot scripting patterns."""
 
 import re
 
-
-# ========== EXPANDED TEMPLATE LIBRARY ==========
 
 TEMPLATES = {
     # === BASIC MONITORING ===

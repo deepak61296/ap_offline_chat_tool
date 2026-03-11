@@ -1,7 +1,4 @@
-"""
-ArduPilot AI Backend Package
-Supports Mission Planner and MAVProxy
-"""
+"""ArduPilot AI Backend."""
 
 __version__ = '2.4.0'
 
@@ -29,19 +26,12 @@ except ImportError:
     PYMAVLINK_AVAILABLE = False
 
 __all__ = [
-    # API
     'app',
-
-    # Commands
     'extract_command',
     'validate_command',
-
-    # Prompts
     'get_agent_prompt',
     'get_ask_prompt',
     'get_script_prompt',
-
-    # Config
     'DEFAULT_MODEL',
     'SCRIPT_MODEL',
     'API_HOST',
@@ -50,9 +40,7 @@ __all__ = [
     'STANDALONE_MODE',
     'OPERATION_MODE',
     'BACKEND_VERSION',
-
-    # MAVLink (optional)
     'MAVLinkManager',
     'get_mavlink_manager',
-    'PYMAVLINK_AVAILABLE'
+    'PYMAVLINK_AVAILABLE',
 ]

@@ -1,32 +1,9 @@
 # Demo Videos
 
-Demonstration videos showing the ArduPilot AI Backend in action.
+Videos showing the AI backend working with each GCS.
 
-## Available Demos
-
-### mavproxy_demo.mkv
-**MAVProxy Agent Mode**
-- Natural language command execution
-- ARM, TAKEOFF, movement commands
-- Safe mode confirmation prompts
-- Real-time telemetry feedback
-
-### mission_planner_demo.mkv
-**Mission Planner Integration**
-- Chat interface (Ctrl+L)
-- Agent/Ask/Script modes
-- Lua script generation
-
-## Viewing Demos
-
-**Windows:**
-```bash
-start demos\mavproxy_demo.mkv
-start demos\mission_planner_demo.mkv
-```
-
-**Linux/macOS:**
-```bash
-vlc demos/mavproxy_demo.mkv
-vlc demos/mission_planner_demo.mkv
-```
+| File | GCS |
+|------|-----|
+| `mavproxy_ai_backend.mp4` | MAVProxy |
+| `mission_planner.mp4` | Mission Planner |
+| `qgc.mp4` | QGroundControl |

@@ -1,7 +1,4 @@
-"""
-Post-Processor for AI-Generated ArduPilot Lua Scripts
-Fixes common mistakes that the LLM makes
-"""
+"""Post-processing fixes for LLM-generated ArduPilot Lua scripts."""
 
 import re
 

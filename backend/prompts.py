@@ -1,7 +1,4 @@
-"""
-AI Prompts for ArduPilot Mission Planner Integration
-Centralized prompt management for Agent and Ask modes
-"""
+"""System prompts for agent, ask, and script modes."""
 
 # Agent Mode Prompt - Full control with command execution
 AGENT_MODE_PROMPT = """You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities.

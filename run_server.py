@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""
-Entry point for ArduPilot AI Backend Server
-Supports Mission Planner and MAVProxy
-"""
+"""Entry point for the ArduPilot AI Backend."""
 
 import sys
 from pathlib import Path

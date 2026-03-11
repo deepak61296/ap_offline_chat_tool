@@ -1,8 +1,4 @@
-"""
-ArduPilot Lua Bindings Reference
-This file contains reference information for ArduPilot Lua 5.3 scripting bindings
-Used by AI to generate valid Lua scripts
-"""
+"""ArduPilot Lua scripting bindings reference for script generation."""
 
 LUA_BINDINGS_REFERENCE = """
 # ArduPilot Lua 5.3 Scripting Reference

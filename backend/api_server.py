@@ -1,22 +1,7 @@
 #!/usr/bin/env python3
 """
-ArduPilot AI Backend - HTTP API Server v2.4
-Supports Mission Planner and MAVProxy
-
-Cross-platform: Windows and Linux compatible
-
-Modes:
-- Integrated: GCS sends telemetry, backend returns commands
-- Standalone: Backend connects directly via MAVLink (pymavlink)
-
-Refactored with modular structure:
-- config.py: Configuration and safety limits
-- prompts.py: AI prompts for Agent/Ask modes
-- commands.py: Command extraction and validation
-- telemetry_data.py: Telemetry formatting
-- template_injector_v2.py: Ultimate template library (31 patterns!)
-- lua_postprocessor.py: Post-processing for LLM-generated Lua
-- mavlink_manager.py: Direct MAVLink connection (standalone mode)
+ArduPilot AI Backend - Flask API server.
+Handles chat requests from GCS clients (MAVProxy, Mission Planner, QGroundControl).
 """
 
 from flask import Flask, request, jsonify
@@ -156,9 +141,7 @@ def get_status():
         }), 500
 
 
-# ========================
-# STANDALONE MODE ENDPOINTS
-# ========================
+# Standalone mode endpoints
 
 @app.route('/connect', methods=['POST'])
 def connect_vehicle():

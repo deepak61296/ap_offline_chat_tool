@@ -1,7 +1,4 @@
-"""
-Telemetry data structures for Mission Planner integration
-Provides read-only access to drone telemetry data
-"""
+"""Telemetry data structures and formatting for GCS integration."""
 
 from dataclasses import dataclass
 from typing import Optional, Dict, Any

@@ -1,8 +1,4 @@
-"""
-MAVLink Connection Manager
-Direct connection to ArduPilot via pymavlink
-Works standalone or alongside GCS
-"""
+"""MAVLink connection manager for direct vehicle communication."""
 
 import threading
 import time
@@ -350,9 +346,7 @@ class MAVLinkManager:
         if callback in self._callbacks:
             self._callbacks.remove(callback)
 
-    # ========================
-    # COMMAND METHODS
-    # ========================
+    # Command methods
 
     def arm(self) -> CommandResult:
         """Arm the vehicle"""

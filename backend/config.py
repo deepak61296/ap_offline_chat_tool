@@ -1,9 +1,4 @@
-"""
-Configuration settings for ArduPilot AI Backend
-Centralized configuration for API server, models, and safety limits
-
-Supports Mission Planner and MAVProxy
-"""
+"""Configuration for the ArduPilot AI backend server."""
 
 import argparse
 import os
@@ -86,9 +81,7 @@ PARAM_CATEGORIES = {
     'RATE': ['RATE_']
 }
 
-# ========================
-# STANDALONE MODE CONFIG
-# ========================
+# Standalone mode config
 
 # Enable standalone mode (direct MAVLink connection)
 STANDALONE_MODE = args.standalone
@@ -109,9 +102,7 @@ DEFAULT_CONNECTIONS = {
 # Telemetry streaming rate (Hz)
 TELEMETRY_RATE = 1  # 1 Hz for arming status updates
 
-# ========================
-# COMMAND APPROVAL CONFIG
-# ========================
+# Command approval config
 
 # Approval modes: "manual", "smart", "autonomous"
 # manual: Ask for every command
@@ -139,9 +130,7 @@ COMMAND_RISK_LEVELS = {
     "REBOOT": "critical",
 }
 
-# ========================
-# GCS INTEGRATION CONFIG
-# ========================
+# GCS integration config
 
 # Operation modes
 # "integrated": GCS sends telemetry, backend returns commands for GCS to execute
