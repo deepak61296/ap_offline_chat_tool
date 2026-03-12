@@ -115,9 +115,14 @@ Module commands:
 
 ### QGroundControl
 
-**Option 1: Download AppImage** (Linux)
+**Option 1: Download AppImage** (Linux, easiest)
 
-*Coming soon — AppImage build in progress.*
+Download from [Releases](https://github.com/deepak61296/qgroundcontrol/releases/tag/ai_backend), make it executable, and run:
+
+```bash
+chmod +x QGroundControl-x86_64.AppImage
+./QGroundControl-x86_64.AppImage
+```
 
 **Option 2: Build from fork**
 
