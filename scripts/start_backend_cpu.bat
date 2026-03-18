@@ -7,10 +7,10 @@ echo ========================================
 echo.
 
 REM Activate conda environment
-call conda activate ap_chat_tools
+call conda activate ai_backend
 
 REM Navigate to backend directory
-cd /d C:\Projects\ArduPilot-AI-Backend\ap_offline_chat_tool
+cd /d C:\Projects\ardupilot-ai-backend
 
 echo Starting AI Backend in CPU-only mode...
 echo (Slower but works on any system)

@@ -6,7 +6,7 @@ Comprehensive test suite for validating AI command extraction and response gener
 
 ## Main Test File
 
-**`test_comprehensive.py`** - Complete test suite with 170+ tests
+**`test_comprehensive.py`** - Complete test suite with 151 tests
 
 ### Test Categories
 

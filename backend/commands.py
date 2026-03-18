@@ -80,6 +80,16 @@ def extract_command(ai_response: str) -> Optional[Dict[str, Any]]:
     if param_cmd:
         return param_cmd
     
+    # Speed commands
+    speed_cmd = extract_speed_command(ai_response)
+    if speed_cmd:
+        return speed_cmd
+
+    # Yaw/heading commands
+    yaw_cmd = extract_yaw_command(ai_response)
+    if yaw_cmd:
+        return yaw_cmd
+
     # No command detected
     return None
 
@@ -250,6 +260,36 @@ def extract_param_command(ai_response: str) -> Optional[Dict[str, Any]]:
     return None
 
 
+def extract_speed_command(ai_response: str) -> Optional[Dict[str, Any]]:
+    """
+    Extract speed change commands
+    Examples: "setting speed to 5 m/s", "changing speed to 10 meters per second"
+    """
+    response_lower = ai_response.lower()
+    speed_match = re.search(r'setting speed to (\d+\.?\d*)\s*(?:m/s|meters? per second|mps)', response_lower)
+    if speed_match:
+        speed = float(speed_match.group(1))
+        if speed > 30:
+            return {"type": "ERROR", "params": {"message": f"Speed {speed} m/s exceeds safe limit of 30 m/s"}}
+        return {"type": "SET_SPEED", "params": {"speed": speed}}
+    return None
+
+
+def extract_yaw_command(ai_response: str) -> Optional[Dict[str, Any]]:
+    """
+    Extract yaw/heading commands
+    Examples: "setting heading to 180 degrees", "turning to face 90 degrees"
+    """
+    response_lower = ai_response.lower()
+    yaw_match = re.search(r'setting heading to (\d+)\s*(?:degrees|deg|°)', response_lower)
+    if yaw_match:
+        heading = int(yaw_match.group(1))
+        if heading < 0 or heading > 360:
+            return {"type": "ERROR", "params": {"message": f"Invalid heading: {heading}°"}}
+        return {"type": "SET_YAW", "params": {"heading": heading}}
+    return None
+
+
 def validate_command(command: Dict[str, Any]) -> tuple[bool, Optional[str]]:
     """
     Validate command parameters
@@ -290,5 +330,74 @@ def validate_command(command: Dict[str, Any]) -> tuple[bool, Optional[str]]:
         mode = params.get("mode", "").upper()
         if mode not in SUPPORTED_MODES:
             return False, f"Unsupported mode: {mode}"
-    
+
+    elif cmd_type == "SET_SPEED":
+        speed = params.get("speed", 0)
+        if speed <= 0:
+            return False, "Speed must be positive"
+        if speed > 30:
+            return False, "Speed exceeds safe limit of 30 m/s"
+
+    elif cmd_type == "SET_YAW":
+        heading = params.get("heading", 0)
+        if heading < 0 or heading > 360:
+            return False, f"Invalid heading: {heading}"
+
     return True, None
+
+
+def extract_lua_script(ai_response: str) -> Optional[Dict[str, Any]]:
+    """
+    Extract Lua script from AI response in Script mode
+    Looks for ```lua code blocks and basic validation
+    Returns: {"type": "LUA_SCRIPT", "params": {"code": "...", "description": "..."}} or None
+    """
+    # Look for ```lua code blocks - handle all whitespace variations
+    lua_match = re.search(r'```lua\s*(.*?)\s*```', ai_response, re.DOTALL)
+    if not lua_match:
+        # Try without language specifier
+        lua_match = re.search(r'```\s*(.*?)\s*```', ai_response, re.DOTALL)
+        if not lua_match:
+            return None
+    
+    lua_code = lua_match.group(1).strip()
+    
+    # Basic validation
+    if not lua_code:
+        return None
+    
+    # Check for required structure: update() function and return statement
+    has_update_function = re.search(r'function\s+update\s*\(', lua_code)
+    has_return_statement = re.search(r'return\s+update', lua_code)
+    
+    if not has_update_function:
+        return {
+            "type": "ERROR",
+            "params": {"message": "Lua script must include an update() function"}
+        }
+    
+    if not has_return_statement:
+        return {
+            "type": "ERROR",
+            "params": {"message": "Lua script must return update() to start execution"}
+        }
+    
+    # Extract description from comments at the top (first line starting with --)
+    description_match = re.search(r'^--\s*(.+)$', lua_code, re.MULTILINE)
+    description = description_match.group(1).strip() if description_match else "Custom Lua script"
+    
+    # Generate a suggested filename
+    # Convert description to lowercase, replace spaces with underscores, remove special chars
+    filename_base = re.sub(r'[^\w\s-]', '', description.lower())
+    filename_base = re.sub(r'[-\s]+', '_', filename_base)[:50]  # Max 50 chars
+    suggested_filename = f"{filename_base}.lua" if filename_base else "custom_script.lua"
+    
+    return {
+        "type": "LUA_SCRIPT",
+        "params": {
+            "code": lua_code,
+            "description": description,
+            "suggested_filename": suggested_filename,
+            "line_count": len(lua_code.split('\n'))
+        }
+    }

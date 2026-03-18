@@ -4,10 +4,8 @@
 
 This guide provides step-by-step instructions for installing the ArduPilot Offline AI Assistant on Windows systems.
 
-> **⚠️ IMPORTANT DISCLAIMER**  
-> This is a **Stage 1 prototype** for testing and development purposes only.  
-> **DO NOT use with real drones in production environments.**  
-> Use at your own risk. Always test in simulation (SITL) first.
+> **⚠️ IMPORTANT**
+> Always test thoroughly in simulation (SITL) before using with real hardware.
 
 ## Prerequisites
 
@@ -48,10 +46,10 @@ Miniconda provides a lightweight Python environment manager for Windows.
 # Open PowerShell or Command Prompt
 
 # Create environment with Python 3.10
-conda create -n ap_chat_tools python=3.10 -y
+conda create -n ardupilot_ai python=3.10 -y
 
 # Activate environment
-conda activate ap_chat_tools
+conda activate ardupilot_ai
 
 # Verify Python version
 python --version
@@ -69,26 +67,26 @@ python --version
 cd C:\Users\YourUsername\Documents
 
 # Clone repository
-git clone https://github.com/deepak61296/ap_offline_chat_tool.git
+git clone https://github.com/deepak61296/ardupilot-ai-backend.git
 
 # Enter directory
-cd ap_offline_chat_tool
+cd ardupilot-ai-backend
 ```
 
 **Option B: Download ZIP**
 
-1. Visit: https://github.com/deepak61296/ap_offline_chat_tool
+1. Visit: https://github.com/deepak61296/ardupilot-ai-backend
 2. Click "Code" → "Download ZIP"
-3. Extract to `C:\Users\YourUsername\Documents\ap_offline_chat_tool`
+3. Extract to `C:\Users\YourUsername\Documents\ardupilot-ai-backend`
 
 ### Step 4: Install Python Dependencies
 
 ```powershell
 # Make sure environment is activated
-conda activate ap_chat_tools
+conda activate ardupilot_ai
 
 # Navigate to project directory
-cd C:\Users\YourUsername\Documents\ap_offline_chat_tool
+cd C:\Users\YourUsername\Documents\ardupilot-ai-backend
 
 # Install requirements
 pip install -r requirements.txt
@@ -121,7 +119,8 @@ Ollama hosts the AI model locally on Windows.
 
 ```powershell
 # Pull the fine-tuned model (552MB download)
-ollama pull deepakpopli/ardupilot-stage1
+ollama pull qwen2.5:3b
+ollama pull qwen2.5-coder:7b
 
 # Verify model is available
 ollama list
@@ -135,13 +134,14 @@ Demo mode works without ArduPilot SITL - perfect for testing the AI assistant.
 
 ```powershell
 # Navigate to project directory
-cd C:\Users\YourUsername\Documents\ap_offline_chat_tool
+cd C:\Users\YourUsername\Documents\ardupilot-ai-backend
 
 # Activate environment
-conda activate ap_chat_tools
+conda activate ardupilot_ai
 
 # Run demo
-python examples\demo.py
+# Test the API
+curl http://localhost:5000/health
 ```
 
 **Try these commands:**
@@ -156,7 +156,7 @@ If demo mode works, your installation is successful!
 ## Optional: ArduPilot SITL Setup
 
 **⚠️ Note**: ArduPilot SITL on Windows requires WSL (Windows Subsystem for Linux) or Docker.  
-**Recommended**: Use Docker for SITL on Windows (see [DOCKER.md](DOCKER.md))
+**Recommended**: Use Docker for SITL on Windows
 
 ### Option 1: Docker (Recommended)
 
@@ -165,10 +165,10 @@ If demo mode works, your installation is successful!
 # Download from: https://www.docker.com/products/docker-desktop/
 
 # Build Docker image
-docker build -t ap_offline_chat_tool .
+docker build -t ardupilot-ai-backend .
 
 # Run with SITL (future feature)
-docker run -it --rm --privileged --network host ap_offline_chat_tool sitl
+docker run -it --rm --privileged --network host ardupilot-ai-backend sitl
 ```
 
 ### Option 2: WSL (Advanced)
@@ -182,7 +182,7 @@ docker run -it --rm --privileged --network host ap_offline_chat_tool sitl
 2. **Install Ubuntu from Microsoft Store**
 
 3. **Follow Linux installation guide inside WSL**:
-   - See [INSTALL_LINUX.md](INSTALL_LINUX.md)
+   - Follow the ArduPilot SITL guide: https://ardupilot.org/dev/docs/sitl-simulator-software-in-the-loop.html
 
 **WSL Documentation**: https://learn.microsoft.com/en-us/windows/wsl/install
 
@@ -192,10 +192,10 @@ Run the test suite to verify everything works:
 
 ```powershell
 # Activate environment
-conda activate ap_chat_tools
+conda activate ardupilot_ai
 
 # Run tests
-python tests\test_suite.py
+python tests\test_comprehensive.py
 
 # Expected output:
 # Total Tests: 20
@@ -237,14 +237,15 @@ ping ollama.com
 # Allow Ollama through firewall if prompted
 
 # Try pulling again
-ollama pull deepakpopli/ardupilot-stage1
+ollama pull qwen2.5:3b
+ollama pull qwen2.5-coder:7b
 ```
 
 ### Import errors
 
 ```powershell
 # Reinstall dependencies
-conda activate ap_chat_tools
+conda activate ardupilot_ai
 pip install --force-reinstall -r requirements.txt
 ```
 
@@ -259,13 +260,14 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 ```powershell
 # Activate environment
-conda activate ap_chat_tools
+conda activate ardupilot_ai
 
 # Run demo mode
-python examples\demo.py
+# Test the API
+curl http://localhost:5000/health
 
 # Run tests
-python tests\test_suite.py
+python tests\test_comprehensive.py
 
 # Deactivate environment
 conda deactivate
@@ -290,17 +292,15 @@ conda deactivate
 
 ## Next Steps
 
-- Read [COMMAND_REFERENCE.md](COMMAND_REFERENCE.md) for supported commands
-- See [QUICK_REFERENCE.md](QUICK_REFERENCE.md) for common usage patterns
-- Check [README.md](../README.md) for project overview
-- For SITL, see [DOCKER.md](DOCKER.md)
+- Check [README.md](../README.md) for supported commands and usage examples
+- See [ARCHITECTURE.md](../ARCHITECTURE.md) for system design
+- See [COMPATIBILITY.md](../COMPATIBILITY.md) for version info
 
 ## Support
 
-- **Issues**: https://github.com/deepak61296/ap_offline_chat_tool/issues
-- **Documentation**: [docs/](.)
-- **Windows Help**: [WINDOWS.md](WINDOWS.md)
+- **Issues**: https://github.com/deepak61296/ardupilot-ai-backend/issues
+- **Documentation**: [README.md](../README.md)
 
 ---
 
-**Remember**: This is a Stage 1 prototype. Always test in simulation before real flights!
+**Remember**: Always test thoroughly in simulation before real flights!

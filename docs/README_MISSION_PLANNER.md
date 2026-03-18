@@ -30,8 +30,8 @@ Mission Planner (C#) <--HTTP--> API Server (Python) <--> Ollama (Qwen 2.5)
 
 1. **Create Conda Environment**
    ```bash
-   conda create -n ap_chat_tools python=3.10
-   conda activate ap_chat_tools
+   conda create -n ardupilot_ai python=3.10
+   conda activate ardupilot_ai
    ```
 
 2. **Install Dependencies**
@@ -51,8 +51,8 @@ Mission Planner (C#) <--HTTP--> API Server (Python) <--> Ollama (Qwen 2.5)
 ### Start API Server
 
 ```bash
-conda activate ap_chat_tools
-python api_server.py
+conda activate ardupilot_ai
+python -m backend.api_server
 ```
 
 Server will run on `http://localhost:5000`
@@ -146,7 +146,7 @@ r'\b(rtl|return to launch|return home)\b'
 
 Edit `api_server.py`:
 ```python
-MODEL_NAME = 'qwen2.5:3b'  # Change to qwen2.5:7b or other models
+MODEL_NAME = 'qwen2.5:3b'  # Change to qwen2.5-coder:7b or other models
 ```
 
 ### Port Configuration
@@ -163,7 +163,7 @@ app.run(host='0.0.0.0', port=5000)  # Change port here
 ### Project Structure
 
 ```
-ap_offline_chat_tool/
+ardupilot-ai-backend/
  api_server.py          # Main Flask API server
  requirements.txt       # Python dependencies
  src/
@@ -244,7 +244,7 @@ See Mission Planner repository for C# integration code:
 
 **Solution**:
 ```bash
-conda activate ap_chat_tools
+conda activate ardupilot_ai
 pip install flask flask-cors
 ```
 
@@ -267,8 +267,8 @@ Subsequent queries are faster (2-5s)
 | Model | Size | Speed | Quality |
 |-------|------|-------|---------|
 | qwen2.5:3b | 2GB | Fast (2-5s) | Good |
-| qwen2.5:7b | 4.7GB | Medium (5-10s) | Better |
-| qwen2.5:14b | 9GB | Slow (10-20s) | Best |
+| qwen2.5-coder:7b | 4.7GB | Medium (5-10s) | Better |
+| qwen2.5-coder:14b | 9GB | Slow (10-20s) | Best |
 
 ## License
 

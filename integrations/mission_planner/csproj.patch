@@ -1,0 +1,12 @@
+diff --git a/MissionPlanner.csproj b/MissionPlanner.csproj
+index eeee11ae6..bc01aa9f8 100644
+--- a/MissionPlanner.csproj
++++ b/MissionPlanner.csproj
+@@ -71,6 +71,7 @@
+     <EmbeddedResource Remove="obj2\**" />
+     <EmbeddedResource Remove="obj\**" />
+     <EmbeddedResource Remove="plugins\**" />
++    <EmbeddedResource Remove="Plugins\**" />
+     <EmbeddedResource Remove="resedit\**" />
+     <EmbeddedResource Remove="SikRadio\**" />
+     <EmbeddedResource Remove="Updater\**" />
