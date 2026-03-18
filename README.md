@@ -12,17 +12,17 @@ land
 
 ## Demos
 
-**MAVProxy**
-
-https://github.com/deepak61296/ardupilot-ai-backend/raw/feature/qgc-integration/demos/mavproxy_ai_backend.mp4
-
 **Mission Planner**
 
-https://github.com/deepak61296/ardupilot-ai-backend/raw/feature/qgc-integration/demos/mission_planner.mp4
+[![Mission Planner Demo](https://img.youtube.com/vi/mMeY41tOgTs/0.jpg)](https://www.youtube.com/watch?v=mMeY41tOgTs)
 
 **QGroundControl**
 
-https://github.com/deepak61296/ardupilot-ai-backend/raw/feature/qgc-integration/demos/qgc.mp4
+[![QGroundControl Demo](https://img.youtube.com/vi/J89E-0sYJxw/0.jpg)](https://www.youtube.com/watch?v=J89E-0sYJxw)
+
+**MAVProxy**
+
+[![MAVProxy Demo](https://img.youtube.com/vi/8ATi4Uj1ndc/0.jpg)](https://www.youtube.com/watch?v=8ATi4Uj1ndc)
 
 ## Quick Start
 
