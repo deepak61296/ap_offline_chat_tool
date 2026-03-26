@@ -12,7 +12,9 @@ The AI Backend provides natural language control for ArduPilot drones through QG
 
 1. **ArduPilot AI Backend** running on `http://localhost:5000`
 2. **Ollama** with `qwen2.5:3b` model installed
-3. **QGroundControl** with AI integration branch
+3. **QGroundControl fork repository**
+   - **Default branch:** `master`
+   - **Feature branch:** `feature/ai-backend-integration` (You *must* checkout this branch for the AI features)
 
 ## Setup
 

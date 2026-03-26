@@ -25,7 +25,12 @@ Download from [Mission Planner fork releases](https://github.com/deepak61296/Mis
 
 ### Option 2: Build from Source
 
-1. Clone Mission Planner fork:
+**Important Branch Info:**
+The Mission Planner fork relies on specific feature branches.
+- **Default branch:** `feature/ai-chat-assistant` (Older version)
+- **Feature branch:** `feature/script-mode-clean` (Latest stable AI features)
+
+1. Clone Mission Planner fork and checkout the correct branch:
 ```bash
 git clone https://github.com/deepak61296/MissionPlanner.git
 cd MissionPlanner

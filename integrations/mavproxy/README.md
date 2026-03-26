@@ -4,6 +4,10 @@ Natural language control for MAVProxy.
 
 ## Installation
 
+**Important Branch Info:**
+If you are cloning the MAVProxy fork, note that the default branch is `master`. The AI Backend features are on the `feature/ai-backend-integration` branch.
+
+### Option 1: Drop-in Module
 Copy `mavproxy_ai_backend.py` to your MAVProxy modules folder:
 
 **Windows:**
