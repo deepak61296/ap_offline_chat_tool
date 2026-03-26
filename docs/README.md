@@ -22,45 +22,33 @@ Complete documentation for the ArduPilot AI Backend project.
 ## Document Descriptions
 
 ### PROJECT_OVERVIEW.md
-Comprehensive introduction to the project covering:
-- What the system does and why
+High-level summary of the system:
 - Core concepts and workflow
-- Three operation modes (Agent/Ask/Script)
+- The three operation modes (Agent/Ask/Script)
 - Safety features and validation
-- Technology stack and requirements
-- Command reference table
-- Integration options for both MAVProxy and Mission Planner
-- Use cases and examples
-- Performance metrics
+- Tech stack, requirements, and performance
 
-**Audience:** New users, stakeholders, anyone evaluating the project
+**Audience:** New users and stakeholders.
 
 ### ARCHITECTURE.md
-Technical deep-dive into system design:
-- Multi-layer architecture diagram (User/Backend/Execution)
-- Component breakdown with file references
-- API contract with JSON examples
-- Operation mode internals
-- Safety system implementation
+System design details:
+- Multi-layer architecture diagram
+- Component breakdown and API contracts
+- Operation mode internals and safety system
 - RAG document retrieval system
 - Lua template engine design
-- Complete data flow from input to execution
 - Extension guide for adding new commands
-- Performance bottlenecks and optimization
 
-**Audience:** Developers, contributors, architects
+**Audience:** Developers and contributors.
 
 ### CONTRIBUTING.md
-Developer onboarding and workflow:
-- Repository structure table
-- Development setup for all 3 repos (main + 2 forks)
-- How to add new commands (6-step process)
-- API contract and testing requirements
-- Syncing integration copies from forks
-- Commit message guidelines
-- Pull request workflow
+Developer guide:
+- Repository structure
+- Development setup for all 3 repos
+- How to add new commands
+- PR and commit guidelines
 
-**Audience:** Contributors, developers extending the system
+**Audience:** Contributors.
 
 ### COMPATIBILITY.md
 Version management reference:

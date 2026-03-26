@@ -139,7 +139,6 @@ cd C:\Users\YourUsername\Documents\ardupilot-ai-backend
 # Activate environment
 conda activate ardupilot_ai
 
-# Run demo
 # Test the API
 curl http://localhost:5000/health
 ```
@@ -196,11 +195,6 @@ conda activate ardupilot_ai
 
 # Run tests
 python tests\test_comprehensive.py
-
-# Expected output:
-# Total Tests: 20
-# [PASS] Passed: 20
-# Success Rate: 100.0%
 ```
 
 ## Troubleshooting
@@ -262,7 +256,6 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 # Activate environment
 conda activate ardupilot_ai
 
-# Run demo mode
 # Test the API
 curl http://localhost:5000/health
 
