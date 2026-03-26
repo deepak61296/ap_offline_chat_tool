@@ -2,6 +2,8 @@
 
 Chat-based drone control for Mission Planner.
 
+[![Mission Planner Demo](https://img.youtube.com/vi/mMeY41tOgTs/0.jpg)](https://www.youtube.com/watch?v=mMeY41tOgTs)
+
 ## Files
 
 All files needed for AI integration:

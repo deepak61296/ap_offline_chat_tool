@@ -8,6 +8,8 @@ The AI Backend provides natural language control for ArduPilot drones through QG
 - **Ask Mode**: Query telemetry data and get information about the drone
 - **Agent Mode**: Execute commands using natural language (arm, takeoff, land, etc.)
 
+[![QGroundControl Demo](https://img.youtube.com/vi/J89E-0sYJxw/0.jpg)](https://www.youtube.com/watch?v=J89E-0sYJxw)
+
 ## Requirements
 
 1. **ArduPilot AI Backend** running on `http://localhost:5000`
