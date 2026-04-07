@@ -1,0 +1,674 @@
+[
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "yo arm it up, she's ready"
+},
+{
+"role": "assistant",
+"content": "Arming the drone now."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "nah dude the props are off, just disarm everything"
+},
+{
+"role": "assistant",
+"content": "Disarming the drone."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "ok ok take off to 12 meters and chill there"
+},
+{
+"role": "assistant",
+"content": "Taking off to 12 meters."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "oh crap bring it down now land land land"
+},
+{
+"role": "assistant",
+"content": "Landing the drone."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "get us back home asap, rtl it"
+},
+{
+"role": "assistant",
+"content": "Returning to launch."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "switch to guided mode, I'm taking control"
+},
+{
+"role": "assistant",
+"content": "Changing mode to GUIDED."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "can you put her in loiter for a sec?"
+},
+{
+"role": "assistant",
+"content": "Changing mode to LOITER."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "bro set it to auto, mission time"
+},
+{
+"role": "assistant",
+"content": "Changing mode to AUTO."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "flip it to stabilize, it's acting weird"
+},
+{
+"role": "assistant",
+"content": "Changing mode to STABILIZE."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "panic mode bro, go back to rtl"
+},
+{
+"role": "assistant",
+"content": "Changing mode to RTL."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "nudge it north 5 meters, tiny correction"
+},
+{
+"role": "assistant",
+"content": "Moving north 5 meters."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "move south 2 meters please, it's a bit off"
+},
+{
+"role": "assistant",
+"content": "Moving south 2 meters."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "can you slide east 18 meters, like super smooth"
+},
+{
+"role": "assistant",
+"content": "Moving east 18 meters."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "yeah go west 11 meters, careful now"
+},
+{
+"role": "assistant",
+"content": "Moving west 11 meters."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "bro bump altitude up by 3 meters"
+},
+{
+"role": "assistant",
+"content": "Increasing altitude by 3 meters."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "drop it 2 meters, just a little lower"
+},
+{
+"role": "assistant",
+"content": "Decreasing altitude by 2 meters."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "make it cruise at 6 m/s, not too fast"
+},
+{
+"role": "assistant",
+"content": "Setting speed to 6 m/s."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "yo set heading to 270 degrees, face west"
+},
+{
+"role": "assistant",
+"content": "Setting heading to 270 degrees."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "what's the current PSC_POSXY_P at right now?"
+},
+{
+"role": "assistant",
+"content": "Getting parameter PSC_POSXY_P."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "set ARMING_CHECK to 1, i need full checks"
+},
+{
+"role": "assistant",
+"content": "Setting parameter ARMING_CHECK to 1."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "can u pull up EKF3_AID_MASK for me?"
+},
+{
+"role": "assistant",
+"content": "Getting parameter EKF3_AID_MASK."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "set WPNAV_SPEED to 800, let's see it move"
+},
+{
+"role": "assistant",
+"content": "Setting parameter WPNAV_SPEED to 800."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "hey reboot the fc, it's being goofy"
+},
+{
+"role": "assistant",
+"content": "Rebooting the flight controller."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "arm now pls no drama"
+},
+{
+"role": "assistant",
+"content": "Arming the drone now."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "bro disarm, we are done here"
+},
+{
+"role": "assistant",
+"content": "Disarming the drone."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "can you lift off to 25 meters real quick"
+},
+{
+"role": "assistant",
+"content": "Taking off to 25 meters."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "get it down on the ground nowww"
+},
+{
+"role": "assistant",
+"content": "Landing the drone."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "return home, i'm losing confidence lol"
+},
+{
+"role": "assistant",
+"content": "Returning to launch."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "switch into guided please, manual takeover"
+},
+{
+"role": "assistant",
+"content": "Changing mode to GUIDED."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "loiter it, the GPS looks okay"
+},
+{
+"role": "assistant",
+"content": "Changing mode to LOITER."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "put it in auto mode and let mission run"
+},
+{
+"role": "assistant",
+"content": "Changing mode to AUTO."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "ok stabilise it, wind is nasty"
+},
+{
+"role": "assistant",
+"content": "Changing mode to STABILIZE."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "rtl it now, battery getting sus"
+},
+{
+"role": "assistant",
+"content": "Changing mode to RTL."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "tiny move north 1 meter, I overshot"
+},
+{
+"role": "assistant",
+"content": "Moving north 1 meters."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "slide south 14 meters, keep it simple"
+},
+{
+"role": "assistant",
+"content": "Moving south 14 meters."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "push east 4 meters pls"
+},
+{
+"role": "assistant",
+"content": "Moving east 4 meters."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "nah west 9 meters, my bad"
+},
+{
+"role": "assistant",
+"content": "Moving west 9 meters."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "altitude up 7 meters, let's clear the tree"
+},
+{
+"role": "assistant",
+"content": "Increasing altitude by 7 meters."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "bring altitude down 1 meter, just a tad"
+},
+{
+"role": "assistant",
+"content": "Decreasing altitude by 1 meters."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "set the cruise speed to 2 m/s, I'm testing"
+},
+{
+"role": "assistant",
+"content": "Setting speed to 2 m/s."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "rotate heading to 90 degrees, face east"
+},
+{
+"role": "assistant",
+"content": "Setting heading to 90 degrees."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "show me the value of ATC_RAT_PIT_P rn"
+},
+{
+"role": "assistant",
+"content": "Getting parameter ATC_RAT_PIT_P."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "set RTL_ALT to 30, I want more return height"
+},
+{
+"role": "assistant",
+"content": "Setting parameter RTL_ALT to 30."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "bro what is FS_THR_ENABLE set to?"
+},
+{
+"role": "assistant",
+"content": "Getting parameter FS_THR_ENABLE."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "turn THR_MIN to 130, it's too low"
+},
+{
+"role": "assistant",
+"content": "Setting parameter THR_MIN to 130."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "pls reboot fc, it froze again"
+},
+{
+"role": "assistant",
+"content": "Rebooting the flight controller."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "arm the thing, I'm at the pad"
+},
+{
+"role": "assistant",
+"content": "Arming the drone now."
+}
+],
+[
+{
+"role": "system",
+"content": "You are an AI assistant for ArduPilot Mission Planner with COMMAND EXECUTION capabilities. Be helpful but SAFE. Only execute when explicitly asked."
+},
+{
+"role": "user",
+"content": "disarm it quick, props are sketchy"
+},
+{
+"role": "assistant",
+"content": "Disarming the drone."
+}
+]
+]
