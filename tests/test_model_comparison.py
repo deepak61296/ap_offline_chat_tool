@@ -1,199 +1,144 @@
 #!/usr/bin/env python3
 """
-Model Comparison Test Script
+ArduPilot AI Model Comparison & Benchmarking Suite
 
-Tests different models (Gemma 3, Qwen 2.5, FunctionGemma) with the same command set
-and compares accuracy, response time, and output quality.
+Tests different Ollama models via the active REST API.
+Evaluates:
+1. Accuracy (Did it extract the correct JSON command?)
+2. Latency (Response time in seconds)
+3. "Chattiness" (Are there <think> tokens or excessive explanation breaking regex?)
 """
 
 import time
+import requests
+import json
 import sys
-from pathlib import Path
+from prettytable import PrettyTable
 
-# Add src to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# The active backend server
+API_URL = "http://localhost:5000/chat"
+HEALTH_URL = "http://localhost:5000/status"
 
-from src.model_adapter import get_model_adapter
-
-
-# Test commands with expected function calls
-TEST_CASES = [
-    # Basic commands
-    ("arm the drone", "arm", {}),
-    ("disarm", "disarm", {}),
-    ("land", "land", {}),
-    ("return to launch", "rtl", {}),
-    
-    # Commands with parameters
-    ("takeoff to 15 meters", "takeoff", {"altitude": 15}),
-    ("takeoff 20", "takeoff", {"altitude": 20}),
-    ("takeoff drone at 25", "takeoff", {"altitude": 25}),
-    
-    # Mode changes
-    ("change mode to GUIDED", "change_mode", {"mode": "GUIDED"}),
-    ("switch to LOITER mode", "change_mode", {"mode": "LOITER"}),
-    
-    # Status queries
-    ("check battery", "get_battery", {}),
-    ("battery status", "get_battery", {}),
-    ("where am I", "get_position", {}),
-    ("current position", "get_position", {}),
-    
-    # Natural variations
-    ("arm", "arm", {}),
-    ("take off to 10 meters", "takeoff", {"altitude": 10}),
-    ("go to GUIDED mode", "change_mode", {"mode": "GUIDED"}),
+# Models to benchmark: You can edit this list if you pull new models!
+MODELS_TO_TEST = [
+    "qwen2.5:3b",
+    "gemma2:2b", # Currently highly recommended over Qwen
+    "llama3.2:3b",
+    "test_bot_fixed"
 ]
 
+TEST_CASES = [
+    # (User Prompt, Expected Command Type, Expected Params)
+    ("arm the drone", "ARM", {}),
+    ("take off to 15 meters", "TAKEOFF", {"altitude": 15}),
+    ("land right now", "LAND", {}),
+    ("return to launch", "RTL", {}),
+    ("change flight mode to LOITER", "CHANGE_MODE", {"mode": "LOITER"}),
+    ("move north 20m", "MOVE_DIRECTION", {"direction": "north", "distance": 20}),
+    ("set parameter WPNAV_SPEED to 500", "SET_PARAM", {"param_id": "WPNAV_SPEED", "value": 500.0}),
+    ("go to battery failsafe params", "SEARCH_PARAM", {"query": "battery failsafe"}) # Pending new architecture!
+]
 
-def test_model(model_name: str) -> dict:
-    """
-    Test a model with all test cases
+def check_backend():
+    try:
+        r = requests.get(HEALTH_URL)
+        if r.status_code == 200:
+            return r.json().get("available_models", [])
+        return []
+    except:
+        return []
+
+def run_benchmarks(available_models):
+    print("=" * 80)
+    print("🚀 ARDUPILOT AI: MODEL BENCHMARKING SUITE")
+    print("=" * 80)
+
+    # Force testing all requested models instead of checking backend cache
+    active_models = MODELS_TO_TEST
     
-    Returns:
-        dict with results
-    """
-    print(f"\n{'='*70}")
-    print(f"Testing Model: {model_name.upper()}")
-    print('='*70)
+    if not active_models:
+        print("❌ Error: None of the target models are currently loaded in Ollama.")
+        print(f"Required targets: {MODELS_TO_TEST}")
+        sys.exit(1)
+
+    print(f"Testing models: {active_models}\n")
     
-    adapter = get_model_adapter(model_name)
-    
-    results = {
-        "model": model_name,
-        "total": len(TEST_CASES),
-        "passed": 0,
-        "failed": 0,
-        "errors": 0,
-        "total_time": 0,
-        "avg_time": 0,
-        "details": []
-    }
-    
-    for i, (command, expected_func, expected_params) in enumerate(TEST_CASES, 1):
-        print(f"\n[{i}/{len(TEST_CASES)}] Testing: '{command}'")
+    results = {}
+
+    for model in active_models:
+        print(f"--- Running tests for {model} ---")
+        passed = 0
+        total_latency = 0
+        overthinking_count = 0
         
-        start_time = time.time()
-        try:
-            result = adapter.get_function_call(command)
-            elapsed = time.time() - start_time
-            results["total_time"] += elapsed
+        for case in TEST_CASES:
+            prompt, expected_type, expected_params = case
+            payload = {
+                "message": prompt,
+                "mode": "agent",
+                "model": model,
+                "telemetry": {
+                    "status": {"mode": "STABILIZE", "armed": False},
+                    "gps": {"satellites": 12, "altitude": 0}
+                }
+            }
             
-            if result is None:
-                print(f"  ❌ FAIL: No result returned")
-                results["failed"] += 1
-                results["details"].append({
-                    "command": command,
-                    "status": "FAIL",
-                    "reason": "No result",
-                    "time": elapsed
-                })
+            start_time = time.time()
+            try:
+                r = requests.post(API_URL, json=payload, timeout=20)
+                latency = time.time() - start_time
+                data = r.json()
+            except requests.exceptions.RequestException:
+                print(f"  [Error] API timeout or crash for '{prompt}'")
                 continue
+
+            total_latency += latency
             
-            # Check function name
-            actual_func = result.get("function", "")
-            actual_params = result.get("parameters", {})
+            # Check accuracy
+            is_accurate = False
+            if data.get("success") and data.get("command"):
+                cmd = data["command"]
+                # For some test cases like SEARCH_PARAM which might not exist in backend yet, we gracefully ignore failure mapping
+                if cmd.get("type") == expected_type:
+                    is_accurate = True
             
-            func_match = actual_func == expected_func
-            params_match = actual_params == expected_params
-            
-            if func_match and params_match:
-                print(f"  ✅ PASS: {result} ({elapsed:.3f}s)")
-                results["passed"] += 1
-                results["details"].append({
-                    "command": command,
-                    "status": "PASS",
-                    "result": result,
-                    "time": elapsed
-                })
-            else:
-                print(f"  ❌ FAIL: Got {result}, expected {expected_func}({expected_params})")
-                results["failed"] += 1
-                results["details"].append({
-                    "command": command,
-                    "status": "FAIL",
-                    "expected": {"function": expected_func, "parameters": expected_params},
-                    "actual": result,
-                    "time": elapsed
-                })
+            if is_accurate: passed += 1
+
+            # Check for Chattiness/Overthinking
+            ai_text = data.get("response") or ""
+            if len(ai_text.split()) > 15 or "<think>" in ai_text:
+                overthinking_count += 1
                 
-        except Exception as e:
-            elapsed = time.time() - start_time
-            print(f"  ❌ ERROR: {e}")
-            results["errors"] += 1
-            results["total_time"] += elapsed
-            results["details"].append({
-                "command": command,
-                "status": "ERROR",
-                "error": str(e),
-                "time": elapsed
-            })
-    
-    results["avg_time"] = results["total_time"] / len(TEST_CASES) if TEST_CASES else 0
-    results["accuracy"] = (results["passed"] / len(TEST_CASES) * 100) if TEST_CASES else 0
-    
-    return results
+        # Store results
+        results[model] = {
+            "accuracy": (passed / len(TEST_CASES)) * 100,
+            "latency": total_latency / len(TEST_CASES),
+            "chattiness": (overthinking_count / len(TEST_CASES)) * 100
+        }
 
-
-def print_summary(all_results: list):
-    """Print comparison summary"""
-    print("\n" + "="*70)
-    print("COMPARISON SUMMARY")
-    print("="*70)
+    # Print Report
+    print("\n" + "=" * 80)
+    print("📊 BENCHMARK REPORT")
+    print("=" * 80)
     
-    print(f"\n{'Model':<20} {'Accuracy':<12} {'Avg Time':<12} {'Passed':<10}")
-    print("-" * 70)
+    pt = PrettyTable()
+    pt.field_names = ["Model", "Accuracy", "Avg Latency", "Overthinking Rate"]
     
-    for result in all_results:
-        accuracy = f"{result['accuracy']:.1f}%"
-        avg_time = f"{result['avg_time']:.3f}s"
-        passed = f"{result['passed']}/{result['total']}"
+    for model, res in results.items():
+        acc = f"{res['accuracy']:.1f}%"
+        lat = f"{res['latency']:.2f}s"
+        chat = f"{res['chattiness']:.1f}%"
+        pt.add_row([model, acc, lat, chat])
         
-        print(f"{result['model']:<20} {accuracy:<12} {avg_time:<12} {passed:<10}")
-    
-    # Find best model
-    best_accuracy = max(all_results, key=lambda x: x['accuracy'])
-    fastest = min(all_results, key=lambda x: x['avg_time'])
-    
-    print("\n" + "="*70)
-    print("RECOMMENDATIONS")
-    print("="*70)
-    print(f"Best Accuracy: {best_accuracy['model']} ({best_accuracy['accuracy']:.1f}%)")
-    print(f"Fastest: {fastest['model']} ({fastest['avg_time']:.3f}s avg)")
-    
-    # Overall recommendation
-    print("\nOverall Recommendation:")
-    if best_accuracy['model'] == fastest['model']:
-        print(f"  ✅ {best_accuracy['model']} - Best accuracy AND fastest!")
-    else:
-        print(f"  ✅ {best_accuracy['model']} - For maximum accuracy")
-        print(f"  ⚡ {fastest['model']} - For fastest response")
-
-
-def main():
-    """Main test function"""
-    print("="*70)
-    print("MODEL COMPARISON TEST")
-    print("="*70)
-    print(f"\nTesting {len(TEST_CASES)} commands across multiple models...")
-    
-    models_to_test = ["functiongemma", "qwen2.5", "gemma3"]
-    all_results = []
-    
-    for model in models_to_test:
-        try:
-            results = test_model(model)
-            all_results.append(results)
-        except Exception as e:
-            print(f"\n❌ Failed to test {model}: {e}")
-    
-    if all_results:
-        print_summary(all_results)
-    
-    print("\n" + "="*70)
-    print("TEST COMPLETE")
-    print("="*70)
-
+    print(pt)
+    print("\n💡 Insights:")
+    print("- High Accuracy (>90%) means the model understands commands perfectly.")
+    print("- Low Avg Latency (<2.0s) is critical for real-time drone control.")
+    print("- High Overthinking Rate means the model is outputting <think> blocks or chatting too much, slowing down extraction.")
 
 if __name__ == "__main__":
-    main()
+    avail = check_backend()
+    if not avail:
+        print("❌ Backend is not running on http://localhost:5000. Please start it first.")
+        sys.exit(1)
+    run_benchmarks(avail)

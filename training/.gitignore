@@ -1,0 +1,9 @@
+# Ignore model weight files and checkpoints
+*.gguf
+*.safetensors
+checkpoint-*/
+runs/
+__pycache__/
+*.jsonl
+ardupilot_ai_finetuned/
+ardupilot_ai_finetuned_gguf/

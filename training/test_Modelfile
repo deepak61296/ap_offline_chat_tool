@@ -1,0 +1,11 @@
+FROM /home/deepak/Documents/ai_backend/ardupilot-ai-backend/training/ardupilot_ai_finetuned_gguf/qwen2.5-3b-instruct.Q4_K_M.gguf
+TEMPLATE """{{ if .System }}<|im_start|>system
+{{ .System }}<|im_end|>
+{{ end }}{{ if .Prompt }}<|im_start|>user
+{{ .Prompt }}<|im_end|>
+{{ end }}<|im_start|>assistant
+"""
+PARAMETER stop "<|im_end|>"
+PARAMETER stop "<|im_start|>"
+PARAMETER temperature 0.1
+SYSTEM """You are an ArduPilot control AI. Follow instructions strictly and concisely."""

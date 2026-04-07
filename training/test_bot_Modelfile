@@ -1,0 +1,6 @@
+FROM /home/deepak/Documents/ai_backend/ardupilot-ai-backend/training/ardupilot_ai_finetuned_gguf/qwen2.5-3b-instruct.Q4_K_M.gguf
+PARAMETER stop "<|im_end|>"
+PARAMETER stop "<|im_start|>"
+PARAMETER stop "<|endoftext|>"
+PARAMETER temperature 0.1
+SYSTEM """You are an ArduPilot control AI. Follow instructions strictly and concisely."""

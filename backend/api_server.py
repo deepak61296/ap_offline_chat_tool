@@ -105,7 +105,12 @@ def get_status():
     """Get backend status and model information"""
     try:
         models = ollama.list()
-        available_models = [m.get('name', '') for m in models.get('models', [])]
+        
+        # Handle both dict (old ollama) and Pydantic objects (new ollama)
+        try:
+            available_models = [m.model for m in models.models]
+        except AttributeError:
+            available_models = [m.get('name', '') for m in models.get('models', [])]
 
         # Get MAVLink connection status
         mavlink_info = {
@@ -284,12 +289,21 @@ def get_models():
         models = ollama.list()
         model_list = []
         
-        for m in models.get('models', []):
-            model_list.append({
-                'name': m.get('name', ''),
-                'size': m.get('size', 0),
-                'modified': m.get('modified_at', '')
-            })
+        # Handle both dict and Pydantic objects
+        try:
+            for m in models.models:
+                model_list.append({
+                    'name': m.model,
+                    'size': getattr(m, 'size', 0),
+                    'modified': str(getattr(m, 'modified_at', ''))
+                })
+        except AttributeError:
+            for m in models.get('models', []):
+                model_list.append({
+                    'name': m.get('name', ''),
+                    'size': m.get('size', 0),
+                    'modified': m.get('modified_at', '')
+                })
         
         return jsonify({
             'models': model_list,
