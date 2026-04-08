@@ -56,7 +56,7 @@ COMMAND_TEMPLATES = [
     # LAND
     ({"land", "land the drone", "bring it down", "EMERGENCY LAND NOW", "stop and land"}, "Landing the drone."),
     # RTL
-    ({"rtl", "return to launch", "come home", "bring it home", "ABORT ABORT"}, "Returning to launch."),
+    ({"rtl", "return to launch", "come home", "bring it home", "ABORT ABORT", "bring drone back", "bring it back it is dangerous", "emergency return", "come back right now"}, "Returning to launch."),
     # MOVE
     ({"move {dir} {x} meters", "fly {dir} for {x}m", "go {dir} {x} meters", "head {dir} {x}m"}, "Moving {dir} {x} meters."),
     # ALTITUDE
@@ -73,7 +73,7 @@ COMMAND_TEMPLATES = [
     # NEW COMMAND: SMART RTL
     ({"smart rtl", "return safely via smart rtl"}, "Returning to launch via safe path."),
     # NEW COMMAND: SEARCH PARAM
-    ({"how do I change my {param}?", "what parameter controls {param}?", "search for params related to {param}"}, "Searching for parameter related to {param}."),
+    ({"how do I change my {param}?", "what parameter controls {param}?", "search for params related to {param}", "go to {param} params", "find the parameter for {param}"}, "Searching the parameter database for '{param}'."),
     # REJECT DIAGONALS
     ({"move northeast {x}m", "fly southwest {x} meters"}, "I can only move in cardinal directions: north, south, east, or west. Please specify one of these directions."),
     # VAGUE TAKEOFF (REJECTION)

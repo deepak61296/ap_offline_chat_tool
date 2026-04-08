@@ -225,8 +225,8 @@ def extract_param_command(ai_response: str) -> Optional[Dict[str, Any]]:
     
     # SET_PARAM: "setting parameter X to Y" - more flexible patterns
     set_patterns = [
-        r'setting parameter\s+(\w+)\s+to\s+([-\d.]+)',  # "setting parameter X to Y"
-        r'setting\s+(\w+)\s+to\s+([-\d.]+)',  # "setting X to Y"
+        r'(?:setting|changing) parameter\s+(\w+)\s+to\s+([-\d.]+)',  # "setting parameter X to Y"
+        r'(?:setting|changing)\s+(\w+)\s+to\s+([-\d.]+)',  # "setting X to Y"
     ]
     
     for pattern in set_patterns:
@@ -256,6 +256,24 @@ def extract_param_command(ai_response: str) -> Optional[Dict[str, Any]]:
                 "type": "GET_PARAM",
                 "params": {"name": param_name}
             }
+            
+    # SEARCH_PARAM: "searching parameter database for X", "search for parameter: X", etc.
+    search_patterns = [
+        r'search.*?parameter.*?(?:for|to|:)\s*[\'"]?(.*?)[\'"]?(?:\.|$)',
+        r'find.*?parameter.*?(?:for|to|:)\s*[\'"]?(.*?)[\'"]?(?:\.|$)'
+    ]
+    
+    for pattern in search_patterns:
+        search_match = re.search(pattern, response_lower)
+        if search_match:
+            query = search_match.group(1).strip()
+            # Clean up trailing quotes or periods
+            query = re.sub(r'[\'\"\.]+$', '', query)
+            if query:
+                return {
+                    "type": "SEARCH_PARAM",
+                    "params": {"query": query}
+                }
     
     return None
 
@@ -342,6 +360,11 @@ def validate_command(command: Dict[str, Any]) -> tuple[bool, Optional[str]]:
         heading = params.get("heading", 0)
         if heading < 0 or heading > 360:
             return False, f"Invalid heading: {heading}"
+
+    elif cmd_type == "SEARCH_PARAM":
+        query = params.get("query", "")
+        if not query or len(query) < 2:
+            return False, "Search query is too short or empty"
 
     return True, None
 

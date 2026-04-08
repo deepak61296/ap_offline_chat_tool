@@ -23,6 +23,7 @@ from backend.commands import extract_command, validate_command, extract_lua_scri
 from backend.telemetry_data import format_telemetry_for_prompt
 from backend.template_injector_v2 import generate_from_template
 from backend.lua_postprocessor import postprocess_lua_script
+from backend.param_db import db as param_db
 
 # Import MAVLink manager (optional for standalone mode)
 try:
@@ -480,6 +481,47 @@ def chat():
                         command = {"type": "ERROR", "params": {"message": error_msg}}
                     else:
                         logger.info(f"Command detected: {command['type']}")
+                        
+                        # --- AGENTIC RAG LOOP FOR PARAMETERS ---
+                        if command['type'] == 'SEARCH_PARAM':
+                            query = command['params']['query']
+                            logger.info(f"Agentic Loop Triggered: Executing search for '{query}'")
+                            
+                            results = param_db.search(query, top_k=3)
+                            if results:
+                                search_text = "SYSTEM RAG SEARCH RESULTS:\\n"
+                                for i, r in enumerate(results):
+                                    search_text += f"{i+1}. {r['name']} - {r['description'][:100]}...\\n"
+                                search_text += "\\nPlease formulate the correct SET_PARAM or GET_PARAM command now that you have the reference. Reply concisely."
+                            else:
+                                search_text = f"SYSTEM RAG SEARCH RESULTS: No parameters found for '{query}'. Please inform the user."
+                                
+                            logger.info("Agentic Loop: Re-prompting AI with search results")
+                            loop_resp = ollama.chat(
+                                model=model,
+                                messages=[
+                                    {'role': 'system', 'content': system_prompt},
+                                    {'role': 'user', 'content': user_message},
+                                    {'role': 'assistant', 'content': ai_response},
+                                    {'role': 'user', 'content': search_text}
+                                ],
+                                options={
+                                    'num_ctx': OLLAMA_NUM_CTX,
+                                    'num_gpu': OLLAMA_NUM_GPU,
+                                    'temperature': 0.1
+                                }
+                            )
+                            
+                            ai_response = loop_resp['message']['content'].strip()
+                            logger.info(f"Agentic Loop Final Output: {ai_response}")
+                            
+                            # Re-extract the new command from the looped response
+                            command = extract_command(ai_response)
+                            if command:
+                                is_valid, error_msg = validate_command(command)
+                                if not is_valid:
+                                    command = {"type": "ERROR", "params": {"message": error_msg}}
+                        # --- END AGENTIC LOOP ---
         
         return jsonify({
             'success': True,
