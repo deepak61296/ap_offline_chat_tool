@@ -81,7 +81,7 @@ COMMAND_TEMPLATES = [
 ]
 
 # Randomizing variables
-DIRECTIONS = ["north", "south", "east", "west"]
+DIRECTIONS = ["north", "south", "east", "west", "forward", "backward", "back", "left", "right"]
 MODES = ["GUIDED", "AUTO", "LOITER", "STABILIZE"]
 PARAMS = ["speed", "tilt", "battery failsafe", "tuning", "fences"]
 

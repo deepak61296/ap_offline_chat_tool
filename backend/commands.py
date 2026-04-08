@@ -103,14 +103,9 @@ def extract_movement_command(ai_response: str) -> Optional[Dict[str, Any]]:
     
     # Pattern: "moving [direction] [distance] meters"
     directions = {
-        'north': 0,
-        'south': 180,
-        'east': 90,
-        'west': 270,
-        'northeast': 45,
-        'northwest': 315,
-        'southeast': 135,
-        'southwest': 225
+        'north': 0, 'south': 180, 'east': 90, 'west': 270,
+        'northeast': 45, 'northwest': 315, 'southeast': 135, 'southwest': 225,
+        'forward': None, 'backward': None, 'back': None, 'left': None, 'right': None
     }
     
     for direction, bearing in directions.items():
@@ -127,13 +122,23 @@ def extract_movement_command(ai_response: str) -> Optional[Dict[str, Any]]:
                 distance = int(match.group(1))
                 if distance > MOVEMENT_MAX_DISTANCE:
                     return {"type": "ERROR", "params": {"message": f"Distance {distance}m exceeds maximum {MOVEMENT_MAX_DISTANCE}m"}}
+                
+                # Treat 'back' as 'backward' natively
+                clean_dir = direction.upper()
+                if clean_dir == "BACK":
+                    clean_dir = "BACKWARD"
+                    
+                params = {
+                    "direction": clean_dir,
+                    "distance": distance
+                }
+                
+                if bearing is not None:
+                    params["bearing"] = bearing
+                    
                 return {
                     "type": "MOVE_DIRECTION",
-                    "params": {
-                        "direction": direction.upper(),
-                        "bearing": bearing,
-                        "distance": distance
-                    }
+                    "params": params
                 }
     
     return None
