@@ -480,6 +480,7 @@ def chat():
                     if not is_valid:
                         logger.warning(f"Invalid command: {error_msg}")
                         command = {"type": "ERROR", "params": {"message": error_msg}}
+                    else:
                         logger.info(f"Command detected: {command['type']}")
                         
                         # --- COMPLEX MISSION GEOMETRY CALCULATOR ---
