@@ -1,20 +1,24 @@
-"""ArduPilot AI Backend."""
+"""ArduPilot AI Backend — Agentic Pipeline v3."""
 
-__version__ = '2.4.0'
+__version__ = '3.0.0'
 
-# Core modules
+# Core pipeline
 from .api_server import app
+from .planner import plan
+from .executor import execute
+
+# Tool definitions
+from .tools import TOOL_DEFINITIONS, extract_tool_calls, normalize_tool_call
+
+# Legacy (backward compat)
 from .commands import extract_command, validate_command
-from .prompts import get_agent_prompt, get_ask_prompt, get_script_prompt
+
+# Configuration
 from .config import (
-    DEFAULT_MODEL,
-    SCRIPT_MODEL,
-    API_HOST,
-    API_PORT,
-    SUPPORTED_MODES,
-    STANDALONE_MODE,
-    OPERATION_MODE,
-    BACKEND_VERSION
+    DEFAULT_MODEL, SCRIPT_MODEL,
+    API_HOST, API_PORT,
+    SUPPORTED_MODES, STANDALONE_MODE,
+    OPERATION_MODE, BACKEND_VERSION
 )
 
 # MAVLink manager (optional)
@@ -26,21 +30,10 @@ except ImportError:
     PYMAVLINK_AVAILABLE = False
 
 __all__ = [
-    'app',
-    'extract_command',
-    'validate_command',
-    'get_agent_prompt',
-    'get_ask_prompt',
-    'get_script_prompt',
-    'DEFAULT_MODEL',
-    'SCRIPT_MODEL',
-    'API_HOST',
-    'API_PORT',
-    'SUPPORTED_MODES',
-    'STANDALONE_MODE',
-    'OPERATION_MODE',
-    'BACKEND_VERSION',
-    'MAVLinkManager',
-    'get_mavlink_manager',
-    'PYMAVLINK_AVAILABLE',
+    'app', 'plan', 'execute',
+    'TOOL_DEFINITIONS', 'extract_tool_calls', 'normalize_tool_call',
+    'extract_command', 'validate_command',
+    'DEFAULT_MODEL', 'SCRIPT_MODEL', 'API_HOST', 'API_PORT',
+    'SUPPORTED_MODES', 'STANDALONE_MODE', 'OPERATION_MODE', 'BACKEND_VERSION',
+    'MAVLinkManager', 'get_mavlink_manager', 'PYMAVLINK_AVAILABLE',
 ]

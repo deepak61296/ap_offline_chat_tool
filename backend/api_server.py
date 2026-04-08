@@ -1,7 +1,18 @@
 #!/usr/bin/env python3
 """
-ArduPilot AI Backend - Flask API server.
-Handles chat requests from GCS clients (MAVProxy, Mission Planner, QGroundControl).
+ArduPilot AI Backend — Flask API Server v3.0
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Clean architecture:
+  /chat → Planner (LLM) → Executor (agentic logic) → QGC response
+
+Modules:
+  planner.py    — LLM task decomposition (the brain)
+  executor.py   — Agentic execution engine (the hands)
+  tools.py      — Tool definitions + JSON extraction
+  commands.py   — Legacy regex fallback
+  mavlink_manager.py — Direct MAVLink vehicle comms
+  param_db.py   — ArduPilot parameter RAG database
 """
 
 from flask import Flask, request, jsonify
@@ -9,9 +20,7 @@ from flask_cors import CORS
 import ollama
 import logging
 import time
-import math
 
-# Import our modules
 from backend.config import (
     API_HOST, API_PORT, API_DEBUG,
     DEFAULT_MODEL, SCRIPT_MODEL, LOG_LEVEL, LOG_FORMAT,
@@ -19,279 +28,110 @@ from backend.config import (
     OPERATION_MODE, BACKEND_VERSION, COMMAND_RISK_LEVELS, APPROVAL_MODE,
     OLLAMA_NUM_CTX, OLLAMA_NUM_GPU
 )
-from backend.prompts import get_agent_prompt, get_ask_prompt, get_script_prompt
+from backend.prompts import get_ask_prompt, get_script_prompt
 from backend.commands import extract_command, validate_command, extract_lua_script
 from backend.telemetry_data import format_telemetry_for_prompt
 from backend.template_injector_v2 import generate_from_template
 from backend.lua_postprocessor import postprocess_lua_script
-from backend.param_db import db as param_db
 
-# Import MAVLink manager (optional for standalone mode)
+# Agentic pipeline
+from backend.planner import plan as planner_plan
+from backend.executor import execute as executor_execute
+
+# MAVLink manager (optional)
 try:
     from backend.mavlink_manager import get_mavlink_manager, PYMAVLINK_AVAILABLE
 except ImportError:
     PYMAVLINK_AVAILABLE = False
     get_mavlink_manager = None
 
-# Configure logging
-logging.basicConfig(
-    level=getattr(logging, LOG_LEVEL),
-    format=LOG_FORMAT
-)
+# ─── Logging ───
+logging.basicConfig(level=getattr(logging, LOG_LEVEL), format=LOG_FORMAT)
 logger = logging.getLogger(__name__)
 
-# Initialize Flask app
+# ─── Flask App ───
 app = Flask(__name__)
 CORS(app)
 
-# MAVLink manager instance (for standalone mode)
+# ─── Standalone MAVLink ───
 mavlink_mgr = None
 if STANDALONE_MODE and PYMAVLINK_AVAILABLE and get_mavlink_manager:
     mavlink_mgr = get_mavlink_manager()
     if MAVLINK_CONNECTION:
-        logger.info(f"Standalone mode: Connecting to {MAVLINK_CONNECTION}")
+        logger.info(f"Standalone: connecting to {MAVLINK_CONNECTION}")
         mavlink_mgr.connect(MAVLINK_CONNECTION, MAVLINK_BAUD)
 
-logger.info(f"AI Backend API Server v{BACKEND_VERSION} initialized")
-logger.info(f"Operation mode: {OPERATION_MODE}")
-logger.info(f"Approval mode: {APPROVAL_MODE}")
+logger.info(f"ArduPilot AI Backend v{BACKEND_VERSION} started")
+logger.info(f"Mode: {OPERATION_MODE} | Approval: {APPROVAL_MODE}")
 
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Helpers
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 def is_telemetry_valid(telemetry):
-    """Check if telemetry data indicates a real drone connection"""
+    """Check if telemetry data indicates a real drone connection."""
     if not telemetry:
         return False
-    
-    # Check battery - if voltage is 0, no drone connected
-    if "battery" in telemetry:
-        voltage = telemetry["battery"].get("voltage", 0)
-        if voltage > 0:
-            return True
-    
-    # Check GPS - if satellites > 0, drone is connected
-    if "gps" in telemetry:
-        sats = telemetry["gps"].get("satellites", 0)
-        if sats > 0:
-            return True
-    
-    # Check status - if mode is not empty/default
-    if "status" in telemetry:
-        mode = telemetry["status"].get("mode", "")
-        if mode and mode != "UNKNOWN" and mode != "":
-            return True
-    
+    if telemetry.get("battery", {}).get("voltage", 0) > 0:
+        return True
+    if telemetry.get("gps", {}).get("satellites", 0) > 0:
+        return True
+    mode = telemetry.get("status", {}).get("mode", "")
+    if mode and mode not in ("UNKNOWN", ""):
+        return True
     return False
 
 
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# API Endpoints
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 @app.route('/health', methods=['GET'])
 def health_check():
-    """Health check endpoint"""
-    mavlink_status = "not_available"
-    if mavlink_mgr:
-        mavlink_status = mavlink_mgr.state.value
-
+    mav_status = mavlink_mgr.state.value if mavlink_mgr else "not_available"
     return jsonify({
         'status': 'healthy',
         'service': 'ArduPilot AI Backend',
         'version': BACKEND_VERSION,
         'operation_mode': OPERATION_MODE,
-        'mavlink_status': mavlink_status,
-        'features': ['agent_mode', 'ask_mode', 'script_mode', 'telemetry', 'parameters', 'movement', 'standalone'],
-        'templates': 31,
-        'template_system': 'v3_ultimate'
+        'mavlink_status': mav_status,
     }), 200
 
 
 @app.route('/status', methods=['GET'])
 def get_status():
-    """Get backend status and model information"""
     try:
         models = ollama.list()
-        
-        # Handle both dict (old ollama) and Pydantic objects (new ollama)
         try:
             available_models = [m.model for m in models.models]
         except AttributeError:
             available_models = [m.get('name', '') for m in models.get('models', [])]
 
-        # Get MAVLink connection status
         mavlink_info = {
             'available': PYMAVLINK_AVAILABLE,
-            'connected': False,
-            'connection_string': ''
+            'connected': mavlink_mgr.connected if mavlink_mgr else False,
         }
-        if mavlink_mgr:
-            mavlink_info['connected'] = mavlink_mgr.connected
-            mavlink_info['connection_string'] = mavlink_mgr._connection_string
 
         return jsonify({
             'status': 'running',
             'version': BACKEND_VERSION,
             'operation_mode': OPERATION_MODE,
-            'approval_mode': APPROVAL_MODE,
             'default_model': DEFAULT_MODEL,
             'available_models': available_models,
-            'backend': 'Ollama',
             'modes': ['agent', 'ask', 'script'],
             'mavlink': mavlink_info,
-            'features': {
-                'commands': ['ARM', 'DISARM', 'TAKEOFF', 'LAND', 'RTL', 'CHANGE_MODE', 'GOTO', 'MOVE_DIRECTION'],
-                'parameters': ['GET_PARAM', 'SET_PARAM'],
-                'telemetry': True,
-                'standalone': PYMAVLINK_AVAILABLE
-            }
+            'architecture': 'agentic_v3',
         }), 200
     except Exception as e:
-        return jsonify({
-            'status': 'error',
-            'error': str(e)
-        }), 500
-
-
-# Standalone mode endpoints
-
-@app.route('/connect', methods=['POST'])
-def connect_vehicle():
-    """
-    Connect to vehicle via MAVLink (standalone mode)
-
-    Request JSON:
-    {
-        "connection_string": "tcp:127.0.0.1:5760",
-        "baud": 57600  (optional, for serial)
-    }
-    """
-    if not PYMAVLINK_AVAILABLE:
-        return jsonify({
-            'success': False,
-            'error': 'pymavlink not installed. Run: pip install pymavlink'
-        }), 400
-
-    global mavlink_mgr
-    if mavlink_mgr is None:
-        mavlink_mgr = get_mavlink_manager()
-
-    data = request.get_json() or {}
-    connection_string = data.get('connection_string', MAVLINK_CONNECTION)
-    baud = data.get('baud', MAVLINK_BAUD)
-
-    if not connection_string:
-        return jsonify({
-            'success': False,
-            'error': 'No connection string provided'
-        }), 400
-
-    try:
-        success = mavlink_mgr.connect(connection_string, baud)
-        return jsonify({
-            'success': success,
-            'connected': mavlink_mgr.connected,
-            'connection_string': connection_string,
-            'message': 'Connected to vehicle' if success else 'Connection failed'
-        }), 200 if success else 500
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-
-@app.route('/disconnect', methods=['POST'])
-def disconnect_vehicle():
-    """Disconnect from vehicle"""
-    if mavlink_mgr and mavlink_mgr.connected:
-        mavlink_mgr.disconnect()
-        return jsonify({
-            'success': True,
-            'message': 'Disconnected from vehicle'
-        }), 200
-    else:
-        return jsonify({
-            'success': False,
-            'message': 'Not connected'
-        }), 400
-
-
-@app.route('/telemetry', methods=['GET'])
-def get_telemetry():
-    """
-    Get current telemetry data
-
-    Returns real-time telemetry in standalone mode,
-    or empty data in integrated mode (GCS provides telemetry)
-    """
-    if mavlink_mgr and mavlink_mgr.connected:
-        telemetry = mavlink_mgr.telemetry
-        return jsonify({
-            'success': True,
-            'connected': True,
-            'telemetry': telemetry.to_dict(),
-            'timestamp': time.time()
-        }), 200
-    else:
-        return jsonify({
-            'success': True,
-            'connected': False,
-            'telemetry': None,
-            'message': 'Not connected to vehicle (use /connect or GCS provides telemetry)'
-        }), 200
-
-
-@app.route('/command', methods=['POST'])
-def execute_command():
-    """
-    Execute command directly (standalone mode)
-
-    Request JSON:
-    {
-        "type": "ARM",
-        "params": {}
-    }
-    """
-    if not mavlink_mgr or not mavlink_mgr.connected:
-        return jsonify({
-            'success': False,
-            'error': 'Not connected to vehicle'
-        }), 400
-
-    data = request.get_json()
-    if not data or 'type' not in data:
-        return jsonify({
-            'success': False,
-            'error': 'Missing command type'
-        }), 400
-
-    command = {
-        'type': data.get('type'),
-        'params': data.get('params', {})
-    }
-
-    # Check command risk level
-    risk_level = COMMAND_RISK_LEVELS.get(command['type'].upper(), 'high')
-
-    try:
-        result = mavlink_mgr.execute_command(command)
-        return jsonify({
-            'success': result.success,
-            'message': result.message,
-            'data': result.data,
-            'risk_level': risk_level
-        }), 200 if result.success else 500
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+        return jsonify({'status': 'error', 'error': str(e)}), 500
 
 
 @app.route('/models', methods=['GET'])
 def get_models():
-    """Get list of available models"""
     try:
         models = ollama.list()
         model_list = []
-        
-        # Handle both dict and Pydantic objects
         try:
             for m in models.models:
                 model_list.append({
@@ -306,307 +146,137 @@ def get_models():
                     'size': m.get('size', 0),
                     'modified': m.get('modified_at', '')
                 })
-        
-        return jsonify({
-            'models': model_list,
-            'default': DEFAULT_MODEL
-        }), 200
+        return jsonify({'models': model_list, 'default': DEFAULT_MODEL}), 200
     except Exception as e:
-        return jsonify({
-            'error': str(e)
-        }), 500
+        return jsonify({'error': str(e)}), 500
 
+
+# ─── Standalone Endpoints ───
+
+@app.route('/connect', methods=['POST'])
+def connect_vehicle():
+    if not PYMAVLINK_AVAILABLE:
+        return jsonify({'success': False, 'error': 'pymavlink not installed'}), 400
+
+    global mavlink_mgr
+    if mavlink_mgr is None:
+        mavlink_mgr = get_mavlink_manager()
+
+    data = request.get_json() or {}
+    conn_str = data.get('connection_string', MAVLINK_CONNECTION)
+    baud = data.get('baud', MAVLINK_BAUD)
+
+    if not conn_str:
+        return jsonify({'success': False, 'error': 'No connection string'}), 400
+
+    try:
+        success = mavlink_mgr.connect(conn_str, baud)
+        return jsonify({
+            'success': success,
+            'connected': mavlink_mgr.connected,
+            'message': 'Connected' if success else 'Failed'
+        }), 200 if success else 500
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/disconnect', methods=['POST'])
+def disconnect_vehicle():
+    if mavlink_mgr and mavlink_mgr.connected:
+        mavlink_mgr.disconnect()
+        return jsonify({'success': True}), 200
+    return jsonify({'success': False, 'message': 'Not connected'}), 400
+
+
+@app.route('/telemetry', methods=['GET'])
+def get_telemetry():
+    if mavlink_mgr and mavlink_mgr.connected:
+        return jsonify({
+            'success': True, 'connected': True,
+            'telemetry': mavlink_mgr.telemetry.to_dict(),
+        }), 200
+    return jsonify({'success': True, 'connected': False, 'telemetry': None}), 200
+
+
+@app.route('/command', methods=['POST'])
+def execute_command():
+    if not mavlink_mgr or not mavlink_mgr.connected:
+        return jsonify({'success': False, 'error': 'Not connected'}), 400
+
+    data = request.get_json()
+    if not data or 'type' not in data:
+        return jsonify({'success': False, 'error': 'Missing command type'}), 400
+
+    command = {'type': data['type'], 'params': data.get('params', {})}
+    try:
+        result = mavlink_mgr.execute_command(command)
+        return jsonify({
+            'success': result.success, 'message': result.message,
+            'data': result.data,
+        }), 200 if result.success else 500
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# THE CORE: /chat endpoint
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 @app.route('/chat', methods=['POST'])
 def chat():
     """
-    Process chat message with mode support
+    Process chat message using the Agentic Pipeline.
     
-    Request JSON:
-    {
-        "message": "user message",
-        "mode": "agent" or "ask" (default: "agent"),
-        "model": "model_name" (default: DEFAULT_MODEL),
-        "telemetry": {...} (optional)
-    }
-    
-    Response JSON:
-    {
-        "success": true/false,
-        "response": "AI response text",
-        "command": {"type": "...", "params": {...}} or null,
-        "mode": "agent" or "ask",
-        "model": "model_name",
-        "error": "error message" or null
-    }
+    Flow:
+    1. Parse request, build telemetry context
+    2. Route by mode:
+       - script → template_injector or LLM Lua generation
+       - ask    → simple LLM Q&A
+       - agent  → Planner (decompose) → Executor (resolve) → QGC command
     """
     try:
         data = request.get_json()
         if not data or 'message' not in data:
-            return jsonify({
-                'success': False,
-                'response': None,
-                'command': None,
-                'error': 'Missing message in request'
-            }), 400
-        
+            return jsonify({'success': False, 'error': 'Missing message'}), 400
+
         user_message = data['message'].strip()
         if not user_message:
-            return jsonify({
-                'success': False,
-                'response': None,
-                'command': None,
-                'error': 'Empty message'
-            }), 400
-        
-        # Get mode (agent, ask, or script)
+            return jsonify({'success': False, 'error': 'Empty message'}), 400
+
         mode = data.get('mode', 'agent').lower()
-        if mode not in ['agent', 'ask', 'script']:
+        if mode not in ('agent', 'ask', 'script'):
             mode = 'agent'
-        
-        # Get model - use SCRIPT_MODEL for script mode, DEFAULT_MODEL for others
-        default_for_mode = SCRIPT_MODEL if mode == 'script' else DEFAULT_MODEL
-        model = data.get('model', default_for_mode)
-        
-        # Get telemetry
+
+        default_model = SCRIPT_MODEL if mode == 'script' else DEFAULT_MODEL
+        model = data.get('model', default_model)
         telemetry = data.get('telemetry', {})
-        
-        # Check if drone is actually connected
+
+        # Build telemetry context
         is_connected = is_telemetry_valid(telemetry)
-        
-        if is_connected:
-            connection_status = "CONNECTED to drone"
-            telemetry_str = format_telemetry_for_prompt(telemetry)
-            telemetry_section = f"CURRENT TELEMETRY:\\n{telemetry_str}"
-        else:
-            connection_status = "NOT CONNECTED to drone"
-            telemetry_section = "TELEMETRY: No drone connected. All values are zero/default."
-        
-        logger.info(f"Processing message in {mode} mode: {user_message} (Connected: {is_connected})")
-        
-        # Initialize variables
+        connection_status = "CONNECTED to drone" if is_connected else "NOT CONNECTED to drone"
+        telemetry_str = format_telemetry_for_prompt(telemetry) if is_connected else ""
+        telemetry_section = f"CURRENT TELEMETRY:\n{telemetry_str}" if is_connected else "TELEMETRY: No drone connected."
+
+        logger.info(f"[{mode.upper()}] '{user_message}' (connected={is_connected})")
+
         ai_response = None
         command = None
-        template_code = None
-        system_prompt = None
 
-        # Select prompt based on mode
-        if mode == 'agent':
-            system_prompt = get_agent_prompt(connection_status, telemetry_section)
+        # ─── SCRIPT MODE ───
+        if mode == 'script':
+            ai_response, command = _handle_script_mode(user_message, model, connection_status, telemetry_section)
+
+        # ─── ASK MODE ───
         elif mode == 'ask':
-            # Ask mode - no RAG, just use prompt
-            system_prompt = get_ask_prompt(connection_status, telemetry_section, "")
-        else:  # script mode
-            # Try template injection first (fast, guaranteed correct)
-            template_code, template_used = generate_from_template(user_message)
+            ai_response = _handle_ask_mode(user_message, model, connection_status, telemetry_section)
 
-            if template_code:
-                # Template match! Use it directly (skip LLM!)
-                logger.info(f"✓ Template matched: {template_used}")
-                ai_response = f"I'll create that script for you:\n\n```lua\n{template_code}\n```\n\nThis script uses the proven {template_used} pattern from ArduPilot examples."
-                command = {
-                    "type": "LUA_SCRIPT",
-                    "params": {
-                        "code": template_code,
-                        "description": user_message[:100],
-                        "source": "template",
-                        "template_used": template_used
-                    }
-                }
-            else:
-                # No template match - use LLM
-                logger.info("No template match - using LLM generation")
-                system_prompt = get_script_prompt(connection_status, telemetry_section)
-
-
-        # Call Ollama API (only if not using template)
-        if mode == 'script' and not template_code:
-            # LLM generation for script mode
-            response = ollama.chat(
-                model=model,
-                messages=[
-                    {'role': 'system', 'content': system_prompt},
-                    {'role': 'user', 'content': user_message}
-                ],
-                options={
-                    'num_ctx': OLLAMA_NUM_CTX,
-                    'num_gpu': OLLAMA_NUM_GPU,
-                    'temperature': 0.05,  # Low temperature for consistent code
-                }
+        # ─── AGENT MODE (The Agentic Pipeline) ───
+        elif mode == 'agent':
+            ai_response, command = _handle_agent_mode(
+                user_message, model, telemetry,
+                connection_status, telemetry_section
             )
 
-            ai_response = response['message']['content'].strip()
-
-            # Extract and post-process Lua script
-            command = extract_lua_script(ai_response)
-            if command and command.get("type") == "LUA_SCRIPT":
-                # Apply post-processing to fix common mistakes
-                original_code = command["params"]["code"]
-                processed_code, fixes_applied = postprocess_lua_script(original_code)
-
-                if fixes_applied:
-                    logger.info(f"Post-processing applied: {', '.join(fixes_applied)}")
-                    command["params"]["code"] = processed_code
-                    command["params"]["source"] = "llm_postprocessed"
-                    command["params"]["fixes"] = fixes_applied
-                else:
-                    command["params"]["source"] = "llm"
-
-                logger.info(f"Lua script extracted: {command.get('params', {}).get('description', 'unknown')}")
-
-        elif mode != 'script':
-            # Agent/Ask mode - call LLM
-            response = ollama.chat(
-                model=model,
-                messages=[
-                    {'role': 'system', 'content': system_prompt},
-                    {'role': 'user', 'content': user_message}
-                ],
-                options={
-                    'num_ctx': OLLAMA_NUM_CTX,
-                    'num_gpu': OLLAMA_NUM_GPU
-                }
-            )
-
-            ai_response = response['message']['content'].strip()
-
-            # Extract command
-            command = None
-            if mode == 'agent':
-                # ─── NEW: Try JSON tool-call extraction first ───
-                from backend.tools import extract_tool_calls, normalize_tool_call, get_first_executable
-                
-                clean_text, tool_calls = extract_tool_calls(ai_response)
-                
-                if tool_calls:
-                    logger.info(f"Tool-call pipeline: extracted {len(tool_calls)} tool(s): {[tc.get('tool') for tc in tool_calls]}")
-                    ai_response = clean_text  # Strip JSON from display text
-                    
-                    # Get the best executable command
-                    command, plan_summary = get_first_executable(tool_calls, telemetry)
-                    logger.info(f"Tool-call resolved → {plan_summary}")
-                    
-                    if command:
-                        # Validate
-                        is_valid, error_msg = validate_command(command)
-                        if not is_valid:
-                            logger.warning(f"Invalid command from tool call: {error_msg}")
-                            command = {"type": "ERROR", "params": {"message": error_msg}}
-                        else:
-                            # --- COMPLEX MISSION GEOMETRY CALCULATOR ---
-                            if command['type'] == 'MISSION_PLAN' and get_mavlink_manager:
-                                logger.info("Agentic Loop: Expanding COMPLEX MISSION_PLAN geometrically")
-                                base_lat = telemetry.get('gps', {}).get('latitude', 0)
-                                base_lon = telemetry.get('gps', {}).get('longitude', 0)
-                                base_alt = telemetry.get('gps', {}).get('altitude', 20)
-                                base_yaw = telemetry.get('attitude', {}).get('yaw', 0)
-                                
-                                waypoints = []
-                                curr_lat, curr_lon = base_lat, base_lon
-                                
-                                def calc_offset(c_lat, c_lon, yaw, dist, dir_str):
-                                    angle = yaw
-                                    if dir_str == "BACKWARD": angle += 180.0
-                                    elif dir_str == "RIGHT": angle += 90.0
-                                    elif dir_str == "LEFT": angle -= 90.0
-                                    elif dir_str == "FORWARD": pass  # angle = yaw
-                                    elif dir_str == 'NORTH': angle = 0
-                                    elif dir_str == 'SOUTH': angle = 180
-                                    elif dir_str == 'EAST': angle = 90
-                                    elif dir_str == 'WEST': angle = 270
-                                    
-                                    l_off = dist * math.cos(math.radians(angle)) / 111320.0
-                                    lo_off = dist * math.sin(math.radians(angle)) / (111320.0 * math.cos(math.radians(c_lat)))
-                                    return c_lat + l_off, c_lon + lo_off
-                                    
-                                for subcmd in command['sequence']:
-                                    if subcmd['type'] == 'MOVE_DIRECTION':
-                                        dist = subcmd['params']['distance']
-                                        dir_str = subcmd['params']['direction']
-                                        curr_lat, curr_lon = calc_offset(curr_lat, curr_lon, base_yaw, dist, dir_str)
-                                        waypoints.append({"lat": curr_lat, "lon": curr_lon, "alt": base_alt})
-                                
-                                if waypoints:
-                                    mgr = get_mavlink_manager()
-                                    if not mgr.connected:
-                                        logger.info("Initializing secret UDP link to upload Mission array...")
-                                        mgr.connect("udp:127.0.0.1:14551")
-                                    
-                                    logger.info(f"Uploading {len(waypoints)} absolute GPS waypoints silently...")
-                                    res = mgr.upload_mission(waypoints)
-                                    logger.info(f"Upload outcome: {res.message}")
-                                    
-                                    ai_response += "\n\nI have generated and uploaded a complex GPS auto-mission for this sequence. Switching to AUTO."
-                                    command = {"type": "CHANGE_MODE", "params": {"mode": "AUTO"}}
-                            
-                            # --- CIRCLE MODE NATIVE IMPL ---
-                            if command and command['type'] == 'CIRCLE':
-                                radius = command['params']['radius']
-                                ai_response += f"\n\nAdjusting internal CIRCLE_RADIUS parameter to {radius}m and engaging CIRCLE."
-                                if get_mavlink_manager:
-                                    mgr = get_mavlink_manager()
-                                    if not mgr.connected:
-                                        mgr.connect("udp:127.0.0.1:14551")
-                                    mgr.set_parameter("CIRCLE_RADIUS", radius * 100.0)
-                                command = {"type": "CHANGE_MODE", "params": {"mode": "CIRCLE"}}
-
-                            # --- AGENTIC RAG LOOP FOR PARAMETERS ---
-                            if command and command['type'] == 'SEARCH_PARAM':
-                                query = command['params']['query']
-                                logger.info(f"Agentic Loop Triggered: Executing search for '{query}'")
-                                
-                                results = param_db.search(query, top_k=3)
-                                if results:
-                                    search_text = "SYSTEM RAG SEARCH RESULTS:\\n"
-                                    for i, r in enumerate(results):
-                                        search_text += f"{i+1}. {r['name']} - {r['description'][:100]}...\\n"
-                                    search_text += "\\nPlease formulate the correct set_param or get_param tool call now that you have the reference. Reply concisely."
-                                else:
-                                    search_text = f"SYSTEM RAG SEARCH RESULTS: No parameters found for '{query}'. Please inform the user."
-                                    
-                                logger.info("Agentic Loop: Re-prompting AI with search results")
-                                loop_resp = ollama.chat(
-                                    model=model,
-                                    messages=[
-                                        {'role': 'system', 'content': system_prompt},
-                                        {'role': 'user', 'content': user_message},
-                                        {'role': 'assistant', 'content': ai_response},
-                                        {'role': 'user', 'content': search_text}
-                                    ],
-                                    options={
-                                        'num_ctx': OLLAMA_NUM_CTX,
-                                        'num_gpu': OLLAMA_NUM_GPU,
-                                        'temperature': 0.1
-                                    }
-                                )
-                                
-                                loop_text = loop_resp['message']['content'].strip()
-                                logger.info(f"Agentic Loop Final Output: {loop_text}")
-                                
-                                # Re-extract from the looped response
-                                loop_clean, loop_tools = extract_tool_calls(loop_text)
-                                if loop_tools:
-                                    ai_response = loop_clean
-                                    cmd = normalize_tool_call(loop_tools[0])
-                                    if cmd:
-                                        is_valid, error_msg = validate_command(cmd)
-                                        command = cmd if is_valid else {"type": "ERROR", "params": {"message": error_msg}}
-                                else:
-                                    ai_response = loop_text
-                                    command = None
-                
-                else:
-                    # ─── FALLBACK: Legacy regex extraction for backward compat ───
-                    logger.info("No JSON tool calls found, falling back to regex extraction")
-                    command = extract_command(ai_response)
-                    if command:
-                        is_valid, error_msg = validate_command(command)
-                        if not is_valid:
-                            logger.warning(f"Invalid command: {error_msg}")
-                            command = {"type": "ERROR", "params": {"message": error_msg}}
-                        else:
-                            logger.info(f"Legacy regex command detected: {command['type']}")
-        
         return jsonify({
             'success': True,
             'response': ai_response,
@@ -615,74 +285,148 @@ def chat():
             'model': model,
             'error': None
         }), 200
-            
+
     except Exception as e:
-        logger.error(f"Error processing chat message: {str(e)}")
+        logger.error(f"Chat error: {str(e)}", exc_info=True)
         return jsonify({
-            'success': False,
-            'response': None,
-            'command': None,
-            'error': str(e)
+            'success': False, 'response': None,
+            'command': None, 'error': str(e)
         }), 500
 
 
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Mode Handlers
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+def _handle_agent_mode(user_message, model, telemetry, connection_status, telemetry_section):
+    """
+    The Agentic Pipeline:
+    1. Planner decomposes the prompt into tool calls
+    2. Executor processes them (mission upload, circle, RAG, etc.)
+    3. Return the first executable command to QGC
+    """
+    # Step 1: Plan
+    ai_text, commands = planner_plan(
+        user_message=user_message,
+        model=model,
+        telemetry=telemetry,
+        connection_status=connection_status,
+        telemetry_section=telemetry_section,
+    )
+
+    if not commands:
+        # Conversational response (no commands)
+        # Try legacy regex as last-resort fallback
+        legacy_cmd = extract_command(ai_text)
+        if legacy_cmd:
+            is_valid, err = validate_command(legacy_cmd)
+            if is_valid:
+                logger.info(f"Legacy fallback: {legacy_cmd['type']}")
+                return ai_text, legacy_cmd
+        return ai_text, None
+
+    # Step 2: Execute
+    result = executor_execute(
+        commands=commands,
+        telemetry=telemetry,
+        ai_response=ai_text,
+        model=model,
+        user_message=user_message,
+        connection_status=connection_status,
+        telemetry_section=telemetry_section,
+    )
+
+    logger.info(f"Executor result: {result.plan_summary} ({result.tasks_executed}/{result.tasks_total} tasks)")
+    return result.ai_response, result.command
+
+
+def _handle_ask_mode(user_message, model, connection_status, telemetry_section):
+    """Simple Q&A mode — no command execution."""
+    system_prompt = get_ask_prompt(connection_status, telemetry_section)
+    response = ollama.chat(
+        model=model,
+        messages=[
+            {'role': 'system', 'content': system_prompt},
+            {'role': 'user', 'content': user_message}
+        ],
+        options={'num_ctx': OLLAMA_NUM_CTX, 'num_gpu': OLLAMA_NUM_GPU}
+    )
+    return response['message']['content'].strip()
+
+
+def _handle_script_mode(user_message, model, connection_status, telemetry_section):
+    """Lua script generation — template matching first, LLM fallback."""
+    # Try template injection first
+    template_code, template_name = generate_from_template(user_message)
+
+    if template_code:
+        logger.info(f"Template matched: {template_name}")
+        ai_response = f"I'll create that script for you:\n\n```lua\n{template_code}\n```\n\nThis uses the proven {template_name} pattern."
+        command = {
+            "type": "LUA_SCRIPT",
+            "params": {
+                "code": template_code,
+                "description": user_message[:100],
+                "source": "template",
+                "template_used": template_name
+            }
+        }
+        return ai_response, command
+
+    # LLM generation
+    system_prompt = get_script_prompt(connection_status, telemetry_section)
+    response = ollama.chat(
+        model=model,
+        messages=[
+            {'role': 'system', 'content': system_prompt},
+            {'role': 'user', 'content': user_message}
+        ],
+        options={'num_ctx': OLLAMA_NUM_CTX, 'num_gpu': OLLAMA_NUM_GPU, 'temperature': 0.05}
+    )
+
+    ai_response = response['message']['content'].strip()
+    command = extract_lua_script(ai_response)
+
+    if command and command.get("type") == "LUA_SCRIPT":
+        original_code = command["params"]["code"]
+        processed_code, fixes = postprocess_lua_script(original_code)
+        if fixes:
+            command["params"]["code"] = processed_code
+            command["params"]["fixes"] = fixes
+        command["params"]["source"] = "llm_postprocessed" if fixes else "llm"
+
+    return ai_response, command
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Test Endpoint
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 @app.route('/test', methods=['GET'])
 def test_endpoint():
-    """Test endpoint to verify API is working"""
     return jsonify({
-        'message': 'API is working!',
+        'message': 'ArduPilot AI Backend is running!',
         'version': BACKEND_VERSION,
-        'operation_mode': OPERATION_MODE,
-        'features': ['agent_mode', 'ask_mode', 'script_mode', 'telemetry', 'multi_model', 'parameters', 'movement', 'standalone'],
-        'endpoints': {
-            'health': 'GET /health',
-            'status': 'GET /status',
-            'models': 'GET /models',
-            'chat': 'POST /chat',
-            'telemetry': 'GET /telemetry',
-            'connect': 'POST /connect',
-            'disconnect': 'POST /disconnect',
-            'command': 'POST /command',
-            'test': 'GET /test'
-        }
+        'architecture': 'agentic_v3',
+        'pipeline': 'Planner → Executor → QGC',
     }), 200
 
 
-if __name__ == '__main__':
-    print("=" * 70)
-    print(f"ArduPilot AI Backend - HTTP API Server v{BACKEND_VERSION}")
-    print("=" * 70)
-    print(f"Operation Mode: {OPERATION_MODE}")
-    print(f"Approval Mode: {APPROVAL_MODE}")
-    print(f"Default Model: {DEFAULT_MODEL}")
-    print(f"pymavlink: {'Available' if PYMAVLINK_AVAILABLE else 'Not installed'}")
-    print("=" * 70)
-    print("Modes:")
-    print("  Agent  - Execute commands (ARM, TAKEOFF, LAND, etc.)")
-    print("  Ask    - Read-only telemetry queries")
-    print("  Script - Lua script generation (31 templates)")
-    print("=" * 70)
-    print("Endpoints:")
-    print("  GET  /health      - Health check")
-    print("  GET  /status      - Backend status")
-    print("  GET  /models      - Available models")
-    print("  POST /chat        - AI chat (main endpoint)")
-    print("  GET  /telemetry   - Current telemetry (standalone)")
-    print("  POST /connect     - Connect to vehicle (standalone)")
-    print("  POST /disconnect  - Disconnect from vehicle")
-    print("  POST /command     - Execute command (standalone)")
-    print("=" * 70)
-    print("Supported GCS:")
-    print("  - Mission Planner")
-    print("  - MAVProxy")
-    print("=" * 70)
-    print(f"Server: http://{API_HOST}:{API_PORT}")
-    print("Press Ctrl+C to stop")
-    print("=" * 70)
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Main
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-    app.run(
-        host=API_HOST,
-        port=API_PORT,
-        debug=API_DEBUG,
-        threaded=True
-    )
+if __name__ == '__main__':
+    print("=" * 60)
+    print(f"  ArduPilot AI Backend v{BACKEND_VERSION}")
+    print(f"  Architecture: Agentic Pipeline v3")
+    print(f"  Pipeline: Planner → Executor → QGC")
+    print("=" * 60)
+    print(f"  Model: {DEFAULT_MODEL}")
+    print(f"  Mode: {OPERATION_MODE} | Approval: {APPROVAL_MODE}")
+    print(f"  PyMAVLink: {'✓' if PYMAVLINK_AVAILABLE else '✗'}")
+    print("=" * 60)
+    print(f"  Server: http://{API_HOST}:{API_PORT}")
+    print("=" * 60)
+
+    app.run(host=API_HOST, port=API_PORT, debug=API_DEBUG, threaded=True)

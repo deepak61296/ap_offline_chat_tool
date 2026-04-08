@@ -138,4 +138,4 @@ COMMAND_RISK_LEVELS = {
 OPERATION_MODE = "standalone" if STANDALONE_MODE else "integrated"
 
 # Backend version
-BACKEND_VERSION = "2.4.0"
+BACKEND_VERSION = "3.0.0"
