@@ -1,13 +1,15 @@
 # ArduPilot AI Backend
 
-Natural language drone control using local LLMs. Talk to your drone in plain English through MAVProxy, Mission Planner, or QGroundControl. Runs fully offline with [Ollama](https://ollama.com).
+Agentic AI drone copilot with structured tool-calling. Control your drone with natural language through QGroundControl, MAVProxy, or Mission Planner. Runs fully offline with [Ollama](https://ollama.com).
+
+**v3.0** — Planner → Executor agentic pipeline. 23/23 tests passing.
 
 ```
-arm the drone
-takeoff to 10 meters
-move north 20 meters
-what's my battery?
-land
+arm the drone and takeoff to 25m
+move forward 10m then right 20m then circle 8m radius
+set speed to 5 m/s
+what is BATT_CAPACITY?
+bring it back its dangerous
 ```
 
 ## Demos
