@@ -90,6 +90,37 @@ def extract_command(ai_response: str) -> Optional[Dict[str, Any]]:
     if yaw_cmd:
         return yaw_cmd
 
+    # MULTI-STEP MISSION PARSER
+    # "fly forward 10m then right 20m"
+    if "then" in response_lower or "after" in response_lower:
+        parts = re.split(r'\bthen\b|\bafter\b|\bfollowed by\b', response_lower)
+        if len(parts) > 1:
+            sequence = []
+            for part in parts:
+                cmd = extract_command(part.strip())
+                # prevent infinite loops
+                if cmd and cmd["type"] not in ["ERROR", "MISSION_PLAN"]:
+                    sequence.append(cmd)
+            
+            if len(sequence) > 1:
+                return {
+                    "type": "MISSION_PLAN",
+                    "sequence": sequence
+                }
+                
+    # CIRCLE MODE
+    circle_patterns = [
+        r'circle.*?radius.*?(?:of\s)?(\d+)',
+        r'orbit.*?radius.*?(?:of\s)?(\d+)'
+    ]
+    for pattern in circle_patterns:
+        match = re.search(pattern, response_lower)
+        if match:
+            return {
+                "type": "CIRCLE",
+                "params": {"radius": int(match.group(1))}
+            }
+
     # No command detected
     return None
 
@@ -370,6 +401,15 @@ def validate_command(command: Dict[str, Any]) -> tuple[bool, Optional[str]]:
         query = params.get("query", "")
         if not query or len(query) < 2:
             return False, "Search query is too short or empty"
+            
+    elif cmd_type == "MISSION_PLAN":
+        if "sequence" not in command or not command["sequence"]:
+            return False, "Mission sequence is empty"
+            
+    elif cmd_type == "CIRCLE":
+        radius = params.get("radius", 0)
+        if radius <= 0 or radius > 10000:
+            return False, "Invalid circle radius"
 
     return True, None
 

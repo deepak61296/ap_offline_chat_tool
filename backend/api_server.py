@@ -9,6 +9,7 @@ from flask_cors import CORS
 import ollama
 import logging
 import time
+import math
 
 # Import our modules
 from backend.config import (
@@ -479,9 +480,71 @@ def chat():
                     if not is_valid:
                         logger.warning(f"Invalid command: {error_msg}")
                         command = {"type": "ERROR", "params": {"message": error_msg}}
-                    else:
                         logger.info(f"Command detected: {command['type']}")
                         
+                        # --- COMPLEX MISSION GEOMETRY CALCULATOR ---
+                        if command['type'] == 'MISSION_PLAN' and get_mavlink_manager:
+                            logger.info("Agentic Loop: Expanding COMPLEX MISSION_PLAN geometrically")
+                            base_lat = telemetry.get('gps', {}).get('latitude', 0)
+                            base_lon = telemetry.get('gps', {}).get('longitude', 0)
+                            base_alt = telemetry.get('gps', {}).get('altitude', 20)
+                            base_yaw = telemetry.get('attitude', {}).get('yaw', 0)
+                            
+                            waypoints = []
+                            curr_lat, curr_lon = base_lat, base_lon
+                            
+                            def calc_offset(c_lat, c_lon, yaw, dist, dir_str):
+                                angle = yaw
+                                if dir_str == "BACKWARD": angle += 180.0
+                                elif dir_str == "RIGHT": angle += 90.0
+                                elif dir_str == "LEFT": angle -= 90.0
+                                elif dir_str == 'NORTH': angle = 0
+                                elif dir_str == 'SOUTH': angle = 180
+                                elif dir_str == 'EAST': angle = 90
+                                elif dir_str == 'WEST': angle = 270
+                                
+                                l_off = dist * math.cos(math.radians(angle)) / 111320.0
+                                lo_off = dist * math.sin(math.radians(angle)) / (111320.0 * math.cos(math.radians(c_lat)))
+                                return c_lat + l_off, c_lon + lo_off
+                                
+                            for subcmd in command['sequence']:
+                                if subcmd['type'] == 'MOVE_DIRECTION':
+                                    dist = subcmd['params']['distance']
+                                    dir_str = subcmd['params']['direction']
+                                    curr_lat, curr_lon = calc_offset(curr_lat, curr_lon, base_yaw, dist, dir_str)
+                                    waypoints.append({"lat": curr_lat, "lon": curr_lon, "alt": base_alt})
+                            
+                            if waypoints:
+                                mgr = get_mavlink_manager()
+                                if not mgr.connected:
+                                    # Tap directly into ArduPilot SITL output 3
+                                    logger.info("Initializing secret UDP link to upload Mission array...")
+                                    mgr.connect("udp:127.0.0.1:14551")
+                                
+                                logger.info(f"Uploading {len(waypoints)} absolute GPS waypoints silently...")
+                                res = mgr.upload_mission(waypoints)
+                                logger.info(f"Upload outcome: {res.message}")
+                                
+                                # Instruct QGroundControl gracefully to swap modes
+                                ai_response += "\n\nI have generated and uploaded a complex GPS auto-mission for this sequence. Switching to AUTO."
+                                command = {"type": "CHANGE_MODE", "params": {"mode": "AUTO"}}
+                        
+                        # --- CIRCLE MODE NATIVE IMPL ---
+                        if command['type'] == 'CIRCLE':
+                            radius = command['params']['radius']
+                            ai_response += f"\n\nAdjusting internal CIRCLE_RADIUS parameter to {radius}m and engaging CIRCLE."
+                            # QGC expects generic commands. We can use QGC's SET_PARAM and CHANGE_MODE?
+                            # Since QGC can only do one command per return natively, 
+                            # we upload the parameter silently via PyMAVLink!
+                            if get_mavlink_manager:
+                                mgr = get_mavlink_manager()
+                                if not mgr.connected:
+                                    mgr.connect("udp:127.0.0.1:14551")
+                                mgr.set_parameter("CIRCLE_RADIUS", radius * 100.0) # ArduPilot radius is in cm
+                            
+                            # Then tell QGC to set mode
+                            command = {"type": "CHANGE_MODE", "params": {"mode": "CIRCLE"}}
+
                         # --- AGENTIC RAG LOOP FOR PARAMETERS ---
                         if command['type'] == 'SEARCH_PARAM':
                             query = command['params']['query']

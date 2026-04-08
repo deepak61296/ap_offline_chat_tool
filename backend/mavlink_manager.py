@@ -621,6 +621,64 @@ class MAVLinkManager:
         else:
             return CommandResult(False, f"Unknown command: {cmd_type}")
 
+    def upload_mission(self, waypoints: List[Dict[str, float]]) -> CommandResult:
+        """Upload an array of global coordinates as an Auto Mission"""
+        if not self.connected:
+            return CommandResult(False, "Not connected to vehicle")
+            
+        try:
+            # 1. Clear existing mission
+            self._connection.mav.mission_clear_all_send(
+                self._connection.target_system, 
+                self._connection.target_component
+            )
+            self._connection.recv_match(type=['MISSION_ACK'], blocking=True, timeout=3)
+            
+            # 2. Inform drone of new waypoint count (+1 for implicit Home)
+            count = len(waypoints) + 1
+            self._connection.mav.mission_count_send(
+                self._connection.target_system, 
+                self._connection.target_component, 
+                count
+            )
+            
+            # 3. Handle sequential requests
+            for _ in range(count):
+                req = self._connection.recv_match(type='MISSION_REQUEST_INT', blocking=True, timeout=5)
+                if not req:
+                    return CommandResult(False, "Mission upload timed out waiting for drone request")
+                    
+                seq = req.seq
+                
+                if seq == 0:
+                    # Item 0 is technically Home
+                    self._connection.mav.mission_item_int_send(
+                        self._connection.target_system, self._connection.target_component,
+                        seq, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT_INT, mavutil.mavlink.MAV_CMD_NAV_WAYPOINT,
+                        0, 1, 0, 0, 0, 0, 
+                        int(self._telemetry.latitude * 1e7), 
+                        int(self._telemetry.longitude * 1e7), 
+                        0
+                    )
+                else:
+                    wp = waypoints[seq - 1]
+                    self._connection.mav.mission_item_int_send(
+                        self._connection.target_system, self._connection.target_component,
+                        seq, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT_INT, mavutil.mavlink.MAV_CMD_NAV_WAYPOINT,
+                        0, 1, 0, 0, 0, 0, 
+                        int(wp['lat'] * 1e7), 
+                        int(wp['lon'] * 1e7), 
+                        wp['alt']
+                    )
+                    
+            ack = self._connection.recv_match(type='MISSION_ACK', blocking=True, timeout=3)
+            if ack and ack.type == mavutil.mavlink.MAV_MISSION_ACCEPTED:
+                return CommandResult(True, "Mission sequence successfully programmed inside drone")
+            return CommandResult(False, f"Drone rejected the uploaded mission. ACk: {ack.type if ack else 'None'}")
+            
+        except Exception as e:
+            return CommandResult(False, f"Critical mission upload failure: {str(e)}")
+
 
 # Singleton instance for global access
 _manager_instance: Optional[MAVLinkManager] = None
