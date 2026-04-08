@@ -96,6 +96,60 @@ IMMEDIATE_COMMANDS = {'ARM', 'DISARM', 'TAKEOFF', 'LAND', 'RTL', 'CHANGE_MODE',
 SPECIAL_COMMANDS = {'CIRCLE', 'SEARCH_PARAM', 'MISSION_PLAN'}
 
 
+def _preflight_check(cmd: Dict, telemetry: dict) -> Optional[str]:
+    """
+    Pure Python pre-flight validation using telemetry.
+    Returns a warning message if there's an issue, or None if all good.
+    Zero LLM cost — the intelligence is in Python code, not the model.
+    """
+    cmd_type = cmd.get('type', '')
+    status = telemetry.get('status', {})
+    gps = telemetry.get('gps', {})
+    is_armed = status.get('armed', False)
+    mode = status.get('mode', '')
+    alt = gps.get('altitude', 0)
+
+    if cmd_type == 'TAKEOFF' and not is_armed:
+        return "Warning: Drone is not armed. Arming first."
+
+    if cmd_type == 'DISARM' and not is_armed:
+        return None  # Already disarmed, skip silently
+
+    if cmd_type in ('MOVE_DIRECTION', 'GOTO') and alt < 1 and is_armed:
+        return "Warning: Drone is on the ground. Takeoff first before moving."
+
+    if cmd_type == 'CIRCLE' and alt < 1:
+        return "Warning: Drone needs to be airborne for CIRCLE mode."
+
+    if cmd_type == 'ARM' and is_armed:
+        return None  # Already armed, no-op
+
+    return None
+
+
+def _auto_inject_prerequisites(commands: List[Dict], telemetry: dict) -> List[Dict]:
+    """
+    Smart prerequisite injection — if user says 'takeoff 20m' but drone
+    isn't armed, automatically prepend ARM. Pure Python logic.
+    """
+    status = telemetry.get('status', {})
+    is_armed = status.get('armed', False)
+
+    if not commands:
+        return commands
+
+    first_type = commands[0].get('type', '')
+
+    # If first command is TAKEOFF but not armed, prepend ARM
+    if first_type == 'TAKEOFF' and not is_armed:
+        has_arm = any(c.get('type') == 'ARM' for c in commands)
+        if not has_arm:
+            logger.info("Executor: Auto-injecting ARM before TAKEOFF")
+            commands.insert(0, {"type": "ARM", "params": {}})
+
+    return commands
+
+
 @dataclass
 class ExecutionResult:
     """Result of executing a command plan."""
@@ -138,6 +192,18 @@ def execute(
             tasks_total=0,
             tasks_executed=0,
         )
+
+    # Smart pre-processing (pure Python, zero LLM cost)
+    commands = _auto_inject_prerequisites(commands, telemetry)
+
+    # Pre-flight warnings
+    warnings = []
+    for cmd in commands:
+        warning = _preflight_check(cmd, telemetry)
+        if warning:
+            warnings.append(warning)
+    if warnings:
+        ai_response = ai_response + "\n" + " ".join(warnings)
 
     # Classify commands
     immediates = []

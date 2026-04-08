@@ -145,8 +145,8 @@ def extract_tool_calls(ai_response: str) -> Tuple[str, List[Dict[str, Any]]]:
         try:
             parsed = json.loads(json_block_match.group(1))
             if isinstance(parsed, list):
-                tool_calls = parsed
-            elif isinstance(parsed, dict):
+                tool_calls = [x for x in parsed if isinstance(x, dict) and x.get('tool')]
+            elif isinstance(parsed, dict) and parsed.get('tool'):
                 tool_calls = [parsed]
             clean_text = ai_response[:json_block_match.start()].strip()
             if clean_text:
