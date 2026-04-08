@@ -455,7 +455,7 @@ def chat():
                 logger.info(f"Lua script extracted: {command.get('params', {}).get('description', 'unknown')}")
 
         elif mode != 'script':
-            # Agent/Ask mode - call LLM normally
+            # Agent/Ask mode - call LLM
             response = ollama.chat(
                 model=model,
                 messages=[
@@ -473,119 +473,139 @@ def chat():
             # Extract command
             command = None
             if mode == 'agent':
-                command = extract_command(ai_response)
-                if command:
-                    # Validate command
-                    is_valid, error_msg = validate_command(command)
-                    if not is_valid:
-                        logger.warning(f"Invalid command: {error_msg}")
-                        command = {"type": "ERROR", "params": {"message": error_msg}}
-                    else:
-                        logger.info(f"Command detected: {command['type']}")
-                        
-                        # --- COMPLEX MISSION GEOMETRY CALCULATOR ---
-                        if command['type'] == 'MISSION_PLAN' and get_mavlink_manager:
-                            logger.info("Agentic Loop: Expanding COMPLEX MISSION_PLAN geometrically")
-                            base_lat = telemetry.get('gps', {}).get('latitude', 0)
-                            base_lon = telemetry.get('gps', {}).get('longitude', 0)
-                            base_alt = telemetry.get('gps', {}).get('altitude', 20)
-                            base_yaw = telemetry.get('attitude', {}).get('yaw', 0)
-                            
-                            waypoints = []
-                            curr_lat, curr_lon = base_lat, base_lon
-                            
-                            def calc_offset(c_lat, c_lon, yaw, dist, dir_str):
-                                angle = yaw
-                                if dir_str == "BACKWARD": angle += 180.0
-                                elif dir_str == "RIGHT": angle += 90.0
-                                elif dir_str == "LEFT": angle -= 90.0
-                                elif dir_str == 'NORTH': angle = 0
-                                elif dir_str == 'SOUTH': angle = 180
-                                elif dir_str == 'EAST': angle = 90
-                                elif dir_str == 'WEST': angle = 270
+                # ─── NEW: Try JSON tool-call extraction first ───
+                from backend.tools import extract_tool_calls, normalize_tool_call, get_first_executable
+                
+                clean_text, tool_calls = extract_tool_calls(ai_response)
+                
+                if tool_calls:
+                    logger.info(f"Tool-call pipeline: extracted {len(tool_calls)} tool(s): {[tc.get('tool') for tc in tool_calls]}")
+                    ai_response = clean_text  # Strip JSON from display text
+                    
+                    # Get the best executable command
+                    command, plan_summary = get_first_executable(tool_calls, telemetry)
+                    logger.info(f"Tool-call resolved → {plan_summary}")
+                    
+                    if command:
+                        # Validate
+                        is_valid, error_msg = validate_command(command)
+                        if not is_valid:
+                            logger.warning(f"Invalid command from tool call: {error_msg}")
+                            command = {"type": "ERROR", "params": {"message": error_msg}}
+                        else:
+                            # --- COMPLEX MISSION GEOMETRY CALCULATOR ---
+                            if command['type'] == 'MISSION_PLAN' and get_mavlink_manager:
+                                logger.info("Agentic Loop: Expanding COMPLEX MISSION_PLAN geometrically")
+                                base_lat = telemetry.get('gps', {}).get('latitude', 0)
+                                base_lon = telemetry.get('gps', {}).get('longitude', 0)
+                                base_alt = telemetry.get('gps', {}).get('altitude', 20)
+                                base_yaw = telemetry.get('attitude', {}).get('yaw', 0)
                                 
-                                l_off = dist * math.cos(math.radians(angle)) / 111320.0
-                                lo_off = dist * math.sin(math.radians(angle)) / (111320.0 * math.cos(math.radians(c_lat)))
-                                return c_lat + l_off, c_lon + lo_off
+                                waypoints = []
+                                curr_lat, curr_lon = base_lat, base_lon
                                 
-                            for subcmd in command['sequence']:
-                                if subcmd['type'] == 'MOVE_DIRECTION':
-                                    dist = subcmd['params']['distance']
-                                    dir_str = subcmd['params']['direction']
-                                    curr_lat, curr_lon = calc_offset(curr_lat, curr_lon, base_yaw, dist, dir_str)
-                                    waypoints.append({"lat": curr_lat, "lon": curr_lon, "alt": base_alt})
+                                def calc_offset(c_lat, c_lon, yaw, dist, dir_str):
+                                    angle = yaw
+                                    if dir_str == "BACKWARD": angle += 180.0
+                                    elif dir_str == "RIGHT": angle += 90.0
+                                    elif dir_str == "LEFT": angle -= 90.0
+                                    elif dir_str == "FORWARD": pass  # angle = yaw
+                                    elif dir_str == 'NORTH': angle = 0
+                                    elif dir_str == 'SOUTH': angle = 180
+                                    elif dir_str == 'EAST': angle = 90
+                                    elif dir_str == 'WEST': angle = 270
+                                    
+                                    l_off = dist * math.cos(math.radians(angle)) / 111320.0
+                                    lo_off = dist * math.sin(math.radians(angle)) / (111320.0 * math.cos(math.radians(c_lat)))
+                                    return c_lat + l_off, c_lon + lo_off
+                                    
+                                for subcmd in command['sequence']:
+                                    if subcmd['type'] == 'MOVE_DIRECTION':
+                                        dist = subcmd['params']['distance']
+                                        dir_str = subcmd['params']['direction']
+                                        curr_lat, curr_lon = calc_offset(curr_lat, curr_lon, base_yaw, dist, dir_str)
+                                        waypoints.append({"lat": curr_lat, "lon": curr_lon, "alt": base_alt})
+                                
+                                if waypoints:
+                                    mgr = get_mavlink_manager()
+                                    if not mgr.connected:
+                                        logger.info("Initializing secret UDP link to upload Mission array...")
+                                        mgr.connect("udp:127.0.0.1:14551")
+                                    
+                                    logger.info(f"Uploading {len(waypoints)} absolute GPS waypoints silently...")
+                                    res = mgr.upload_mission(waypoints)
+                                    logger.info(f"Upload outcome: {res.message}")
+                                    
+                                    ai_response += "\n\nI have generated and uploaded a complex GPS auto-mission for this sequence. Switching to AUTO."
+                                    command = {"type": "CHANGE_MODE", "params": {"mode": "AUTO"}}
                             
-                            if waypoints:
-                                mgr = get_mavlink_manager()
-                                if not mgr.connected:
-                                    # Tap directly into ArduPilot SITL output 3
-                                    logger.info("Initializing secret UDP link to upload Mission array...")
-                                    mgr.connect("udp:127.0.0.1:14551")
-                                
-                                logger.info(f"Uploading {len(waypoints)} absolute GPS waypoints silently...")
-                                res = mgr.upload_mission(waypoints)
-                                logger.info(f"Upload outcome: {res.message}")
-                                
-                                # Instruct QGroundControl gracefully to swap modes
-                                ai_response += "\n\nI have generated and uploaded a complex GPS auto-mission for this sequence. Switching to AUTO."
-                                command = {"type": "CHANGE_MODE", "params": {"mode": "AUTO"}}
-                        
-                        # --- CIRCLE MODE NATIVE IMPL ---
-                        if command['type'] == 'CIRCLE':
-                            radius = command['params']['radius']
-                            ai_response += f"\n\nAdjusting internal CIRCLE_RADIUS parameter to {radius}m and engaging CIRCLE."
-                            # QGC expects generic commands. We can use QGC's SET_PARAM and CHANGE_MODE?
-                            # Since QGC can only do one command per return natively, 
-                            # we upload the parameter silently via PyMAVLink!
-                            if get_mavlink_manager:
-                                mgr = get_mavlink_manager()
-                                if not mgr.connected:
-                                    mgr.connect("udp:127.0.0.1:14551")
-                                mgr.set_parameter("CIRCLE_RADIUS", radius * 100.0) # ArduPilot radius is in cm
-                            
-                            # Then tell QGC to set mode
-                            command = {"type": "CHANGE_MODE", "params": {"mode": "CIRCLE"}}
+                            # --- CIRCLE MODE NATIVE IMPL ---
+                            if command and command['type'] == 'CIRCLE':
+                                radius = command['params']['radius']
+                                ai_response += f"\n\nAdjusting internal CIRCLE_RADIUS parameter to {radius}m and engaging CIRCLE."
+                                if get_mavlink_manager:
+                                    mgr = get_mavlink_manager()
+                                    if not mgr.connected:
+                                        mgr.connect("udp:127.0.0.1:14551")
+                                    mgr.set_parameter("CIRCLE_RADIUS", radius * 100.0)
+                                command = {"type": "CHANGE_MODE", "params": {"mode": "CIRCLE"}}
 
-                        # --- AGENTIC RAG LOOP FOR PARAMETERS ---
-                        if command['type'] == 'SEARCH_PARAM':
-                            query = command['params']['query']
-                            logger.info(f"Agentic Loop Triggered: Executing search for '{query}'")
-                            
-                            results = param_db.search(query, top_k=3)
-                            if results:
-                                search_text = "SYSTEM RAG SEARCH RESULTS:\\n"
-                                for i, r in enumerate(results):
-                                    search_text += f"{i+1}. {r['name']} - {r['description'][:100]}...\\n"
-                                search_text += "\\nPlease formulate the correct SET_PARAM or GET_PARAM command now that you have the reference. Reply concisely."
-                            else:
-                                search_text = f"SYSTEM RAG SEARCH RESULTS: No parameters found for '{query}'. Please inform the user."
+                            # --- AGENTIC RAG LOOP FOR PARAMETERS ---
+                            if command and command['type'] == 'SEARCH_PARAM':
+                                query = command['params']['query']
+                                logger.info(f"Agentic Loop Triggered: Executing search for '{query}'")
                                 
-                            logger.info("Agentic Loop: Re-prompting AI with search results")
-                            loop_resp = ollama.chat(
-                                model=model,
-                                messages=[
-                                    {'role': 'system', 'content': system_prompt},
-                                    {'role': 'user', 'content': user_message},
-                                    {'role': 'assistant', 'content': ai_response},
-                                    {'role': 'user', 'content': search_text}
-                                ],
-                                options={
-                                    'num_ctx': OLLAMA_NUM_CTX,
-                                    'num_gpu': OLLAMA_NUM_GPU,
-                                    'temperature': 0.1
-                                }
-                            )
-                            
-                            ai_response = loop_resp['message']['content'].strip()
-                            logger.info(f"Agentic Loop Final Output: {ai_response}")
-                            
-                            # Re-extract the new command from the looped response
-                            command = extract_command(ai_response)
-                            if command:
-                                is_valid, error_msg = validate_command(command)
-                                if not is_valid:
-                                    command = {"type": "ERROR", "params": {"message": error_msg}}
-                        # --- END AGENTIC LOOP ---
+                                results = param_db.search(query, top_k=3)
+                                if results:
+                                    search_text = "SYSTEM RAG SEARCH RESULTS:\\n"
+                                    for i, r in enumerate(results):
+                                        search_text += f"{i+1}. {r['name']} - {r['description'][:100]}...\\n"
+                                    search_text += "\\nPlease formulate the correct set_param or get_param tool call now that you have the reference. Reply concisely."
+                                else:
+                                    search_text = f"SYSTEM RAG SEARCH RESULTS: No parameters found for '{query}'. Please inform the user."
+                                    
+                                logger.info("Agentic Loop: Re-prompting AI with search results")
+                                loop_resp = ollama.chat(
+                                    model=model,
+                                    messages=[
+                                        {'role': 'system', 'content': system_prompt},
+                                        {'role': 'user', 'content': user_message},
+                                        {'role': 'assistant', 'content': ai_response},
+                                        {'role': 'user', 'content': search_text}
+                                    ],
+                                    options={
+                                        'num_ctx': OLLAMA_NUM_CTX,
+                                        'num_gpu': OLLAMA_NUM_GPU,
+                                        'temperature': 0.1
+                                    }
+                                )
+                                
+                                loop_text = loop_resp['message']['content'].strip()
+                                logger.info(f"Agentic Loop Final Output: {loop_text}")
+                                
+                                # Re-extract from the looped response
+                                loop_clean, loop_tools = extract_tool_calls(loop_text)
+                                if loop_tools:
+                                    ai_response = loop_clean
+                                    cmd = normalize_tool_call(loop_tools[0])
+                                    if cmd:
+                                        is_valid, error_msg = validate_command(cmd)
+                                        command = cmd if is_valid else {"type": "ERROR", "params": {"message": error_msg}}
+                                else:
+                                    ai_response = loop_text
+                                    command = None
+                
+                else:
+                    # ─── FALLBACK: Legacy regex extraction for backward compat ───
+                    logger.info("No JSON tool calls found, falling back to regex extraction")
+                    command = extract_command(ai_response)
+                    if command:
+                        is_valid, error_msg = validate_command(command)
+                        if not is_valid:
+                            logger.warning(f"Invalid command: {error_msg}")
+                            command = {"type": "ERROR", "params": {"message": error_msg}}
+                        else:
+                            logger.info(f"Legacy regex command detected: {command['type']}")
         
         return jsonify({
             'success': True,
