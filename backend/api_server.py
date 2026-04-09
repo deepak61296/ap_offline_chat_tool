@@ -315,14 +315,10 @@ def _handle_agent_mode(user_message, model, telemetry, connection_status, teleme
     )
 
     if not commands:
-        # Conversational response (no commands)
-        # Try legacy regex as last-resort fallback
-        legacy_cmd = extract_command(ai_text)
-        if legacy_cmd:
-            is_valid, err = validate_command(legacy_cmd)
-            if is_valid:
-                logger.info(f"Legacy fallback: {legacy_cmd['type']}")
-                return ai_text, legacy_cmd
+        # No tool calls → conversational response (greeting, question, etc.)
+        # Do NOT fall back to legacy regex — it causes false-positive commands
+        # (e.g., "hi" → model says "I can help with returning..." → regex matches RTL)
+        logger.info("Planner: conversational response (no tool calls)")
         return ai_text, None
 
     # Step 2: Execute
