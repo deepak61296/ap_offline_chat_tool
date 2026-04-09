@@ -261,6 +261,7 @@ def chat():
 
         ai_response = None
         command = None
+        commands_array = None
 
         # ─── SCRIPT MODE ───
         if mode == 'script':
@@ -272,19 +273,24 @@ def chat():
 
         # ─── AGENT MODE (The Agentic Pipeline) ───
         elif mode == 'agent':
-            ai_response, command = _handle_agent_mode(
+            ai_response, command, commands_array = _handle_agent_mode(
                 user_message, model, telemetry,
                 connection_status, telemetry_section
             )
 
-        return jsonify({
+        response_data = {
             'success': True,
             'response': ai_response,
             'command': command,
             'mode': mode,
             'model': model,
             'error': None
-        }), 200
+        }
+        # Include commands array for multi-step plans
+        if commands_array:
+            response_data['commands'] = commands_array
+
+        return jsonify(response_data), 200
 
     except Exception as e:
         logger.error(f"Chat error: {str(e)}", exc_info=True)
@@ -317,9 +323,8 @@ def _handle_agent_mode(user_message, model, telemetry, connection_status, teleme
     if not commands:
         # No tool calls → conversational response (greeting, question, etc.)
         # Do NOT fall back to legacy regex — it causes false-positive commands
-        # (e.g., "hi" → model says "I can help with returning..." → regex matches RTL)
         logger.info("Planner: conversational response (no tool calls)")
-        return ai_text, None
+        return ai_text, None, None
 
     # Step 2: Execute
     result = executor_execute(
@@ -333,7 +338,7 @@ def _handle_agent_mode(user_message, model, telemetry, connection_status, teleme
     )
 
     logger.info(f"Executor result: {result.plan_summary} ({result.tasks_executed}/{result.tasks_total} tasks)")
-    return result.ai_response, result.command
+    return result.ai_response, result.command, result.commands
 
 
 def _handle_ask_mode(user_message, model, connection_status, telemetry_section):

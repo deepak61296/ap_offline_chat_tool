@@ -154,7 +154,8 @@ def _auto_inject_prerequisites(commands: List[Dict], telemetry: dict) -> List[Di
 class ExecutionResult:
     """Result of executing a command plan."""
     ai_response: str              # Text to show user in QGC
-    command: Optional[Dict]       # Single command for QGC to execute (or None)
+    command: Optional[Dict]       # Single command for QGC to execute (backward compat)
+    commands: Optional[List[Dict]] # Full command sequence for QGC to execute in order
     plan_summary: str             # Human-readable summary of what was planned
     tasks_total: int              # Total tasks in the plan
     tasks_executed: int           # How many were processed this cycle
@@ -191,6 +192,7 @@ def execute(
         return ExecutionResult(
             ai_response=ai_response,
             command=None,
+            commands=None,
             plan_summary="No commands to execute",
             tasks_total=0,
             tasks_executed=0,
@@ -221,6 +223,7 @@ def execute(
         return ExecutionResult(
             ai_response=ai_response,
             command=None,
+            commands=None,
             plan_summary="No valid commands found",
             tasks_total=len(commands),
             tasks_executed=0,
@@ -235,88 +238,87 @@ def execute(
         )
 
     # ─── Agentic Execution Loop ───
-    # Execute prerequisites via PyMAVLink, collect final action for QGC
+    # Build the full ordered command sequence for QGC
     mgr = _get_mavlink_manager()
-    executed_steps = []
     movements = [s for cat, s in plan_steps if cat == 'move']
     circles = [s for cat, s in plan_steps if cat == 'circle']
     immediates = [s for cat, s in plan_steps if cat == 'immediate']
 
     logger.info(f"Executor: {len(immediates)} immediate, {len(movements)} movements, {len(circles)} circles")
 
-    # Step 1: Execute immediate prerequisites (ARM, TAKEOFF, etc.) via PyMAVLink
-    final_qgc_command = None
+    # Build the full QGC command sequence in execution order
+    qgc_commands = []   # Ordered list of commands for QGC
+    executed_steps = []  # Human-readable log
 
-    if mgr and mgr.connected and len(plan_steps) > 1:
-        # Multi-step plan: execute prerequisites directly on the backend
-        for cat, cmd in plan_steps:
-            if cat != 'immediate':
-                continue
-
+    # Process all plan steps in ORDER
+    for cat, cmd in plan_steps:
+        if cat == 'immediate':
             cmd_type = cmd['type']
 
-            # These are safe to execute directly via PyMAVLink
-            if cmd_type in ('ARM', 'TAKEOFF', 'CHANGE_MODE', 'SET_SPEED', 'SET_YAW'):
+            # If PyMAVLink is connected AND this is a multi-step plan,
+            # execute prerequisites (ARM, TAKEOFF) directly on backend
+            if mgr and mgr.connected and len(plan_steps) > 1 and cmd_type in ('ARM', 'TAKEOFF', 'CHANGE_MODE', 'SET_SPEED', 'SET_YAW'):
                 logger.info(f"Executor: Direct-executing {cmd_type} via PyMAVLink")
                 result = mgr.execute_command(cmd)
                 executed_steps.append(f"{cmd_type}: {'OK' if result.success else result.message}")
-
-                # Wait for ARM/TAKEOFF to complete
                 if cmd_type == 'ARM' and result.success:
-                    import time
-                    time.sleep(1)  # Give the FC a moment to arm
+                    import time; time.sleep(1)
                 elif cmd_type == 'TAKEOFF' and result.success:
-                    import time
-                    time.sleep(3)  # Wait for initial climb
+                    import time; time.sleep(3)
             else:
-                # Non-prerequisite immediate (LAND, RTL, GET_PARAM, etc.)
-                # Save as the final QGC command
-                final_qgc_command = cmd
+                # No PyMAVLink or single command: queue for QGC
+                qgc_commands.append(cmd)
                 executed_steps.append(f"{cmd_type}: queued for QGC")
-    else:
-        # No PyMAVLink or single command: return first immediate to QGC
-        if immediates:
-            final_qgc_command = immediates[0]
-            executed_steps.append(f"{immediates[0]['type']}: sent to QGC")
 
-    # Step 2: Handle movements
+        elif cat == 'move':
+            # Movements are handled in bulk below
+            pass
+
+        elif cat == 'circle':
+            # Circles are handled in bulk below
+            pass
+
+    # Handle movements
     if movements:
         if len(movements) >= 2:
             mission_result = _handle_mission_plan(movements, telemetry, ai_response)
-            if mission_result:
+            if mission_result and mission_result.command:
                 executed_steps.append(f"Mission: {len(movements)} waypoints uploaded")
-                # Mission upload returns CHANGE_MODE: AUTO
-                final_qgc_command = mission_result.command
-        elif len(movements) == 1 and not final_qgc_command:
-            # Single movement — send to QGC if nothing else is pending
-            final_qgc_command = movements[0]
-            executed_steps.append(f"Move: {movements[0]['params']['direction']} {movements[0]['params']['distance']}m")
-        elif len(movements) == 1 and mgr and mgr.connected:
-            # Single movement but we have other commands — execute directly
+                qgc_commands.append(mission_result.command)  # CHANGE_MODE: AUTO
+        else:
+            # Single movement
             move_cmd = movements[0]
-            direction = move_cmd['params']['direction']
-            distance = move_cmd['params']['distance']
-            gps = telemetry.get('gps', {})
-            yaw = telemetry.get('attitude', {}).get('yaw', 0)
-            base_lat = gps.get('latitude', 0)
-            base_lon = gps.get('longitude', 0)
-            base_alt = gps.get('altitude', 20)
+            if mgr and mgr.connected and len(plan_steps) > 1:
+                # Execute directly via PyMAVLink GOTO
+                direction = move_cmd['params']['direction']
+                distance = move_cmd['params']['distance']
+                gps = telemetry.get('gps', {})
+                yaw = telemetry.get('attitude', {}).get('yaw', 0)
+                base_lat = gps.get('latitude', 0)
+                base_lon = gps.get('longitude', 0)
+                base_alt = gps.get('altitude', 20)
 
-            if base_lat != 0 or base_lon != 0:
-                new_lat, new_lon = _offset_coords(base_lat, base_lon, yaw, distance, direction)
-                goto_cmd = {"type": "GOTO", "params": {
-                    "latitude": new_lat, "longitude": new_lon, "altitude": base_alt
-                }}
-                result = mgr.execute_command(goto_cmd)
-                executed_steps.append(f"Move {direction} {distance}m: {'OK' if result.success else result.message}")
-                import time
-                time.sleep(2)  # Let drone start moving
+                if base_lat != 0 or base_lon != 0:
+                    new_lat, new_lon = _offset_coords(base_lat, base_lon, yaw, distance, direction)
+                    goto_cmd = {"type": "GOTO", "params": {
+                        "latitude": new_lat, "longitude": new_lon, "altitude": base_alt
+                    }}
+                    result = mgr.execute_command(goto_cmd)
+                    executed_steps.append(f"Move {direction} {distance}m: {'OK' if result.success else result.message}")
+                    import time; time.sleep(2)
+                else:
+                    qgc_commands.append(move_cmd)
+                    executed_steps.append(f"Move: {move_cmd['params']['direction']} {move_cmd['params']['distance']}m")
+            else:
+                qgc_commands.append(move_cmd)
+                executed_steps.append(f"Move: {move_cmd['params']['direction']} {move_cmd['params']['distance']}m")
 
-    # Step 3: Handle circles
+    # Handle circles
     if circles:
         circle_result = _handle_circle(circles[0], ai_response)
         executed_steps.append(f"Circle: radius={circles[0]['params']['radius']}m")
-        final_qgc_command = circle_result.command
+        if circle_result.command:
+            qgc_commands.append(circle_result.command)
 
     # Build summary
     total_tasks = len(plan_steps)
@@ -332,9 +334,14 @@ def execute(
 
     logger.info(f"Executor: {summary} ({tasks_done}/{total_tasks} tasks)")
 
+    # For backward compat: command = first QGC command, commands = all of them
+    first_cmd = qgc_commands[0] if qgc_commands else None
+    all_cmds = qgc_commands if len(qgc_commands) > 1 else None
+
     return ExecutionResult(
         ai_response=enhanced_response,
-        command=final_qgc_command,
+        command=first_cmd,
+        commands=all_cmds,
         plan_summary=summary,
         tasks_total=total_tasks,
         tasks_executed=tasks_done,
@@ -359,6 +366,7 @@ def _handle_mission_plan(
         return ExecutionResult(
             ai_response=ai_response + "\n\nCannot execute mission: No GPS position available.",
             command=None,
+            commands=None,
             plan_summary="Mission failed: no GPS",
             tasks_total=len(movements),
             tasks_executed=0,
@@ -391,6 +399,7 @@ def _handle_mission_plan(
         return ExecutionResult(
             ai_response=ai_response + f"\n\nMission uploaded: {mission_text}. Switching to AUTO.",
             command={"type": "CHANGE_MODE", "params": {"mode": "AUTO"}},
+            commands=None,
             plan_summary=f"Mission: {mission_text}",
             tasks_total=len(movements),
             tasks_executed=len(movements),
@@ -401,6 +410,7 @@ def _handle_mission_plan(
         return ExecutionResult(
             ai_response=ai_response,
             command=movements[0],
+            commands=None,
             plan_summary="Single movement (PyMAVLink unavailable)",
             tasks_total=len(movements),
             tasks_executed=1,
@@ -422,6 +432,7 @@ def _handle_circle(circle_cmd: Dict, ai_response: str) -> ExecutionResult:
     return ExecutionResult(
         ai_response=ai_response + f"\n\nSet circle radius to {radius}m. Engaging CIRCLE mode.",
         command={"type": "CHANGE_MODE", "params": {"mode": "CIRCLE"}},
+        commands=None,
         plan_summary=f"Circle radius={radius}m",
         tasks_total=1,
         tasks_executed=1,
@@ -445,6 +456,7 @@ def _handle_search_param(
         return ExecutionResult(
             ai_response="Parameter database is not available.",
             command=None,
+            commands=None,
             plan_summary="RAG failed: no database",
             tasks_total=1,
             tasks_executed=0,
@@ -479,6 +491,7 @@ def _handle_search_param(
             return ExecutionResult(
                 ai_response=new_text,
                 command=cmd,
+                commands=None,
                 plan_summary=f"RAG resolved: {cmd['type']} {cmd.get('params', {}).get('name', '')}",
                 tasks_total=1,
                 tasks_executed=1,
@@ -488,6 +501,7 @@ def _handle_search_param(
     return ExecutionResult(
         ai_response=new_text,
         command=None,
+        commands=None,
         plan_summary="RAG: informational response",
         tasks_total=1,
         tasks_executed=1,
