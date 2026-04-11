@@ -162,10 +162,9 @@ User (plain English) --> GCS (MAVProxy / MP / QGC)
                          GCS executes via MAVLink
 ```
 
-Three modes:
+Two modes:
 - **Agent** — executes commands (arm, takeoff, land, move, etc.)
 - **Ask** — read-only telemetry queries
-- **Script** — generates Lua scripts for the flight controller
 
 ## Supported Commands
 
@@ -221,13 +220,19 @@ ai_backend enable
 ardupilot-ai-backend/
 ├── backend/                   # Flask API server
 │   ├── api_server.py          # HTTP endpoints
+│   ├── planner.py             # LLM task decomposition (the brain)
+│   ├── executor.py            # Agentic execution engine (the hands)
+│   ├── tools.py               # Tool definitions + JSON extraction
 │   ├── commands.py            # Command extraction from LLM output
 │   ├── prompts.py             # System prompts for each mode
 │   ├── config.py              # Settings and safety limits
 │   ├── telemetry_data.py      # Telemetry formatting
-│   ├── template_injector_v2.py # Lua template library
-│   ├── lua_postprocessor.py   # Lua script fixes
+│   ├── param_db.py            # ArduPilot parameter RAG database
 │   └── mavlink_manager.py     # Direct MAVLink (standalone mode)
+├── training/                  # Fine-tuning with Unsloth
+│   ├── unsloth_finetuning.ipynb  # Training notebook
+│   ├── train_unsloth.py       # Training script
+│   └── outputs/               # Training outputs
 ├── integrations/
 │   ├── mavproxy/              # MAVProxy module
 │   ├── mission_planner/       # Mission Planner plugin

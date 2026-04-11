@@ -23,16 +23,14 @@ import time
 
 from backend.config import (
     API_HOST, API_PORT, API_DEBUG,
-    DEFAULT_MODEL, SCRIPT_MODEL, LOG_LEVEL, LOG_FORMAT,
+    DEFAULT_MODEL, LOG_LEVEL, LOG_FORMAT,
     STANDALONE_MODE, MAVLINK_CONNECTION, MAVLINK_BAUD,
-    OPERATION_MODE, BACKEND_VERSION, COMMAND_RISK_LEVELS, APPROVAL_MODE,
+    OPERATION_MODE, BACKEND_VERSION, APPROVAL_MODE,
     OLLAMA_NUM_CTX, OLLAMA_NUM_GPU
 )
-from backend.prompts import get_ask_prompt, get_script_prompt
-from backend.commands import extract_command, validate_command, extract_lua_script
+from backend.prompts import get_ask_prompt
+from backend.commands import extract_command, validate_command
 from backend.telemetry_data import format_telemetry_for_prompt
-from backend.template_injector_v2 import generate_from_template
-from backend.lua_postprocessor import postprocess_lua_script
 
 # Agentic pipeline
 from backend.planner import plan as planner_plan
@@ -119,7 +117,7 @@ def get_status():
             'operation_mode': OPERATION_MODE,
             'default_model': DEFAULT_MODEL,
             'available_models': available_models,
-            'modes': ['agent', 'ask', 'script'],
+            'modes': ['agent', 'ask'],
             'mavlink': mavlink_info,
             'architecture': 'agentic_v3',
         }), 200
@@ -226,13 +224,12 @@ def execute_command():
 def chat():
     """
     Process chat message using the Agentic Pipeline.
-    
+
     Flow:
     1. Parse request, build telemetry context
     2. Route by mode:
-       - script → template_injector or LLM Lua generation
-       - ask    → simple LLM Q&A
-       - agent  → Planner (decompose) → Executor (resolve) → QGC command
+       - ask   → simple LLM Q&A
+       - agent → Planner (decompose) → Executor (resolve) → QGC command
     """
     try:
         data = request.get_json()
@@ -244,10 +241,10 @@ def chat():
             return jsonify({'success': False, 'error': 'Empty message'}), 400
 
         mode = data.get('mode', 'agent').lower()
-        if mode not in ('agent', 'ask', 'script'):
+        if mode not in ('agent', 'ask'):
             mode = 'agent'
 
-        default_model = SCRIPT_MODEL if mode == 'script' else DEFAULT_MODEL
+        default_model = DEFAULT_MODEL
         model = data.get('model', default_model)
         telemetry = data.get('telemetry', {})
 
@@ -263,16 +260,12 @@ def chat():
         command = None
         commands_array = None
 
-        # ─── SCRIPT MODE ───
-        if mode == 'script':
-            ai_response, command = _handle_script_mode(user_message, model, connection_status, telemetry_section)
-
         # ─── ASK MODE ───
-        elif mode == 'ask':
+        if mode == 'ask':
             ai_response = _handle_ask_mode(user_message, model, connection_status, telemetry_section)
 
         # ─── AGENT MODE (The Agentic Pipeline) ───
-        elif mode == 'agent':
+        else:
             ai_response, command, commands_array = _handle_agent_mode(
                 user_message, model, telemetry,
                 connection_status, telemetry_section
@@ -353,50 +346,6 @@ def _handle_ask_mode(user_message, model, connection_status, telemetry_section):
         options={'num_ctx': OLLAMA_NUM_CTX, 'num_gpu': OLLAMA_NUM_GPU}
     )
     return response['message']['content'].strip()
-
-
-def _handle_script_mode(user_message, model, connection_status, telemetry_section):
-    """Lua script generation — template matching first, LLM fallback."""
-    # Try template injection first
-    template_code, template_name = generate_from_template(user_message)
-
-    if template_code:
-        logger.info(f"Template matched: {template_name}")
-        ai_response = f"I'll create that script for you:\n\n```lua\n{template_code}\n```\n\nThis uses the proven {template_name} pattern."
-        command = {
-            "type": "LUA_SCRIPT",
-            "params": {
-                "code": template_code,
-                "description": user_message[:100],
-                "source": "template",
-                "template_used": template_name
-            }
-        }
-        return ai_response, command
-
-    # LLM generation
-    system_prompt = get_script_prompt(connection_status, telemetry_section)
-    response = ollama.chat(
-        model=model,
-        messages=[
-            {'role': 'system', 'content': system_prompt},
-            {'role': 'user', 'content': user_message}
-        ],
-        options={'num_ctx': OLLAMA_NUM_CTX, 'num_gpu': OLLAMA_NUM_GPU, 'temperature': 0.05}
-    )
-
-    ai_response = response['message']['content'].strip()
-    command = extract_lua_script(ai_response)
-
-    if command and command.get("type") == "LUA_SCRIPT":
-        original_code = command["params"]["code"]
-        processed_code, fixes = postprocess_lua_script(original_code)
-        if fixes:
-            command["params"]["code"] = processed_code
-            command["params"]["fixes"] = fixes
-        command["params"]["source"] = "llm_postprocessed" if fixes else "llm"
-
-    return ai_response, command
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
