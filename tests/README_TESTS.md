@@ -31,7 +31,7 @@ scripts\run_comprehensive_tests.bat
 ## Latest Results
 
 **Pass Rate:** 76.8% (116/151 tests passing)
-**Model:** qwen2.5:3b (3 billion parameters)
+**Model:** qwen2.5:3b
 
 This is excellent accuracy considering:
 - Rigorous test suite with edge cases

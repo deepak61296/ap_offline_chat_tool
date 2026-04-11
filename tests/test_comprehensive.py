@@ -38,7 +38,7 @@ class Colors:
     RESET = '\033[0m'
     BOLD = '\033[1m'
 
-class TestResult:
+class ComprehensiveResult:
     def __init__(self, category: str, test_name: str, input_text: str, 
                  expected_command: str, actual_response: str, 
                  extracted_command: Dict, passed: bool, error: str = None):
@@ -54,7 +54,7 @@ class TestResult:
 
 class ComprehensiveTestSuite:
     def __init__(self):
-        self.results: List[TestResult] = []
+        self.results: List[ComprehensiveResult] = []
         self.start_time = None
         self.end_time = None
         self.total_tests = 170  # Approximate total tests
@@ -128,8 +128,8 @@ class ComprehensiveTestSuite:
             elif expected_phrase:
                 error_msg = f"Missing phrase: '{expected_phrase}'"
         
-        result = TestResult(category, test_name, input_text, expected_command_type,
-                          response, command, passed, error_msg)
+        result = ComprehensiveResult(category, test_name, input_text, expected_command_type,
+                                     response, command, passed, error_msg)
 
         self.results.append(result)
         self.tests_completed += 1

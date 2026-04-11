@@ -159,6 +159,10 @@ class ExecutionResult:
     plan_summary: str             # Human-readable summary of what was planned
     tasks_total: int              # Total tasks in the plan
     tasks_executed: int           # How many were processed this cycle
+    execution_attempted: bool = False
+    execution_success: bool = False
+    execution_error: Optional[str] = None
+    step_results: Optional[List[Dict[str, Any]]] = None
 
 
 # ─────────────────────────────────────────────────────
@@ -173,6 +177,8 @@ def execute(
     user_message: str = "",
     connection_status: str = "",
     telemetry_section: str = "",
+    standalone_mode: bool = False,
+    mavlink_manager=None,
 ) -> ExecutionResult:
     """
     TRUE Agentic Executor — processes ALL commands in a single request.
@@ -196,10 +202,27 @@ def execute(
             plan_summary="No commands to execute",
             tasks_total=0,
             tasks_executed=0,
+            execution_success=True,
+            step_results=[],
         )
 
     # Smart pre-processing (pure Python, zero LLM cost)
     commands = _auto_inject_prerequisites(commands, telemetry)
+    mgr = mavlink_manager or _get_mavlink_manager()
+
+    if standalone_mode and (not mgr or not mgr.connected):
+        return ExecutionResult(
+            ai_response="Cannot execute command: MAVLink is not connected. Start SITL/vehicle and connect the backend first.",
+            command=None,
+            commands=None,
+            plan_summary="Execution blocked: mavlink disconnected",
+            tasks_total=len(commands),
+            tasks_executed=0,
+            execution_attempted=False,
+            execution_success=False,
+            execution_error="MAVLink is not connected",
+            step_results=[],
+        )
 
     # Classify commands while preserving order
     plan_steps = []  # [(category, cmd), ...]
@@ -227,6 +250,9 @@ def execute(
             plan_summary="No valid commands found",
             tasks_total=len(commands),
             tasks_executed=0,
+            execution_success=False,
+            execution_error="No valid commands found",
+            step_results=[],
         )
 
     # ─── Handle SEARCH_PARAM first (RAG double-hop) ───
@@ -239,7 +265,6 @@ def execute(
 
     # ─── Agentic Execution Loop ───
     # Build the full ordered command sequence for QGC
-    mgr = _get_mavlink_manager()
     movements = [s for cat, s in plan_steps if cat == 'move']
     circles = [s for cat, s in plan_steps if cat == 'circle']
     immediates = [s for cat, s in plan_steps if cat == 'immediate']
@@ -249,46 +274,75 @@ def execute(
     # Build the full QGC command sequence in execution order
     qgc_commands = []   # Ordered list of commands for QGC
     executed_steps = []  # Human-readable log
-
+    step_results = []
+    
     # Process all plan steps in ORDER
     for cat, cmd in plan_steps:
         if cat == 'immediate':
             cmd_type = cmd['type']
 
-            # If PyMAVLink is connected AND this is a multi-step plan,
-            # execute prerequisites (ARM, TAKEOFF) directly on backend
-            if mgr and mgr.connected and len(plan_steps) > 1 and cmd_type in ('ARM', 'TAKEOFF', 'CHANGE_MODE', 'SET_SPEED', 'SET_YAW'):
+            # In STANDALONE, execute *everything* directly.
+            # In INTEGRATED multi-step, execute only prerequisites directly.
+            is_standalone_exec = standalone_mode and mgr and mgr.connected
+            is_prereq_exec = mgr and mgr.connected and len(plan_steps) > 1 and cmd_type in ('ARM', 'TAKEOFF', 'CHANGE_MODE', 'SET_SPEED', 'SET_YAW')
+
+            if is_standalone_exec or is_prereq_exec:
                 logger.info(f"Executor: Direct-executing {cmd_type} via PyMAVLink")
                 result = mgr.execute_command(cmd)
-                executed_steps.append(f"{cmd_type}: {'OK' if result.success else result.message}")
+                status = "OK" if result.success else f"FAILED ({result.message})"
+                executed_steps.append(f"{cmd_type}: {status}")
+                step_results.append({
+                    "command": cmd_type,
+                    "success": result.success,
+                    "message": result.message,
+                })
                 if cmd_type == 'ARM' and result.success:
                     import time; time.sleep(1)
                 elif cmd_type == 'TAKEOFF' and result.success:
                     import time; time.sleep(3)
             else:
-                # No PyMAVLink or single command: queue for QGC
+                # Queue for QGC (Integrated Mode only)
                 qgc_commands.append(cmd)
                 executed_steps.append(f"{cmd_type}: queued for QGC")
+                step_results.append({
+                    "command": cmd_type,
+                    "success": True,
+                    "message": "queued for compatibility executor",
+                })
 
         elif cat == 'move':
-            # Movements are handled in bulk below
             pass
-
         elif cat == 'circle':
-            # Circles are handled in bulk below
             pass
 
     # Handle movements
     if movements:
         if len(movements) >= 2:
-            mission_result = _handle_mission_plan(movements, telemetry, ai_response)
+            mission_result = _handle_mission_plan(movements, telemetry, ai_response, mgr)
             if mission_result and mission_result.command:
                 executed_steps.append(f"Mission: {len(movements)} waypoints uploaded")
-                qgc_commands.append(mission_result.command)  # CHANGE_MODE: AUTO
+                if standalone_mode and mgr and mgr.connected:
+                    result = mgr.execute_command(mission_result.command)
+                    step_results.append({
+                        "command": "MISSION_PLAN",
+                        "success": result.success,
+                        "message": result.message,
+                    })
+                    import time; time.sleep(1)
+                else:
+                    qgc_commands.append(mission_result.command)  # CHANGE_MODE: AUTO
+                    step_results.append({
+                        "command": "MISSION_PLAN",
+                        "success": True,
+                        "message": "queued for compatibility executor",
+                    })
         else:
             # Single movement
             move_cmd = movements[0]
-            if mgr and mgr.connected and len(plan_steps) > 1:
+            is_standalone_exec = standalone_mode and mgr and mgr.connected
+            is_prereq_exec = mgr and mgr.connected and len(plan_steps) > 1
+
+            if is_standalone_exec or is_prereq_exec:
                 # Execute directly via PyMAVLink GOTO
                 direction = move_cmd['params']['direction']
                 distance = move_cmd['params']['distance']
@@ -304,21 +358,51 @@ def execute(
                         "latitude": new_lat, "longitude": new_lon, "altitude": base_alt
                     }}
                     result = mgr.execute_command(goto_cmd)
-                    executed_steps.append(f"Move {direction} {distance}m: {'OK' if result.success else result.message}")
+                    status = "OK" if result.success else f"FAILED ({result.message})"
+                    executed_steps.append(f"Move {direction} {distance}m: {status}")
+                    step_results.append({
+                        "command": "MOVE_DIRECTION",
+                        "success": result.success,
+                        "message": result.message,
+                    })
                     import time; time.sleep(2)
                 else:
-                    qgc_commands.append(move_cmd)
+                    if not standalone_mode:
+                        qgc_commands.append(move_cmd)
                     executed_steps.append(f"Move: {move_cmd['params']['direction']} {move_cmd['params']['distance']}m")
+                    step_results.append({
+                        "command": "MOVE_DIRECTION",
+                        "success": not standalone_mode,
+                        "message": "missing GPS position" if standalone_mode else "queued for compatibility executor",
+                    })
             else:
                 qgc_commands.append(move_cmd)
                 executed_steps.append(f"Move: {move_cmd['params']['direction']} {move_cmd['params']['distance']}m")
+                step_results.append({
+                    "command": "MOVE_DIRECTION",
+                    "success": True,
+                    "message": "queued for compatibility executor",
+                })
 
     # Handle circles
     if circles:
-        circle_result = _handle_circle(circles[0], ai_response)
+        circle_result = _handle_circle(circles[0], ai_response, mgr)
         executed_steps.append(f"Circle: radius={circles[0]['params']['radius']}m")
         if circle_result.command:
-            qgc_commands.append(circle_result.command)
+            if standalone_mode and mgr and mgr.connected:
+                result = mgr.execute_command(circle_result.command)
+                step_results.append({
+                    "command": "CIRCLE",
+                    "success": result.success,
+                    "message": result.message,
+                })
+            else:
+                qgc_commands.append(circle_result.command)
+                step_results.append({
+                    "command": "CIRCLE",
+                    "success": True,
+                    "message": "queued for compatibility executor",
+                })
 
     # Build summary
     total_tasks = len(plan_steps)
@@ -332,11 +416,22 @@ def execute(
     else:
         enhanced_response = ai_response
 
+    execution_attempted = any(step.get("message") != "queued for compatibility executor" for step in step_results)
+    execution_success = bool(step_results) and all(step.get("success") for step in step_results)
+    execution_error = None
+    if step_results and not execution_success:
+        failed = [step for step in step_results if not step.get("success")]
+        execution_error = failed[0].get("message") if failed else "Execution failed"
+
     logger.info(f"Executor: {summary} ({tasks_done}/{total_tasks} tasks)")
 
-    # For backward compat: command = first QGC command, commands = all of them
-    first_cmd = qgc_commands[0] if qgc_commands else None
-    all_cmds = qgc_commands if len(qgc_commands) > 1 else None
+    # In standalone mode, suppress ALL qgc_commands so QGC acts strictly as a dumb chat terminal
+    if standalone_mode:
+        first_cmd = None
+        all_cmds = None
+    else:
+        first_cmd = qgc_commands[0] if qgc_commands else None
+        all_cmds = qgc_commands if len(qgc_commands) > 1 else None
 
     return ExecutionResult(
         ai_response=enhanced_response,
@@ -345,6 +440,10 @@ def execute(
         plan_summary=summary,
         tasks_total=total_tasks,
         tasks_executed=tasks_done,
+        execution_attempted=execution_attempted,
+        execution_success=execution_success,
+        execution_error=execution_error,
+        step_results=step_results,
     )
 
 
@@ -353,7 +452,7 @@ def execute(
 # ─────────────────────────────────────────────────────
 
 def _handle_mission_plan(
-    movements: List[Dict], telemetry: dict, ai_response: str
+    movements: List[Dict], telemetry: dict, ai_response: str, mgr=None
 ) -> Optional[ExecutionResult]:
     """Compile multiple movements into a GPS waypoint mission and upload via PyMAVLink."""
     base_lat = telemetry.get('gps', {}).get('latitude', 0)
@@ -385,11 +484,18 @@ def _handle_mission_plan(
         plan_parts.append(f"{direction.lower()} {distance}m")
 
     # Upload via PyMAVLink
-    mgr = _get_mavlink_manager()
+    mgr = mgr or _get_mavlink_manager()
     if mgr:
         if not mgr.connected:
-            logger.info("Executor: Connecting to ArduPilot via UDP for mission upload...")
-            mgr.connect("udp:127.0.0.1:14551")
+            logger.warning("Executor: Cannot upload mission because MAVLink manager is not connected")
+            return ExecutionResult(
+                ai_response=ai_response + "\n\nCannot upload mission: MAVLink is not connected.",
+                command=None,
+                commands=None,
+                plan_summary="Mission failed: mavlink disconnected",
+                tasks_total=len(movements),
+                tasks_executed=0,
+            )
 
         logger.info(f"Executor: Uploading {len(waypoints)} waypoints...")
         result = mgr.upload_mission(waypoints)
@@ -417,17 +523,18 @@ def _handle_mission_plan(
         )
 
 
-def _handle_circle(circle_cmd: Dict, ai_response: str) -> ExecutionResult:
+def _handle_circle(circle_cmd: Dict, ai_response: str, mgr=None) -> ExecutionResult:
     """Set CIRCLE_RADIUS parameter and trigger CIRCLE flight mode."""
     radius = circle_cmd['params']['radius']
 
-    mgr = _get_mavlink_manager()
+    mgr = mgr or _get_mavlink_manager()
     if mgr:
-        if not mgr.connected:
-            mgr.connect("udp:127.0.0.1:14551")
-        # ArduPilot stores circle radius in centimeters
-        mgr.set_parameter("CIRCLE_RADIUS", radius * 100.0)
-        logger.info(f"Executor: Set CIRCLE_RADIUS={radius * 100.0}cm")
+        if mgr.connected:
+            # ArduPilot stores circle radius in centimeters
+            mgr.set_parameter("CIRCLE_RADIUS", radius * 100.0)
+            logger.info(f"Executor: Set CIRCLE_RADIUS={radius * 100.0}cm")
+        else:
+            logger.warning("Executor: Skipping CIRCLE_RADIUS update because MAVLink manager is not connected")
 
     return ExecutionResult(
         ai_response=ai_response + f"\n\nSet circle radius to {radius}m. Engaging CIRCLE mode.",

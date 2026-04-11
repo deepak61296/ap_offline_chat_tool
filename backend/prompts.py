@@ -1,6 +1,6 @@
 """System prompts for agent, ask, and script modes."""
 
-# Agent Mode Prompt - Optimized for small models (qwen2.5:3b, 4096 ctx)
+# Agent Mode Prompt - Optimized for compact local models (4096 ctx)
 AGENT_MODE_PROMPT = """You are a drone copilot. Respond briefly and output tool calls as JSON.
 
 TOOLS:

@@ -176,6 +176,11 @@ class MAVLinkManager:
         with self._lock:
             return self._telemetry
 
+    @property
+    def connection_string(self) -> str:
+        """Get the active connection string."""
+        return self._connection_string
+
     def connect(self, connection_string: str, baud: int = 57600) -> bool:
         """
         Connect to vehicle via MAVLink
@@ -201,7 +206,6 @@ class MAVLinkManager:
             return False
 
         self._state = ConnectionState.CONNECTING
-        self._connection_string = connection_string
 
         try:
             logger.info(f"Connecting to {connection_string}...")
@@ -220,6 +224,9 @@ class MAVLinkManager:
 
             if msg is None:
                 logger.error("No heartbeat received")
+                if self._connection:
+                    self._connection.close()
+                    self._connection = None
                 self._state = ConnectionState.ERROR
                 return False
 
@@ -234,11 +241,16 @@ class MAVLinkManager:
             self._recv_thread.start()
 
             self._state = ConnectionState.CONNECTED
+            self._connection_string = connection_string
             logger.info(f"Connected to vehicle at {connection_string}")
             return True
 
         except Exception as e:
             logger.error(f"Connection failed: {e}")
+            if self._connection:
+                self._connection.close()
+                self._connection = None
+            self._connection_string = ""
             self._state = ConnectionState.ERROR
             return False
 
@@ -253,6 +265,7 @@ class MAVLinkManager:
             self._connection.close()
             self._connection = None
 
+        self._connection_string = ""
         self._state = ConnectionState.DISCONNECTED
         logger.info("Disconnected from vehicle")
         return True

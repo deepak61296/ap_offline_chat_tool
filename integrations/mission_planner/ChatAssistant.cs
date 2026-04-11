@@ -595,7 +595,7 @@ namespace MissionPlanner.GCSViews
                             modelComboBox.Items.Add(modelName);
                         }
 
-                        // Set default to qwen2.5:3b if available, otherwise first item
+                        // Set default to the stable local model if available, otherwise first item
                         int defaultIndex = modelComboBox.Items.IndexOf("qwen2.5:3b");
                         if (defaultIndex >= 0)
                         {
@@ -611,7 +611,7 @@ namespace MissionPlanner.GCSViews
                     else
                     {
                         // Fallback to default models
-                        modelComboBox.Items.AddRange(new object[] { "qwen2.5:3b", "qwen2.5-coder:7b" });
+                        modelComboBox.Items.AddRange(new object[] { "qwen2.5:3b", "test_bot_fixed:latest", "qwen2.5-coder:7b" });
                         modelComboBox.SelectedIndex = 0;
                         UpdateConnectionStatus(false);
                     }
@@ -620,7 +620,7 @@ namespace MissionPlanner.GCSViews
             catch
             {
                 // Fallback to default models if Ollama is not running
-                modelComboBox.Items.AddRange(new object[] { "qwen2.5:3b", "qwen2.5-coder:7b" });
+                modelComboBox.Items.AddRange(new object[] { "qwen2.5:3b", "test_bot_fixed:latest", "qwen2.5-coder:7b" });
                 modelComboBox.SelectedIndex = 0;
                 UpdateConnectionStatus(false);
             }
@@ -1697,4 +1697,3 @@ namespace MissionPlanner.GCSViews
 
     }
 }
-

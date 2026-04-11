@@ -40,7 +40,7 @@ cd ardupilot-ai-backend
 pip install -r requirements.txt
 
 # Start the backend (make sure ollama is running first)
-python run_server.py
+python run_server.py --standalone
 ```
 
 Backend runs at `http://localhost:5000`. If you prefer **conda**:
@@ -49,12 +49,21 @@ Backend runs at `http://localhost:5000`. If you prefer **conda**:
 conda create -n ardupilot_ai python=3.10 -y
 conda activate ardupilot_ai
 pip install -r requirements.txt
-python run_server.py
+python run_server.py --standalone
 ```
 
 **Windows users** can use the batch file instead:
 ```
 start_backend.bat
+```
+
+## True Standalone Agent (CLI)
+You can now run the ArduPilot AI Backend as a true standalone agent directly in your terminal, skipping the GCS chat windows completely. It provides a Rich-based terminal UI (like Claude Code) and executes MAVLink commands completely autonomously.
+
+```bash
+# This script configures the background MAVLink split and launches the UI
+chmod +x start_agent.sh
+./start_agent.sh
 ```
 
 ## GCS Setup
@@ -159,7 +168,7 @@ User (plain English) --> GCS (MAVProxy / MP / QGC)
                          Command extraction
                               |
                               v
-                         GCS executes via MAVLink
+                         Backend executes via MAVLink
 ```
 
 Three modes:
@@ -211,7 +220,7 @@ ai_backend enable
 
 **Commands not executing** — Check the backend terminal for errors. Run `curl http://localhost:5000/health` to verify the backend is reachable.
 
-**Slow responses** — Use a GPU if available. For CPU-only, try a smaller model: `ollama pull qwen2.5:1.5b` and edit `backend/config.py`.
+**Slow responses** — Use a GPU if available. For CPU-only, point `--model` or `DEFAULT_MODEL` at a smaller local model.
 
 **Port 5000 in use** — Change `API_PORT` in `backend/config.py` and update the GCS backend URL.
 

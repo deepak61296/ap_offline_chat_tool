@@ -12,7 +12,14 @@ import re
 import logging
 from typing import Dict, Any, List, Tuple, Optional
 
-import ollama
+try:
+    import ollama
+except ImportError:
+    class _MissingOllama:
+        def __getattr__(self, name):
+            raise RuntimeError("ollama Python package is not installed")
+
+    ollama = _MissingOllama()
 
 from backend.config import OLLAMA_NUM_CTX, OLLAMA_NUM_GPU
 from backend.prompts import get_agent_prompt

@@ -13,7 +13,6 @@ import time
 import requests
 import json
 import sys
-from prettytable import PrettyTable
 
 # The active backend server
 API_URL = "http://localhost:5000/chat"
@@ -21,7 +20,7 @@ HEALTH_URL = "http://localhost:5000/status"
 
 # Models to benchmark: You can edit this list if you pull new models!
 MODELS_TO_TEST = [
-    "qwen2.5:3b",
+    "test_bot_fixed:latest",
     "gemma2:2b", # Currently highly recommended over Qwen
     "llama3.2:3b",
     "test_bot_fixed"
@@ -49,6 +48,12 @@ def check_backend():
         return []
 
 def run_benchmarks(available_models):
+    try:
+        from prettytable import PrettyTable
+    except ModuleNotFoundError:
+        print("❌ Missing dependency: prettytable. Install it to run model benchmarks.")
+        sys.exit(1)
+
     print("=" * 80)
     print("🚀 ARDUPILOT AI: MODEL BENCHMARKING SUITE")
     print("=" * 80)
