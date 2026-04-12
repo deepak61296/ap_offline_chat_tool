@@ -7,6 +7,27 @@ from typing import List, Dict
 PARAM_URL = "https://autotest.ardupilot.org/Parameters/ArduCopter/apm.pdef.json"
 CACHE_FILE = os.path.join(os.path.dirname(__file__), "apm.pdef.json")
 
+# Prefixes to deprioritize (secondary/simulation/display params)
+DEPRIORITIZE_PREFIXES = ('SIM_', 'OSD', 'NTF_', 'LOG_', 'STAT_')
+# Numbered variants (BATT2, BATT3, etc.) get lower priority than primary
+NUMBERED_SUFFIX_PATTERN = re.compile(r'^([A-Z]+)(\d+)_')
+
+# Common query -> preferred prefix mappings
+QUERY_PREFIX_MAP = {
+    'battery': ['BATT_', 'BATT2_'],
+    'loiter': ['LOIT_', 'LOITER'],
+    'rtl': ['RTL_'],
+    'altitude': ['ALT_', 'RTL_ALT'],
+    'motor': ['MOT_'],
+    'compass': ['COMPASS_'],
+    'gps': ['GPS_', 'EK3_GPS'],
+    'barometer': ['BARO', 'GND_'],
+    'accelerometer': ['INS_ACC', 'INS_'],
+    'arming': ['ARMING_', 'ARM_'],
+    'fence': ['FENCE_'],
+    'failsafe': ['FS_', 'BATT_FS', 'RC_FS'],
+}
+
 class ParameterDB:
     def __init__(self):
         self.params: List[Dict] = []
@@ -45,27 +66,65 @@ class ParameterDB:
                         })
 
     def search(self, query: str, top_k: int = 4) -> List[Dict]:
-        """Simple keyword matching to find the best parameter."""
+        """Improved keyword matching with smart ranking."""
         if not self.params:
             return []
 
-        query_terms = query.lower().split()
+        query_lower = query.lower()
+        query_terms = query_lower.split()
         results = []
 
-        for p in self.params:
-            score = 0
-            for term in query_terms:
-                if term in p["name"].lower():
-                    score += 3 # Exact parameter code match is highly weighted
-                elif term in p["search_corpus"]:
-                    score += 1
-            
-            if score > 0:
-                results.append((score, p))
+        # Find preferred prefixes for this query
+        preferred_prefixes = []
+        for key, prefixes in QUERY_PREFIX_MAP.items():
+            if key in query_lower:
+                preferred_prefixes.extend(prefixes)
 
-        # Sort by best score descending
-        results.sort(key=lambda x: x[0], reverse=True)
-        
+        for p in self.params:
+            name = p["name"]
+            name_lower = name.lower()
+            score = 0
+
+            # Check each query term
+            for term in query_terms:
+                # Exact name match (highest priority)
+                if name_lower == term:
+                    score += 20
+                # Term in parameter name
+                elif term in name_lower:
+                    score += 5
+                # Term in display name
+                elif term in p["display_name"].lower():
+                    score += 3
+                # Term in description
+                elif term in p["description"].lower():
+                    score += 1
+
+            if score == 0:
+                continue
+
+            # Boost: preferred prefix for this query type
+            for prefix in preferred_prefixes:
+                if name.startswith(prefix):
+                    score += 8
+                    break
+
+            # Penalty: deprioritize SIM_, OSD, etc.
+            if name.startswith(DEPRIORITIZE_PREFIXES):
+                score -= 5
+
+            # Penalty: numbered variants (BATT2_, BATT3_) rank lower than primary
+            num_match = NUMBERED_SUFFIX_PATTERN.match(name)
+            if num_match:
+                variant_num = int(num_match.group(2))
+                if variant_num > 1:
+                    score -= (variant_num - 1) * 2
+
+            results.append((score, p))
+
+        # Sort by score descending, then by name length (shorter = more specific)
+        results.sort(key=lambda x: (-x[0], len(x[1]["name"])))
+
         # Format the top K
         out = []
         for _, p in results[:top_k]:
