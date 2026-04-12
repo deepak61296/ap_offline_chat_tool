@@ -500,11 +500,17 @@ def _handle_search_param(
     results = db.search(query, top_k=5)
 
     if results:
+        # Build a human-readable summary of search results
+        result_summary = f"Found {len(results)} parameter(s) related to '{query}':\n"
+        for i, r in enumerate(results):
+            result_summary += f"  {i+1}. {r['name']} - {r['description'][:100]}\n"
+
         context = "SYSTEM: Here are the ArduPilot parameters matching your query:\n"
         for i, r in enumerate(results):
             context += f"{i+1}. {r['name']} — {r['description'][:120]}\n"
-        context += "\nNow use the correct parameter name in a get_param or set_param tool call."
+        context += "\nProvide a helpful response explaining these parameters. Do NOT output any JSON."
     else:
+        result_summary = f"No parameters found matching '{query}'."
         context = f"SYSTEM: No parameters found matching '{query}'. Please inform the user."
 
     # Re-prompt the Planner with the injected context
@@ -525,8 +531,10 @@ def _handle_search_param(
         # Filter out backend-only commands - don't send them to QGC
         if cmd_type in BACKEND_ONLY_COMMANDS:
             logger.info(f"Executor: Filtering backend-only command {cmd_type} from QGC response")
+            # Return the search results directly if LLM response is poor
+            response = new_text if new_text and new_text != "Executing commands." else result_summary
             return ExecutionResult(
-                ai_response=new_text,
+                ai_response=response,
                 command=None,
                 commands=None,
                 plan_summary=f"RAG: {cmd_type} handled internally",
@@ -544,9 +552,10 @@ def _handle_search_param(
                 tasks_executed=1,
             )
 
-    # RAG didn't resolve to a command — return the text explanation
+    # RAG didn't resolve to a command — return text or fallback to search results
+    response = new_text if new_text and new_text != "Executing commands." else result_summary
     return ExecutionResult(
-        ai_response=new_text,
+        ai_response=response,
         command=None,
         commands=None,
         plan_summary="RAG: informational response",
