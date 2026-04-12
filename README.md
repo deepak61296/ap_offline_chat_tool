@@ -1,8 +1,8 @@
 # ArduPilot AI Backend
 
-Agentic AI drone copilot with structured tool-calling. Control your drone with natural language through QGroundControl, MAVProxy, or Mission Planner. Runs fully offline with [Ollama](https://ollama.com).
+Natural language drone control with structured tool calling. Talk to your drone through QGroundControl, MAVProxy, or Mission Planner. Runs fully offline with [Ollama](https://ollama.com).
 
-**v3.0** — Planner → Executor agentic pipeline. 23/23 tests passing.
+**v3.0** — Planner → Executor pipeline with JSON tool calling. 23/23 tests passing.
 
 ```
 arm the drone and takeoff to 25m
@@ -268,7 +268,11 @@ ardupilot-ai-backend/
 ## Running Tests
 
 ```bash
-python -m pytest tests/test_comprehensive.py -v
+# Run comprehensive test suite
+./run_tests.sh
+
+# Or run specific tests
+python tests/test_new_tools.py
 ```
 
 ## License

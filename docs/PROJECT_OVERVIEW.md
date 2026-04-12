@@ -1,323 +1,231 @@
-# Project Overview
+# ArduPilot AI Backend - Project Overview
 
-## What is ArduPilot AI Backend?
+## What is it?
 
-A natural language interface for ArduPilot drones that lets users control vehicles using plain English instead of technical commands. The system runs entirely locally using Ollama and supports both MAVProxy and Mission Planner.
+A natural language drone control system that runs entirely offline. Talk to your drone in plain English through QGroundControl, Mission Planner, or MAVProxy.
 
-## Core Concept
+**Version 3.0** - Structured tool calling with Planner/Executor pipeline.
 
-**Traditional workflow:**
+## The Problem
+
+Traditional drone control requires technical MAVLink commands:
 ```
-User → "mode guided" → MAVProxy → MAVLink → Drone changes mode
+mode guided
+arm throttle
+takeoff 20
 ```
 
-**AI-enabled workflow:**
+Users need to memorize syntax and remember parameter names.
+
+## The Solution
+
+Natural language interface:
 ```
-User → "switch to guided mode" → AI Backend → Command extraction → MAVProxy → MAVLink → Drone changes mode
+"arm the drone and takeoff to 20 meters"
+"move north 50m then circle at 10m radius"
+"which parameter controls disarm delay?"
 ```
 
-The AI backend translates natural language into structured MAVLink commands while maintaining safety checks and validation.
+The AI understands intent and translates to proper commands.
 
 ## Key Features
 
-### Natural Language Control
-- **Simple commands**: "arm the drone", "take off to 20 meters", "land now"
-- **Complex sequences**: "arm, take off to 15 meters, then move north 50 meters"
-- **Telemetry queries**: "what's my battery level?", "how high am I flying?"
+| Feature | Description |
+|---------|-------------|
+| **Offline** | Runs locally with Ollama, no cloud/API needed |
+| **Multi-GCS** | Works with QGroundControl, Mission Planner, MAVProxy |
+| **21 Tools** | arm, takeoff, land, move, goto, circle, set_param, etc. |
+| **Parameter RAG** | Search 5600+ ArduPilot parameters semantically |
+| **Multi-step** | "arm, takeoff, move north 50m" executes as sequence |
+| **Safety** | Altitude limits, distance limits, validation |
 
-### Two Operation Modes
-
-**1. Agent Mode** - Execute commands
-```
-User: "take off to 30 meters"
-AI: "Taking off to 30 meters now."
-→ Executes MAV_CMD_NAV_TAKEOFF
-```
-
-**2. Ask Mode** - Read-only queries
-```
-User: "what's my current altitude?"
-AI: "You are currently at 15.3 meters above home."
-→ No command execution
-```
-
-### Safety Features
-- Altitude limits (max 500m for takeoff)
-- Distance limits (max 1000m for movement)
-- Risk-based confirmation prompts
-- Parameter validation before execution
-- Command logging for audit trail
-
-### Offline Operation
-- Runs entirely on local machine
-- No cloud API calls or internet required
-- Uses Ollama for LLM inference
-- ArduPilot documentation search via local embeddings
-
-## Technology Stack
-
-**Backend:**
-- Python 3.8+
-- Flask (HTTP API)
-- Ollama (local LLM inference)
-- Sentence Transformers (document search)
-
-**LLM Models:**
-- qwen2.5:3b (default agent/ask model)
-
-**GCS Integration:**
-- MAVProxy 1.8+ (Python module)
-- Mission Planner 1.3+ (C# plugin)
-
-**Communication:**
-- HTTP REST API between GCS and backend
-- MAVLink protocol between GCS and vehicle
-
-## Project Structure
+## Architecture (v3.0)
 
 ```
-ardupilot-ai-backend/
-├── backend/                 # Core Flask API server
-│   ├── api_server.py       # Main HTTP endpoints
-│   ├── commands.py         # Command parsing and extraction
-│   ├── prompts.py          # LLM system prompts
-│   ├── config.py           # Safety limits and settings
-│   ├── planner.py          # Structured task planning
-│   └── executor.py         # Agentic execution pipeline
-├── integrations/           # GCS integration code
-│   ├── mavproxy/          # MAVProxy module + patch
-│   └── mission_planner/   # Mission Planner plugin files
-├── models/                 # Ollama model management
-├── tests/                  # Test suite
-├── docs/                   # Documentation
-└── demos/                  # Demo videos
+┌─────────────────────────────────────────────────────────────┐
+│                  TOOL CALLING PIPELINE                       │
+│                                                              │
+│   User: "arm and takeoff to 20m"                            │
+│              │                                               │
+│              ▼                                               │
+│   ┌────────────────────────────────────────────────────┐    │
+│   │                    PLANNER                          │    │
+│   │  • Calls Ollama LLM (qwen2.5:3b)                   │    │
+│   │  • LLM outputs JSON tool calls:                    │    │
+│   │    [{"tool":"arm"}, {"tool":"takeoff",             │    │
+│   │     "params":{"altitude":20}}]                     │    │
+│   └──────────────────────┬─────────────────────────────┘    │
+│                          │                                   │
+│                          ▼                                   │
+│   ┌────────────────────────────────────────────────────┐    │
+│   │                    EXECUTOR                         │    │
+│   │  • Classifies commands                             │    │
+│   │  • Handles special flows (CIRCLE, SEARCH_PARAM)    │    │
+│   │  • Compiles movements to GPS waypoints             │    │
+│   │  • Returns commands to GCS                         │    │
+│   └──────────────────────┬─────────────────────────────┘    │
+│                          │                                   │
+│                          ▼                                   │
+│   GCS (QGC/MP/MAVProxy) executes via MAVLink               │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-## How It Works
+## Core Components
 
-### Request Flow
+### 1. Planner (`planner.py`) - The Brain
+- Builds system prompt with tool definitions
+- Calls Ollama LLM
+- Extracts JSON tool calls from response
+- Handles RAG re-prompting for parameter lookups
 
-1. **User Input** - User types natural language in GCS
-2. **NL Detection** - GCS checks if input is natural language or direct command
-3. **HTTP Request** - GCS sends POST /chat with message and telemetry
-4. **LLM Processing** - Backend builds prompt and calls Ollama
-5. **Response Parsing** - Backend receives natural language response
-6. **Command Extraction** - Regex patterns extract structured command
-7. **Validation** - Safety checks on parameters and risk level
-8. **Return to GCS** - JSON command sent back to GCS
-9. **MAVLink Execution** - GCS translates to MAVLink and sends to vehicle
-10. **Feedback** - Vehicle state changes, telemetry updates
+### 2. Executor (`executor.py`) - The Hands
+- Classifies commands: immediate, special, backend-only
+- Multi-step mission handling
+- CIRCLE mode (sets radius param + mode change)
+- RAG double-hop for SEARCH_PARAM
 
-### Command Extraction Example
+### 3. Tools (`tools.py`) - Capabilities
+- 21 structured tool definitions
+- JSON extraction from LLM output
+- Validation and type coercion
+- Tool name → command type normalization
 
-**LLM Response:**
-```
-"Taking off to 25 meters now."
-```
-
-**Regex Pattern:**
-```python
-r'taking off to (\d+)'
-```
-
-**Extracted Command:**
-```json
-{
-  "type": "TAKEOFF",
-  "params": {
-    "altitude": 25
-  }
-}
-```
-
-**MAVLink Translation:**
-```python
-master.mav.command_long_send(
-    target_system,
-    target_component,
-    mavutil.mavlink.MAV_CMD_NAV_TAKEOFF,
-    0, 0, 0, 0, 0, 0, 0, 25
-)
-```
+### 4. Parameter Database (`param_db.py`) - Knowledge
+- 5600+ ArduPilot parameters indexed
+- TF-IDF semantic search
+- Prefix boosting (BATT_ for battery queries)
+- SIM_ parameter deprioritization
 
 ## Supported Commands
 
-| Command | Example | Risk Level |
-|---------|---------|------------|
-| ARM | "arm the drone" | Medium |
-| DISARM | "disarm now" | Low |
-| TAKEOFF | "take off to 20 meters" | High |
-| LAND | "land the drone" | Medium |
-| RTL | "return to home" | Medium |
-| GOTO | "go to waypoint 2" | Medium |
-| MOVE | "move north 50 meters" | Medium |
-| ALTITUDE_CHANGE | "climb 10 meters" | Medium |
-| SET_MODE | "switch to loiter mode" | Medium |
-| SET_SPEED | "set speed to 5 meters per second" | Medium |
-| SET_YAW | "turn to heading 180 degrees" | Medium |
-| GET_PARAM | "get parameter RTL_ALT" | Low |
-| SET_PARAM | "set RTL_ALT to 50" | High |
-## Integration Options
+| Category | Commands |
+|----------|----------|
+| **Basic** | arm, disarm, takeoff, land, rtl |
+| **Movement** | move (N/S/E/W/forward/backward), goto |
+| **Mode** | change_mode, pause, resume |
+| **Parameters** | get_param, set_param, search_param, explain_param |
+| **Info** | get_status, get_position |
+| **Advanced** | circle, set_speed, set_altitude, set_heading |
 
-### MAVProxy Integration
+## How RAG Works
 
-**Option 1: Install Module**
-```bash
-# Copy module to MAVProxy modules directory
-cp integrations/mavproxy/mavproxy_ai_backend.py \
-   ~/.local/lib/python3.x/site-packages/MAVProxy/modules/
+When user asks "which parameter sets disarm delay?":
 
-# Load in MAVProxy
-module load ai_backend
+```
+1. LLM outputs: [{"tool":"search_param", "params":{"query":"disarm delay"}}]
+
+2. Executor detects SEARCH_PARAM → triggers RAG
+
+3. Search param_db:
+   - DISARM_DELAY: "Time before auto-disarm after landing"
+   - MOT_SAFE_TIME: "Motor output safety delay"
+   - etc.
+
+4. Inject results into context, re-prompt LLM
+
+5. LLM explains parameters in natural language
+
+6. Return informational response (no command to GCS)
 ```
 
-**Option 2: Use Forked MAVProxy**
-```bash
-git clone https://github.com/deepak61296/MAVProxy.git
-cd MAVProxy
-git checkout feature/ai-backend-integration
-pip install -e .
-mavproxy.py --ai-backend
+## API Contract
+
+```
+POST /chat
+{
+  "message": "takeoff to 25 meters",
+  "mode": "agent",
+  "telemetry": {...}
+}
+
+Response:
+{
+  "response": "Taking off to 25 meters.",
+  "command": {"type": "TAKEOFF", "params": {"altitude": 25}},
+  "success": true
+}
 ```
 
-### Mission Planner Integration
+## Technology Stack
 
-**Option 1: Use Pre-built Fork**
-```bash
-# Download from releases
-https://github.com/deepak61296/MissionPlanner/releases
-```
-
-**Option 2: Build from Source**
-```bash
-git clone https://github.com/deepak61296/MissionPlanner.git
-cd MissionPlanner
-# Copy plugin files from integrations/mission_planner/
-# Build in Visual Studio
-```
-
-## Use Cases
-
-### Flight Testing
-```
-"arm and take off to 10 meters"
-"move forward 20 meters"
-"what's my battery voltage?"
-"land now"
-```
-
-### Parameter Tuning
-```
-"what's the current RTL altitude?"
-"set RTL altitude to 100 meters"
-"get all PID parameters"
-```
-
-### Training and Education
-- New users can learn MAVLink commands through natural language
-- Ask mode explains telemetry without risk of execution
-
-## System Requirements
-
-**Hardware:**
-- CPU: 4+ cores (8+ recommended)
-- RAM: 8GB minimum (16GB for 7B models)
-- Disk: 10GB for models and docs
-- GPU: Optional, speeds up inference
-
-**Software:**
-- Python 3.8 or higher
-- Ollama 0.1.0+
-- MAVProxy 1.8+ or Mission Planner 1.3+
-- Windows, Linux, or macOS
-
-**Network:**
-- Local network connection between GCS and backend (can be same machine)
-- No internet required for operation
+| Layer | Technology |
+|-------|------------|
+| **LLM** | Ollama + qwen2.5:3b (local, offline) |
+| **Backend** | Python, Flask |
+| **Search** | TF-IDF vectorization, cosine similarity |
+| **GCS** | QGroundControl, Mission Planner, MAVProxy |
+| **Protocol** | MAVLink |
 
 ## Performance
 
-**Typical Response Times:**
-- LLM command extraction (3B model): 1-2 seconds
-- MAVLink execution overhead: ~100ms
+| Operation | Time |
+|-----------|------|
+| LLM inference (3B) | 1-2s |
+| Parameter search | ~10ms |
+| RAG re-prompt | +1-2s |
+| End-to-end | 1-3s |
 
-**Bottlenecks:**
-- LLM inference time (depends on model size and hardware)
-- Can use GPU for 2-3x speedup
-- Smaller models (3B) faster but slightly less accurate
+## Test Coverage
 
-## Development Status
+```
+./run_tests.sh
 
-**Current Version:** 2.3.0
+✓ Unit tests: 39/39 passed
+✓ Syntax check: passed
+✓ Parameter DB: 6/6 tests passed
+✓ Tool definitions: 9/9 tests passed
+✓ Integration tests: 23/23 passed
+```
 
-**Completed Features:**
-- ✓ MAVProxy integration with input interception
-- ✓ Mission Planner plugin with chat integration
-- ✓ 14 command types with validation
-- ✓ RAG system for ArduPilot docs
-- ✓ Safety checks and risk levels
-- ✓ Comprehensive test suite
+## Quick Start
 
-## Documentation
-
-- **README.md** - Quick start and setup instructions
-- **docs/ARCHITECTURE.md** - System architecture and data flow
-- **docs/CONTRIBUTING.md** - Developer guide
-- **docs/COMPATIBILITY.md** - Version compatibility matrix
-- **docs/INSTALL_WINDOWS.md** - Windows installation guide
-- **docs/PROJECT_OVERVIEW.md** - This document
-
-## Repository Structure
-
-**Main Repository:**
-- https://github.com/deepak61296/ardupilot-ai-backend
-- Contains backend server and integration copies
-
-**Integration Forks:**
-- https://github.com/deepak61296/MAVProxy (feature/ai-backend-integration branch)
-- https://github.com/deepak61296/MissionPlanner (feature/script-mode-clean branch)
-
-## Getting Started
-
-**1. Install Ollama and pull models:**
 ```bash
+# 1. Install Ollama and model
 ollama pull qwen2.5:3b
-```
 
-**2. Create conda environment:**
-```bash
-conda create -n ardupilot_ai python=3.10
-conda activate ardupilot_ai
-```
-
-**3. Install backend:**
-```bash
+# 2. Clone and install
+git clone https://github.com/deepak61296/ardupilot-ai-backend.git
 cd ardupilot-ai-backend
 pip install -r requirements.txt
-```
 
-**4. Start backend:**
-```bash
-python -m backend.api_server
-```
+# 3. Start backend
+python run_server.py
 
-**5. Integrate with GCS:**
-- For MAVProxy: Load ai_backend module
-- For Mission Planner: Press Ctrl+L to open chat
-
-**6. Verify:**
-```bash
+# 4. Test
 curl http://localhost:5000/health
 ```
 
+## GCS Integration
+
+**QGroundControl**: Download fork, enable AI backend in settings, Ctrl+L for chat
+
+**Mission Planner**: Download release, Ctrl+L for chat panel
+
+**MAVProxy**: `module load ai_backend && ai_backend enable`
+
+## Key Design Decisions
+
+1. **Structured tool calling over regex** - JSON tools more robust than parsing
+2. **Local LLM** - Privacy-first, no cloud dependency
+3. **Backend-only commands** - Info queries don't pollute GCS
+4. **RAG double-hop** - Search → inject → re-prompt for accuracy
+5. **Separation of concerns** - Planner + Executor
+
+## Future Work
+
+- **Full agentic loop**: Observation-action cycles with retry logic
+- **Telemetry feedback**: Observe results, adjust next action
+- **Memory**: Persistent context across requests
+- **Autonomous missions**: Multi-step reasoning without user input
+
+## Repository
+
+- Backend: https://github.com/deepak61296/ardupilot-ai-backend
+- QGC Fork: https://github.com/deepak61296/qgroundcontrol
+- Mission Planner Fork: https://github.com/deepak61296/MissionPlanner
+- MAVProxy Fork: https://github.com/deepak61296/MAVProxy
+
 ## License
 
-MIT License - see LICENSE file for details
-
-## Contributing
-
-See docs/CONTRIBUTING.md for development workflow and guidelines.
-
-## Support
-
-For issues and feature requests, please use GitHub Issues on the main repository.
+GPL-3.0
