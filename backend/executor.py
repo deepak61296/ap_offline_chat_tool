@@ -97,6 +97,9 @@ IMMEDIATE_COMMANDS = {'ARM', 'DISARM', 'TAKEOFF', 'LAND', 'RTL', 'CHANGE_MODE',
 SPECIAL_COMMANDS = {'CIRCLE', 'SEARCH_PARAM', 'MISSION_PLAN', 'GET_STATUS',
                     'GET_POSITION', 'EXPLAIN_PARAM'}
 
+# Commands that are backend-only (never sent to QGC)
+BACKEND_ONLY_COMMANDS = {'SEARCH_PARAM', 'GET_STATUS', 'GET_POSITION', 'EXPLAIN_PARAM'}
+
 
 def _preflight_check(cmd: Dict, telemetry: dict) -> Optional[str]:
     """
@@ -363,6 +366,9 @@ def execute(
 
     logger.info(f"Executor: {summary} ({tasks_done}/{total_tasks} tasks)")
 
+    # Filter out any backend-only commands that might have slipped through
+    qgc_commands = [c for c in qgc_commands if c.get('type') not in BACKEND_ONLY_COMMANDS]
+
     # For backward compat: command = first QGC command, commands = all of them
     first_cmd = qgc_commands[0] if qgc_commands else None
     all_cmds = qgc_commands if len(qgc_commands) > 1 else None
@@ -515,13 +521,25 @@ def _handle_search_param(
     # Process the re-planned commands (should be GET_PARAM or SET_PARAM now)
     if new_commands:
         cmd = new_commands[0]
+        cmd_type = cmd.get('type', '')
+        # Filter out backend-only commands - don't send them to QGC
+        if cmd_type in BACKEND_ONLY_COMMANDS:
+            logger.info(f"Executor: Filtering backend-only command {cmd_type} from QGC response")
+            return ExecutionResult(
+                ai_response=new_text,
+                command=None,
+                commands=None,
+                plan_summary=f"RAG: {cmd_type} handled internally",
+                tasks_total=1,
+                tasks_executed=1,
+            )
         is_valid, error = validate_command(cmd)
         if is_valid:
             return ExecutionResult(
                 ai_response=new_text,
                 command=cmd,
                 commands=None,
-                plan_summary=f"RAG resolved: {cmd['type']} {cmd.get('params', {}).get('name', '')}",
+                plan_summary=f"RAG resolved: {cmd_type} {cmd.get('params', {}).get('name', '')}",
                 tasks_total=1,
                 tasks_executed=1,
             )
