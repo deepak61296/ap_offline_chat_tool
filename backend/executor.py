@@ -90,10 +90,12 @@ def _offset_coords(lat: float, lon: float, yaw: float, distance: float, directio
 # Commands that QGC can execute immediately
 IMMEDIATE_COMMANDS = {'ARM', 'DISARM', 'TAKEOFF', 'LAND', 'RTL', 'CHANGE_MODE',
                       'GOTO', 'ALTITUDE_CHANGE', 'SET_SPEED', 'SET_YAW',
-                      'GET_PARAM', 'SET_PARAM', 'REBOOT', 'MOVE_DIRECTION'}
+                      'GET_PARAM', 'SET_PARAM', 'REBOOT', 'MOVE_DIRECTION',
+                      'PAUSE', 'RESUME'}
 
 # Commands that need special backend processing
-SPECIAL_COMMANDS = {'CIRCLE', 'SEARCH_PARAM', 'MISSION_PLAN'}
+SPECIAL_COMMANDS = {'CIRCLE', 'SEARCH_PARAM', 'MISSION_PLAN', 'GET_STATUS',
+                    'GET_POSITION', 'EXPLAIN_PARAM'}
 
 
 def _preflight_check(cmd: Dict, telemetry: dict) -> Optional[str]:
@@ -212,10 +214,22 @@ def execute(
         cmd_type = cmd['type']
         if cmd_type == 'SEARCH_PARAM':
             plan_steps.append(('search', cmd))
+        elif cmd_type == 'EXPLAIN_PARAM':
+            plan_steps.append(('explain', cmd))
+        elif cmd_type == 'GET_STATUS':
+            plan_steps.append(('status', cmd))
+        elif cmd_type == 'GET_POSITION':
+            plan_steps.append(('position', cmd))
         elif cmd_type == 'CIRCLE':
             plan_steps.append(('circle', cmd))
         elif cmd_type == 'MOVE_DIRECTION':
             plan_steps.append(('move', cmd))
+        elif cmd_type == 'PAUSE':
+            # PAUSE = switch to LOITER mode
+            plan_steps.append(('immediate', {"type": "CHANGE_MODE", "params": {"mode": "LOITER"}}))
+        elif cmd_type == 'RESUME':
+            # RESUME = switch to AUTO mode
+            plan_steps.append(('immediate', {"type": "CHANGE_MODE", "params": {"mode": "AUTO"}}))
         else:
             plan_steps.append(('immediate', cmd))
 
@@ -236,6 +250,21 @@ def execute(
             search_cmds[0], ai_response, model, user_message,
             connection_status, telemetry_section
         )
+
+    # ─── Handle EXPLAIN_PARAM (parameter explanation) ───
+    explain_cmds = [s for cat, s in plan_steps if cat == 'explain']
+    if explain_cmds:
+        return _handle_explain_param(explain_cmds[0], telemetry)
+
+    # ─── Handle GET_STATUS (drone status query) ───
+    status_cmds = [s for cat, s in plan_steps if cat == 'status']
+    if status_cmds:
+        return _handle_get_status(telemetry)
+
+    # ─── Handle GET_POSITION (GPS position query) ───
+    position_cmds = [s for cat, s in plan_steps if cat == 'position']
+    if position_cmds:
+        return _handle_get_position(telemetry)
 
     # ─── Agentic Execution Loop ───
     # Build the full ordered command sequence for QGC
@@ -503,6 +532,132 @@ def _handle_search_param(
         command=None,
         commands=None,
         plan_summary="RAG: informational response",
+        tasks_total=1,
+        tasks_executed=1,
+    )
+
+
+def _handle_get_status(telemetry: dict) -> ExecutionResult:
+    """Return formatted drone status from telemetry."""
+    if not telemetry:
+        return ExecutionResult(
+            ai_response="No telemetry data available. Make sure the drone is connected.",
+            command=None,
+            commands=None,
+            plan_summary="Status: no telemetry",
+            tasks_total=1,
+            tasks_executed=0,
+        )
+
+    status = telemetry.get('status', {})
+    battery = telemetry.get('battery', {})
+    gps = telemetry.get('gps', {})
+
+    mode = status.get('mode', 'UNKNOWN')
+    armed = "ARMED" if status.get('armed', False) else "DISARMED"
+    voltage = battery.get('voltage', 0)
+    remaining = battery.get('remaining', 0)
+    alt = gps.get('altitude', 0)
+    sats = gps.get('satellites', 0)
+
+    response = f"""**Drone Status:**
+- Flight Mode: {mode}
+- Armed State: {armed}
+- Battery: {voltage:.1f}V ({remaining}% remaining)
+- Altitude: {alt:.1f}m
+- GPS Satellites: {sats}"""
+
+    return ExecutionResult(
+        ai_response=response,
+        command=None,
+        commands=None,
+        plan_summary=f"Status: {mode}, {armed}, {voltage:.1f}V",
+        tasks_total=1,
+        tasks_executed=1,
+    )
+
+
+def _handle_get_position(telemetry: dict) -> ExecutionResult:
+    """Return current GPS position from telemetry."""
+    if not telemetry:
+        return ExecutionResult(
+            ai_response="No telemetry data available. Make sure the drone is connected.",
+            command=None,
+            commands=None,
+            plan_summary="Position: no telemetry",
+            tasks_total=1,
+            tasks_executed=0,
+        )
+
+    gps = telemetry.get('gps', {})
+    lat = gps.get('latitude', 0)
+    lon = gps.get('longitude', 0)
+    alt = gps.get('altitude', 0)
+    sats = gps.get('satellites', 0)
+
+    if lat == 0 and lon == 0:
+        response = f"GPS position not available. Satellites visible: {sats}"
+    else:
+        response = f"""**Current Position:**
+- Latitude: {lat:.6f}
+- Longitude: {lon:.6f}
+- Altitude: {alt:.1f}m
+- GPS Satellites: {sats}"""
+
+    return ExecutionResult(
+        ai_response=response,
+        command=None,
+        commands=None,
+        plan_summary=f"Position: {lat:.4f}, {lon:.4f}",
+        tasks_total=1,
+        tasks_executed=1,
+    )
+
+
+def _handle_explain_param(explain_cmd: Dict, telemetry: dict) -> ExecutionResult:
+    """Explain what a parameter does using the parameter database."""
+    param_name = explain_cmd['params']['name'].upper()
+    logger.info(f"Executor: Explaining parameter '{param_name}'")
+
+    db = _get_param_db()
+    if not db:
+        return ExecutionResult(
+            ai_response="Parameter database is not available.",
+            command=None,
+            commands=None,
+            plan_summary="Explain failed: no database",
+            tasks_total=1,
+            tasks_executed=0,
+        )
+
+    # Search for exact match first
+    exact_match = None
+    for p in db.params:
+        if p['name'].upper() == param_name:
+            exact_match = p
+            break
+
+    if exact_match:
+        response = f"""**{exact_match['name']}**
+
+{exact_match['description']}
+
+Display Name: {exact_match.get('display_name', 'N/A')}"""
+    else:
+        # Try fuzzy search
+        results = db.search(param_name, top_k=3)
+        if results:
+            response = f"Parameter '{param_name}' not found exactly. Did you mean:\n"
+            for r in results:
+                response += f"\n- **{r['name']}**: {r['description'][:100]}..."
+        else:
+            response = f"Parameter '{param_name}' not found in the database."
+
+    return ExecutionResult(
+        ai_response=response,
+        command=None,
+        commands=None,
+        plan_summary=f"Explained: {param_name}",
         tasks_total=1,
         tasks_executed=1,
     )

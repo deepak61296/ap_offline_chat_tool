@@ -105,6 +105,31 @@ TOOL_DEFINITIONS = [
         "name": "reboot",
         "description": "Reboot the flight controller.",
         "parameters": {}
+    },
+    {
+        "name": "get_status",
+        "description": "Get current drone status including battery, GPS, flight mode, and altitude. Use to check drone health.",
+        "parameters": {}
+    },
+    {
+        "name": "get_position",
+        "description": "Get current GPS position (latitude, longitude, altitude) of the drone.",
+        "parameters": {}
+    },
+    {
+        "name": "pause",
+        "description": "Pause/hold current operation. Drone will hover in place (switches to LOITER mode). Use for emergencies.",
+        "parameters": {}
+    },
+    {
+        "name": "resume",
+        "description": "Resume mission after pause. Switches back to AUTO mode to continue waypoint mission.",
+        "parameters": {}
+    },
+    {
+        "name": "explain_param",
+        "description": "Explain what a parameter does, its valid range, and typical values. Use when user asks 'what does X parameter do?'",
+        "parameters": {"name": "string (parameter name, required)"}
     }
 ]
 
@@ -261,6 +286,13 @@ def normalize_tool_call(tool_call: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         "set_param":    lambda p: {"type": "SET_PARAM", "params": {"name": p.get("name", "").upper(), "value": p.get("value", 0)}},
         "search_param": lambda p: {"type": "SEARCH_PARAM", "params": {"query": p.get("query", "")}},
         "reboot":       lambda p: {"type": "REBOOT", "params": {}},
+        # New tools
+        "get_status":   lambda p: {"type": "GET_STATUS", "params": {}},
+        "get_position": lambda p: {"type": "GET_POSITION", "params": {}},
+        "pause":        lambda p: {"type": "PAUSE", "params": {}},
+        "hold":         lambda p: {"type": "PAUSE", "params": {}},  # Alias
+        "resume":       lambda p: {"type": "RESUME", "params": {}},
+        "explain_param": lambda p: {"type": "EXPLAIN_PARAM", "params": {"name": p.get("name", "").upper()}},
     }
     
     handler = TOOL_MAP.get(tool_name)
