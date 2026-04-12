@@ -33,7 +33,6 @@ if __name__ == '__main__':
     print("Modes:")
     print("  Agent  - Execute commands (ARM, TAKEOFF, LAND, etc.)")
     print("  Ask    - Read-only telemetry queries")
-    print("  Script - Lua script generation (31 templates)")
     print("=" * 70)
     print("Endpoints:")
     print("  GET  /health      - Health check")

@@ -537,9 +537,6 @@ When enabled, you can use natural language:
             return f"YAW {heading}°"
         elif cmd_type == "REBOOT":
             return "REBOOT"
-        elif cmd_type == "LUA_SCRIPT":
-            desc = params.get('description', 'custom script')
-            return f"LUA: {desc}"
         elif cmd_type == "ERROR":
             return f"ERROR: {params.get('message', 'unknown')}"
         else:

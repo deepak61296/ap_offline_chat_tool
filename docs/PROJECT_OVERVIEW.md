@@ -25,7 +25,7 @@ The AI backend translates natural language into structured MAVLink commands whil
 - **Complex sequences**: "arm, take off to 15 meters, then move north 50 meters"
 - **Telemetry queries**: "what's my battery level?", "how high am I flying?"
 
-### Three Operation Modes
+### Two Operation Modes
 
 **1. Agent Mode** - Execute commands
 ```
@@ -39,13 +39,6 @@ AI: "Taking off to 30 meters now."
 User: "what's my current altitude?"
 AI: "You are currently at 15.3 meters above home."
 → No command execution
-```
-
-**3. Script Mode** - Lua script generation
-```
-User: "create a battery monitor script"
-AI: Generates complete Lua script with ArduPilot API calls
-→ Deploys via MAVFTP (Mission Planner only)
 ```
 
 ### Safety Features
@@ -70,8 +63,7 @@ AI: Generates complete Lua script with ArduPilot API calls
 - Sentence Transformers (document search)
 
 **LLM Models:**
-- qwen2.5:3b (agent/ask modes, fast responses)
-- qwen2.5-coder:7b (script mode, better code generation)
+- qwen2.5:3b (default agent/ask model)
 
 **GCS Integration:**
 - MAVProxy 1.8+ (Python module)
@@ -90,8 +82,8 @@ ardupilot-ai-backend/
 │   ├── commands.py         # Command parsing and extraction
 │   ├── prompts.py          # LLM system prompts
 │   ├── config.py           # Safety limits and settings
-│   ├── rag.py              # Document search
-│   └── template_injector.py # Lua template system
+│   ├── planner.py          # Structured task planning
+│   └── executor.py         # Agentic execution pipeline
 ├── integrations/           # GCS integration code
 │   ├── mavproxy/          # MAVProxy module + patch
 │   └── mission_planner/   # Mission Planner plugin files
@@ -165,8 +157,6 @@ master.mav.command_long_send(
 | SET_YAW | "turn to heading 180 degrees" | Medium |
 | GET_PARAM | "get parameter RTL_ALT" | Low |
 | SET_PARAM | "set RTL_ALT to 50" | High |
-| LUA_SCRIPT | "create battery monitor script" | High |
-
 ## Integration Options
 
 ### MAVProxy Integration
@@ -223,17 +213,9 @@ cd MissionPlanner
 "get all PID parameters"
 ```
 
-### Script Development
-```
-"create a geofence script with 500 meter radius"
-"generate battery monitor that triggers RTL at 20%"
-"make a waypoint follower script"
-```
-
 ### Training and Education
 - New users can learn MAVLink commands through natural language
 - Ask mode explains telemetry without risk of execution
-- Script mode teaches Lua API through examples
 
 ## System Requirements
 
@@ -256,9 +238,7 @@ cd MissionPlanner
 ## Performance
 
 **Typical Response Times:**
-- Template-based Lua generation: ~50ms
 - LLM command extraction (3B model): 1-2 seconds
-- LLM script generation (7B model): 2-4 seconds
 - MAVLink execution overhead: ~100ms
 
 **Bottlenecks:**
@@ -272,10 +252,8 @@ cd MissionPlanner
 
 **Completed Features:**
 - ✓ MAVProxy integration with input interception
-- ✓ Mission Planner plugin with three modes
+- ✓ Mission Planner plugin with chat integration
 - ✓ 14 command types with validation
-- ✓ Template-based Lua generation
-- ✓ LLM fallback for custom scripts
 - ✓ RAG system for ArduPilot docs
 - ✓ Safety checks and risk levels
 - ✓ Comprehensive test suite
@@ -304,7 +282,6 @@ cd MissionPlanner
 **1. Install Ollama and pull models:**
 ```bash
 ollama pull qwen2.5:3b
-ollama pull qwen2.5-coder:7b
 ```
 
 **2. Create conda environment:**

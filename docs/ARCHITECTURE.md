@@ -26,7 +26,7 @@ ArduPilot AI Backend enables natural language drone control through local LLMs.
 │                                                                   │
 │  ┌────────────────────────────────────────────────────────────┐ │
 │  │  Flask API Server (backend/api_server.py)                  │ │
-│  │  - /chat endpoint (Agent/Ask/Script modes)                 │ │
+│  │  - /chat endpoint (Agent/Ask modes)                        │ │
 │  │  - /health endpoint                                        │ │
 │  └──────────────────┬──────────────────────┬──────────────────┘ │
 │                     │                      │                     │
@@ -45,7 +45,6 @@ ArduPilot AI Backend enables natural language drone control through local LLMs.
                     ┌────────────▼────────────┐
                     │   Ollama Service        │
                     │   - qwen2.5:3b    │
-                    │   - qwen2.5-coder:7b    │
                     │   - Local inference     │
                     └────────────┬────────────┘
                                  │
@@ -96,8 +95,8 @@ Flask HTTP API that processes natural language and returns structured commands.
 - `commands.py` - Command extraction using regex patterns and validation logic
 - `prompts.py` - Mode-specific system prompts for LLM
 - `config.py` - Safety limits, risk levels, model settings
-- `rag.py` - Document search and retrieval for ArduPilot docs
-- `template_injector.py` - Lua script template system
+- `planner.py` - LLM planner for structured tool calls
+- `executor.py` - Command sequencing and execution orchestration
 
 **API Contract:**
 ```json
@@ -138,8 +137,7 @@ Response:
 
 **Mission Planner Plugin** (`integrations/mission_planner/`)
 - C# chat interface accessible via Ctrl+L
-- Three operation modes with dropdown selector
-- Direct MAVFTP for Lua script deployment
+- Agent and Ask modes
 - Backend URL configuration in settings
 - Two integration options:
   1. Use pre-built fork exe
@@ -159,12 +157,6 @@ Response:
 - Used for flight status monitoring
 - Cannot modify vehicle state
 
-**Script Mode** (Lua generation)
-- Template-based generation for common patterns (96% coverage)
-- LLM fallback for custom requests
-- Syntax validation and post-processing
-- Direct deployment via MAVFTP when using Mission Planner
-
 ### 4. Safety System
 
 **Command Validation** (`backend/config.py`)
@@ -173,8 +165,7 @@ COMMAND_RISK_LEVELS = {
     "ARM": "medium",
     "TAKEOFF": "high",
     "GOTO": "medium",
-    "SET_PARAM": "high",
-    "LUA_SCRIPT": "high"
+    "SET_PARAM": "high"
 }
 
 MAX_TAKEOFF_ALTITUDE = 500  # meters
@@ -197,20 +188,6 @@ MAX_GOTO_DISTANCE = 1000    # meters
 - Returns top-k relevant chunks with sources
 - Integrated into Ask mode for technical queries
 - No external API calls required
-
-### 6. Lua Script System
-
-**Template Engine** (`backend/template_injector.py`)
-- Pre-built templates for common use cases
-- Parameter injection system
-- Covers: battery monitoring, geofencing, auto-land, waypoint following
-- Instant generation without LLM overhead
-
-**LLM Fallback** (`backend/prompts.py`)
-- Activates for custom/complex requests
-- Uses lua_bindings_reference.py for API knowledge
-- Syntax validation and auto-fix
-- Example formatting from templates
 
 ## Data Flow
 

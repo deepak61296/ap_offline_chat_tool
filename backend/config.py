@@ -29,8 +29,7 @@ API_DEBUG = False
 
 # Model Configuration
 DEFAULT_MODEL = 'qwen2.5:3b'
-SCRIPT_MODEL = 'qwen2.5-coder:7b'
-SUPPORTED_MODELS = ['qwen2.5:3b', 'qwen2.5-coder:7b']
+SUPPORTED_MODELS = ['qwen2.5:3b']
 
 # CPU/GPU Configuration
 USE_GPU = not args.no_gpu
@@ -126,7 +125,6 @@ COMMAND_RISK_LEVELS = {
     "ALTITUDE_CHANGE": "high",
     "SET_SPEED": "medium",
     "SET_YAW": "medium",
-    "LUA_SCRIPT": "high",
     "REBOOT": "critical",
 }
 

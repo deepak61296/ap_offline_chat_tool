@@ -1,7 +1,7 @@
 @echo off
 echo ========================================
 echo ArduPilot AI Backend Server
-echo Agent + Ask + Script Modes
+echo Agent + Ask Modes
 echo ========================================
 echo.
 echo Starting backend on http://localhost:5000

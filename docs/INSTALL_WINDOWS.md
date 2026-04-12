@@ -118,9 +118,8 @@ Ollama hosts the AI model locally on Windows.
 ### Step 6: Pull the AI Model
 
 ```powershell
-# Pull the fine-tuned model (552MB download)
+# Pull the default backend model
 ollama pull qwen2.5:3b
-ollama pull qwen2.5-coder:7b
 
 # Verify model is available
 ollama list
@@ -232,7 +231,6 @@ ping ollama.com
 
 # Try pulling again
 ollama pull qwen2.5:3b
-ollama pull qwen2.5-coder:7b
 ```
 
 ### Import errors

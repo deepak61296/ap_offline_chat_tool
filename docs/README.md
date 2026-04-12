@@ -24,7 +24,7 @@ Complete documentation for the ArduPilot AI Backend project.
 ### PROJECT_OVERVIEW.md
 High-level summary of the system:
 - Core concepts and workflow
-- The three operation modes (Agent/Ask/Script)
+- The two operation modes (Agent/Ask)
 - Safety features and validation
 - Tech stack, requirements, and performance
 
@@ -36,7 +36,6 @@ System design details:
 - Component breakdown and API contracts
 - Operation mode internals and safety system
 - RAG document retrieval system
-- Lua template engine design
 - Extension guide for adding new commands
 
 **Audience:** Developers and contributors.
@@ -74,17 +73,16 @@ Windows-specific installation guide:
 ### README_MISSION_PLANNER.md
 Mission Planner integration reference:
 - Plugin architecture
-- Three-mode UI explanation
+- Agent/Ask UI explanation
 - Backend URL configuration
 - Ctrl+L keyboard shortcut
-- Script mode MAVFTP deployment
 - Build from source instructions
 
 **Audience:** Mission Planner users
 
 ### MODEL_SELECTION.md
 LLM model configuration:
-- Supported models (qwen2.5:3b and qwen2.5-coder:7b)
+- Supported default model configuration
 - System requirements
 - Configuration file editing
 - Troubleshooting

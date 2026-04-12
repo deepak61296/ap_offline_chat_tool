@@ -1,6 +1,6 @@
 # QGroundControl AI Backend Integration
 
-This document describes how to integrate the ArduPilot AI Backend with QGroundControl.
+This document describes how to integrate the cleaned two-mode ArduPilot AI Backend with QGroundControl.
 
 ## Overview
 
@@ -17,6 +17,8 @@ The AI Backend provides natural language control for ArduPilot drones through QG
 3. **QGroundControl fork repository**
    - **Default branch:** `master`
    - **Feature branch:** `feature/ai-backend-integration` (You *must* checkout this branch for the AI features)
+
+Note: this repo only contains the backend-side contract and integration notes for QGroundControl. The QGroundControl source files listed below live in the QGroundControl fork, not in this backend repo.
 
 ## Setup
 

@@ -108,6 +108,10 @@ TOOL_DEFINITIONS = [
     }
 ]
 
+# Valid tool names for quick lookup
+VALID_TOOLS = {t["name"] for t in TOOL_DEFINITIONS}
+
+
 def get_tools_description() -> str:
     """Format tool definitions for the system prompt."""
     lines = []
@@ -124,6 +128,38 @@ def get_tools_description() -> str:
 # ─────────────────────────────────────────────────────
 # JSON Command Extraction (replaces fragile regex)
 # ─────────────────────────────────────────────────────
+
+def validate_and_coerce(tool_call: Dict) -> Optional[Dict]:
+    """
+    Validate tool name and coerce parameter types.
+    Returns normalized tool_call or None if invalid.
+    """
+    tool = tool_call.get("tool", "").lower().strip()
+    if tool not in VALID_TOOLS:
+        logger.warning(f"Invalid tool: {tool}")
+        return None
+
+    params = tool_call.get("params", {})
+    if not isinstance(params, dict):
+        params = {}
+
+    # Coerce string numbers to actual numbers
+    coerced = {}
+    for k, v in params.items():
+        if isinstance(v, str):
+            try:
+                coerced[k] = float(v) if '.' in v else int(v)
+            except ValueError:
+                coerced[k] = v
+        else:
+            coerced[k] = v
+
+    result = {"tool": tool, "params": coerced}
+    # Preserve confidence if present
+    if "confidence" in tool_call:
+        result["confidence"] = tool_call["confidence"]
+    return result
+
 
 def extract_tool_calls(ai_response: str) -> Tuple[str, List[Dict[str, Any]]]:
     """
@@ -148,6 +184,8 @@ def extract_tool_calls(ai_response: str) -> Tuple[str, List[Dict[str, Any]]]:
                 tool_calls = [x for x in parsed if isinstance(x, dict) and x.get('tool')]
             elif isinstance(parsed, dict) and parsed.get('tool'):
                 tool_calls = [parsed]
+            # Validate and coerce
+            tool_calls = [t for t in (validate_and_coerce(tc) for tc in tool_calls) if t]
             clean_text = ai_response[:json_block_match.start()].strip()
             if clean_text:
                 return clean_text, tool_calls
@@ -164,6 +202,8 @@ def extract_tool_calls(ai_response: str) -> Tuple[str, List[Dict[str, Any]]]:
             parsed = json.loads(json_array_match.group(0))
             if isinstance(parsed, list) and all(isinstance(x, dict) for x in parsed):
                 tool_calls = parsed
+                # Validate and coerce
+                tool_calls = [t for t in (validate_and_coerce(tc) for tc in tool_calls) if t]
                 clean_text = ai_response[:json_array_match.start()].strip()
                 if not clean_text:
                     clean_text = ai_response[json_array_match.end():].strip()
@@ -178,6 +218,8 @@ def extract_tool_calls(ai_response: str) -> Tuple[str, List[Dict[str, Any]]]:
             parsed = json.loads(json_obj_match.group(0))
             if isinstance(parsed, dict) and "tool" in parsed:
                 tool_calls = [parsed]
+                # Validate and coerce
+                tool_calls = [t for t in (validate_and_coerce(tc) for tc in tool_calls) if t]
                 clean_text = ai_response[:json_obj_match.start()].strip()
                 if not clean_text:
                     clean_text = ai_response[json_obj_match.end():].strip()

@@ -15,7 +15,7 @@ from .commands import extract_command, validate_command
 
 # Configuration
 from .config import (
-    DEFAULT_MODEL, SCRIPT_MODEL,
+    DEFAULT_MODEL,
     API_HOST, API_PORT,
     SUPPORTED_MODES, STANDALONE_MODE,
     OPERATION_MODE, BACKEND_VERSION
@@ -33,7 +33,7 @@ __all__ = [
     'app', 'plan', 'execute',
     'TOOL_DEFINITIONS', 'extract_tool_calls', 'normalize_tool_call',
     'extract_command', 'validate_command',
-    'DEFAULT_MODEL', 'SCRIPT_MODEL', 'API_HOST', 'API_PORT',
+    'DEFAULT_MODEL', 'API_HOST', 'API_PORT',
     'SUPPORTED_MODES', 'STANDALONE_MODE', 'OPERATION_MODE', 'BACKEND_VERSION',
     'MAVLinkManager', 'get_mavlink_manager', 'PYMAVLINK_AVAILABLE',
 ]
