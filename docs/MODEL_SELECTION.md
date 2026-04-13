@@ -1,67 +1,28 @@
-# Model Selection Guide
+# Model Selection
 
-The cleaned backend defaults to a single local Ollama model for Agent and Ask mode.
+Current server defaults come from `backend/config.py`.
 
-## Default Configuration
+## Default
 
-- Model: `qwen2.5:3b`
-- Size: about 1.9 GB
-- Best for: command extraction, telemetry queries, and low-latency local use
+- `DEFAULT_MODEL = "qwen2.5:3b"`
+- `SUPPORTED_MODELS = ["qwen2.5:3b"]`
+- `OLLAMA_NUM_CTX = 4096`, or `2048` with `--low-power`
+- `OLLAMA_NUM_GPU = -1`, or `0` with `--no-gpu`
 
-## Installation
+## How the model is chosen
+
+- if `POST /chat` includes `model`, that value is passed to `ollama.chat()`
+- otherwise the backend uses `DEFAULT_MODEL`
+
+The code does not currently enforce that the request model is inside `SUPPORTED_MODELS`.
+
+## Install the default model
 
 ```bash
 ollama pull qwen2.5:3b
 ollama list
 ```
 
-## Changing the Default Model
+## Change defaults
 
-Edit `backend/config.py`:
-
-```python
-DEFAULT_MODEL = "qwen2.5:3b"
-OLLAMA_NUM_CTX = 4096
-OLLAMA_NUM_GPU = -1
-```
-
-After editing, restart the backend:
-
-```bash
-python run_server.py
-```
-
-## Performance Notes
-
-| Model | Size | RAM Usage | Best For |
-|-------|------|-----------|----------|
-| qwen2.5:3b | 1.9 GB | 8 GB+ | Default Agent/Ask workflow |
-
-## Troubleshooting
-
-### Model Not Found
-
-```bash
-ollama pull qwen2.5:3b
-```
-
-### Out of Memory
-
-Reduce context size in `backend/config.py`:
-
-```python
-OLLAMA_NUM_CTX = 2048
-```
-
-### CPU-Only Mode
-
-Start the backend with:
-
-```bash
-python run_server.py --no-gpu
-```
-
-## Related Documentation
-
-- [Architecture](ARCHITECTURE.md)
-- [Installation Guide](INSTALL_WINDOWS.md)
+Edit `backend/config.py` and restart the server.

@@ -1,360 +1,326 @@
 # Architecture
 
-ArduPilot AI Backend v3.0 - Natural language drone control through local LLMs with structured tool calling.
+This document is the main technical walkthrough of the project. It describes the runtime flow, the main folders, and the purpose of the core backend files.
 
-> **Note**: Current implementation uses structured JSON tool calling. Full agentic architecture (autonomous looping, observation-action cycles, memory) is planned for future versions.
+## Project summary
 
-## High-Level Overview
+The repo is a local Python backend for natural-language ArduPilot control. A client such as Mission Planner, MAVProxy, or QGroundControl sends a chat request plus telemetry. The backend calls a local Ollama model, converts the model output into structured commands, and returns commands for the client to execute. In standalone mode it can also talk to the vehicle directly through `pymavlink`.
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              USER INTERFACE                                  │
-│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐          │
-│  │   QGroundControl │  │  Mission Planner │  │   MAVProxy CLI   │          │
-│  │   (AI Chat Box)  │  │   (Ctrl+L Chat)  │  │   (ai: prefix)   │          │
-│  └────────┬─────────┘  └────────┬─────────┘  └────────┬─────────┘          │
-└───────────┼─────────────────────┼─────────────────────┼─────────────────────┘
-            │                     │                     │
-            └─────────────────────┼─────────────────────┘
-                                  │ HTTP POST /chat
-                                  ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         BACKEND SERVER (Flask)                               │
-│                                                                              │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │                         API Layer (api_server.py)                    │   │
-│  │   POST /chat    POST /health    POST /status                        │   │
-│  └──────────────────────────────┬──────────────────────────────────────┘   │
-│                                 │                                           │
-│  ┌──────────────────────────────▼──────────────────────────────────────┐   │
-│  │                      PLANNER (planner.py)                            │   │
-│  │  • Builds system prompt with tool definitions                        │   │
-│  │  • Calls Ollama LLM (qwen2.5:3b)                                    │   │
-│  │  • Extracts JSON tool calls from response                           │   │
-│  │  • Supports RAG re-prompting for parameter lookups                  │   │
-│  └──────────────────────────────┬──────────────────────────────────────┘   │
-│                                 │                                           │
-│  ┌──────────────────────────────▼──────────────────────────────────────┐   │
-│  │                      EXECUTOR (executor.py)                          │   │
-│  │  • Classifies commands (immediate vs special vs backend-only)       │   │
-│  │  • Handles multi-step missions (ARM → TAKEOFF → MOVE sequences)     │   │
-│  │  • Compiles movement sequences into GPS waypoints                   │   │
-│  │  • Manages CIRCLE mode (sets radius, changes mode)                  │   │
-│  │  • RAG double-hop for SEARCH_PARAM                                  │   │
-│  └──────────────────────────────┬──────────────────────────────────────┘   │
-│                                 │                                           │
-│  ┌──────────────┐  ┌────────────┴───────────┐  ┌───────────────────────┐   │
-│  │  tools.py    │  │   param_db.py          │  │  mavlink_manager.py   │   │
-│  │  21 tools    │  │   5600+ params         │  │  Direct MAVLink ops   │   │
-│  │  JSON schema │  │   Semantic search      │  │  (optional)           │   │
-│  └──────────────┘  └────────────────────────┘  └───────────────────────┘   │
-│                                                                              │
-└──────────────────────────────────────┬──────────────────────────────────────┘
-                                       │
-                                       ▼ JSON Command
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                          GROUND CONTROL STATION                              │
-│  Receives: {"type": "TAKEOFF", "params": {"altitude": 20}}                  │
-│  Executes: MAVLink MAV_CMD_NAV_TAKEOFF                                      │
-└──────────────────────────────────────┬──────────────────────────────────────┘
-                                       │
-                                       ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         ARDUPILOT VEHICLE                                    │
-│                    (SITL Simulator or Real Hardware)                         │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+## Top-level structure
 
-## Tool Calling Pipeline (v3.0)
-
-The backend uses **structured JSON tool calling** instead of fragile regex parsing:
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                  TOOL CALLING PIPELINE                           │
-│                                                                  │
-│   User: "arm and takeoff to 20m then move north 50m"           │
-│                          │                                       │
-│                          ▼                                       │
-│   ┌──────────────────────────────────────────────────────────┐  │
-│   │                    PLANNER                                │  │
-│   │  1. Build prompt with TOOL_DEFINITIONS                   │  │
-│   │  2. Call LLM → get response with JSON tool calls         │  │
-│   │  3. Extract: [{"tool":"arm"}, {"tool":"takeoff",         │  │
-│   │               "params":{"altitude":20}},                  │  │
-│   │               {"tool":"move", "params":{"direction":     │  │
-│   │               "north", "distance":50}}]                   │  │
-│   └──────────────────────────┬───────────────────────────────┘  │
-│                              │                                   │
-│                              ▼                                   │
-│   ┌──────────────────────────────────────────────────────────┐  │
-│   │                    EXECUTOR                               │  │
-│   │  1. Classify each command                                 │  │
-│   │  2. ARM, TAKEOFF → immediate (queue for GCS)             │  │
-│   │  3. MOVE → movement (compile to GPS waypoint)            │  │
-│   │  4. Build execution plan                                  │  │
-│   │  5. Return commands to GCS for execution                 │  │
-│   └──────────────────────────┬───────────────────────────────┘  │
-│                              │                                   │
-│                              ▼                                   │
-│   Output: {"command": {"type":"ARM"}, "commands": [...]}        │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-## Core Components
-
-### 1. Tool Definitions (`backend/tools.py`)
-
-21 structured tools the LLM can call:
-
-| Tool | Description | Parameters |
-|------|-------------|------------|
-| `arm` | Arm drone motors | none |
-| `disarm` | Disarm drone motors | none |
-| `takeoff` | Take off to altitude | `altitude` (meters) |
-| `land` | Land at current position | none |
-| `rtl` | Return to launch | none |
-| `move` | Move in direction | `direction`, `distance` |
-| `circle` | Orbit at radius | `radius` (meters) |
-| `goto` | Fly to GPS coords | `latitude`, `longitude`, `altitude` |
-| `change_mode` | Change flight mode | `mode` |
-| `set_speed` | Set ground speed | `speed` (m/s) |
-| `set_altitude` | Change altitude | `change` (meters) |
-| `set_heading` | Set yaw/heading | `heading` (degrees) |
-| `get_param` | Read parameter | `name` |
-| `set_param` | Write parameter | `name`, `value` |
-| `search_param` | Search param database | `query` |
-| `get_status` | Get drone status | none |
-| `get_position` | Get GPS position | none |
-| `pause` | Hover in place (LOITER) | none |
-| `resume` | Resume mission (AUTO) | none |
-| `explain_param` | Explain parameter | `name` |
-| `reboot` | Reboot flight controller | none |
-
-### 2. Planner (`backend/planner.py`)
-
-The "brain" that interprets user intent:
-
-```python
-def plan(user_message, telemetry, model) -> (ai_text, commands):
-    # 1. Build system prompt with tool definitions
-    prompt = get_agent_prompt(connection_status, telemetry)
-
-    # 2. Call Ollama LLM
-    response = ollama.chat(model=model, messages=[...])
-
-    # 3. Extract JSON tool calls from response
-    text, tool_calls = extract_tool_calls(response)
-
-    # 4. Normalize to command format
-    commands = [normalize_tool_call(tc) for tc in tool_calls]
-
-    return text, commands
-```
-
-### 3. Executor (`backend/executor.py`)
-
-The "hands" that process and sequence commands:
-
-**Command Classification:**
-- `IMMEDIATE`: ARM, DISARM, TAKEOFF, LAND, RTL, CHANGE_MODE, GOTO, SET_SPEED, etc.
-- `SPECIAL`: CIRCLE, SEARCH_PARAM, MISSION_PLAN, GET_STATUS, GET_POSITION
-- `BACKEND_ONLY`: SEARCH_PARAM, GET_STATUS, GET_POSITION, EXPLAIN_PARAM (never sent to GCS)
-
-**Special Flows:**
-- **Multi-step missions**: ARM + TAKEOFF + MOVEs → uploads waypoint mission
-- **CIRCLE mode**: Sets CIRCLE_RADIUS param, then changes mode
-- **SEARCH_PARAM**: RAG lookup → re-prompts LLM with results
-- **Movement compilation**: Converts direction+distance to GPS coordinates
-
-### 4. Parameter Database (`backend/param_db.py`)
-
-Semantic search over 5600+ ArduPilot parameters:
-
-```python
-# Search for parameters
-results = db.search("battery failsafe", top_k=5)
-# Returns: [{"name": "BATT_FS_LOW_VOLT", "description": "...", "range": "..."}]
-```
-
-Features:
-- TF-IDF vectorization with cosine similarity
-- Prefix boosting (BATT_ for battery queries, MOT_ for motor queries)
-- SIM_ parameter deprioritization
-- Numbered suffix handling (BATT_ ranked higher than BATT2_)
-
-### 5. JSON Tool Calling (`backend/tools.py`)
-
-LLM outputs structured JSON instead of free-text:
-
-```
-User: "take off to 25 meters"
-
-LLM Response:
-Taking off to 25 meters now.
-```json
-[{"tool": "takeoff", "params": {"altitude": 25}}]
-```
-```
-
-**Extraction strategies:**
-1. Look for ```json code blocks
-2. Look for raw JSON arrays [...]
-3. Look for single JSON objects {"tool": ...}
-
-**Validation & coercion:**
-- Validates tool name against VALID_TOOLS set
-- Coerces string numbers to int/float ("25" → 25)
-- Preserves confidence scores if present
-
-## API Contract
-
-### POST /chat
-
-```json
-Request:
-{
-  "message": "arm and take off to 20 meters",
-  "mode": "agent",
-  "model": "qwen2.5:3b",
-  "telemetry": {
-    "status": {"armed": false, "mode": "STABILIZE"},
-    "battery": {"voltage": 12.4, "remaining": 85},
-    "gps": {"latitude": 37.7749, "longitude": -122.4194, "altitude": 0}
-  }
-}
-
-Response:
-{
-  "success": true,
-  "response": "Arming and taking off to 20 meters.",
-  "command": {"type": "ARM", "params": {}},
-  "commands": [
-    {"type": "ARM", "params": {}},
-    {"type": "TAKEOFF", "params": {"altitude": 20}}
-  ],
-  "mode": "agent",
-  "model": "qwen2.5:3b"
-}
-```
-
-### POST /health
-
-```json
-Response:
-{
-  "status": "healthy",
-  "service": "ArduPilot AI Backend",
-  "version": "3.0.0",
-  "operation_mode": "integrated",
-  "mavlink_status": "connected" | "not_available"
-}
-```
-
-## Data Flow Example
-
-```
-User: "which parameter controls disarm delay?"
-                    │
-                    ▼
-┌─────────────────────────────────────────────────────────────┐
-│ PLANNER: LLM outputs search_param tool                      │
-│ [{"tool": "search_param", "params": {"query": "disarm"}}]  │
-└─────────────────────────────┬───────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│ EXECUTOR: Detects SEARCH_PARAM → triggers RAG              │
-│ 1. Search param_db for "disarm delay"                      │
-│ 2. Find: DISARM_DELAY, MOT_SAFE_TIME, etc.                 │
-│ 3. Inject results into context                              │
-│ 4. Re-prompt LLM with parameter info                       │
-└─────────────────────────────┬───────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│ RESPONSE: Informational text (no command to GCS)           │
-│ "DISARM_DELAY controls how long the drone waits before     │
-│  automatically disarming after landing..."                  │
-└─────────────────────────────────────────────────────────────┘
-```
-
-## Directory Structure
-
-```
+```text
 ardupilot-ai-backend/
-├── backend/
-│   ├── api_server.py      # Flask HTTP server
-│   ├── planner.py         # LLM planning layer
-│   ├── executor.py        # Command execution layer
-│   ├── tools.py           # Tool definitions & JSON extraction
-│   ├── param_db.py        # Parameter database with search
-│   ├── prompts.py         # System prompts for agent/ask modes
-│   ├── commands.py        # Command validation
-│   ├── config.py          # Safety limits, risk levels
-│   └── mavlink_manager.py # Direct MAVLink operations (optional)
-├── integrations/
-│   ├── qgroundcontrol/    # QGC with AI chat (forked)
-│   ├── mission_planner/   # Mission Planner plugin
-│   └── mavproxy/          # MAVProxy module
-├── tests/
-│   ├── test_new_tools.py  # Unit tests for tools
-│   └── test_agentic_pipeline.py  # Integration tests
-├── docs/
-│   └── ARCHITECTURE.md    # This file
-├── run_server.py          # Server entry point
-└── run_tests.sh           # Test runner
+├── backend/                # Main Python application
+├── docs/                   # Project documentation
+├── integrations/           # GCS-side integration copies
+├── tests/                  # Unit and HTTP-level tests
+├── training/               # Fine-tuning and dataset experiments
+├── run_server.py           # Server entrypoint
+├── requirements.txt        # Python dependencies
+└── run_tests.sh            # Test helper
 ```
 
-## Performance
+## Runtime architecture
 
-| Operation | Time |
-|-----------|------|
-| JSON extraction | ~5ms |
-| LLM inference (qwen2.5:3b) | 1-2s |
-| Parameter search | ~10ms |
-| RAG re-prompt | +1-2s |
-| End-to-end simple command | 1-3s |
-| End-to-end with RAG | 2-4s |
+```text
+Client UI / GCS
+  -> POST /chat with message + mode + telemetry
+  -> backend/api_server.py
+  -> ask path or command path
+  -> ollama chat
+  -> structured command objects
+  -> JSON response to client
+  -> client executes MAVLink commands
+```
 
-## System Requirements
+Two runtime modes are defined in `backend/config.py`:
 
-**Minimum:**
-- Python 3.8+
-- 8GB RAM
-- Ollama with qwen2.5:3b model
-- 4GB disk space
+- `integrated`: default. External client sends telemetry and executes returned commands.
+- `standalone`: backend connects directly to the vehicle over MAVLink.
 
-**Recommended:**
-- Python 3.10+
-- 16GB RAM
-- GPU for faster inference
-- 10GB disk space
+## Request flow
 
-## Key Design Decisions
+### Ask mode
 
-1. **Structured tool calling over regex**: JSON tool calls more robust than regex parsing
-2. **Local LLM**: Privacy-first, no cloud API needed
-3. **Backend-only commands**: Info queries don't pollute GCS command stream
-4. **RAG double-hop**: Search → inject → re-prompt for accurate parameter info
-5. **JSON validation**: Type coercion and tool name validation prevents errors
-6. **Separation of concerns**: Planner (interprets intent) + Executor (processes commands)
+Used for information only.
 
-## Future Work: Full Agentic Architecture
+1. `backend/api_server.py` receives `POST /chat`.
+2. Request is validated and telemetry is checked.
+3. `backend/telemetry_data.py` formats telemetry into prompt text.
+4. `backend/prompts.py:get_ask_prompt()` builds the ask-mode prompt.
+5. `ollama.chat()` returns text.
+6. API response contains text and no command.
 
-Current implementation is **single-pass tool calling**. Future versions will add true agentic capabilities:
+### Command path
 
-| Feature | Current | Future (Agentic) |
-|---------|---------|------------------|
-| Execution | Single LLM call → commands | Observation-action loop |
-| Error handling | Return error to user | Retry with different approach |
-| Memory | Stateless per request | Persistent context |
-| Planning | LLM outputs all tools at once | Step-by-step reasoning |
-| Feedback | None | Observe telemetry, adjust |
+Used when `mode=agent`.
 
-**Planned agentic features:**
-- Autonomous retry on command failure
-- Telemetry observation between actions
-- Multi-turn reasoning for complex missions
-- Learning from past interactions
+1. `backend/api_server.py` receives `POST /chat`.
+2. Telemetry context and connection status are built.
+3. `backend/planner.py` sends the request to Ollama with tool descriptions.
+4. `backend/tools.py` extracts JSON tool calls from the model output.
+5. `backend/tools.py` normalizes tool calls into backend command structs.
+6. `backend/executor.py` validates, classifies, and transforms the command sequence.
+7. The API returns:
+   - `response`: user-facing text
+   - `command`: first command for backward compatibility
+   - `commands`: ordered list when multiple commands are queued
+
+## Main backend files
+
+### `backend/api_server.py`
+
+This is the HTTP layer and main orchestrator.
+
+Responsibilities:
+
+- creates the Flask app
+- exposes all REST endpoints
+- routes `/chat` by mode
+- builds telemetry context for prompts
+- initializes standalone MAVLink connection when enabled
+
+Main endpoints:
+
+- `GET /health`
+- `GET /status`
+- `GET /models`
+- `POST /chat`
+- `GET /test`
+- `POST /connect`
+- `POST /disconnect`
+- `GET /telemetry`
+- `POST /command`
+
+### `backend/config.py`
+
+Central configuration and safety constants.
+
+Responsibilities:
+
+- parses startup flags like `--standalone`, `--connect`, `--baud`, `--no-gpu`, `--low-power`
+- defines API host and port
+- defines default model and Ollama options
+- stores command limits such as max takeoff altitude and max movement distance
+- defines supported flight modes
+- defines operation mode and approval mode
+
+This file is where interviewer-style questions about runtime configuration, limits, or deployment defaults should usually be answered from.
+
+### `backend/prompts.py`
+
+Contains the system prompts for both ask mode and command mode.
+
+Responsibilities:
+
+- defines the command-mode prompt with examples
+- injects tool descriptions into the prompt
+- defines the ask-mode prompt that explicitly disables command execution
+- provides `get_agent_prompt()` and `get_ask_prompt()`
+
+This file is important because command behavior depends heavily on prompt rules. The current design uses prompt instructions plus tool definitions, not pure regex matching.
+
+### `backend/tools.py`
+
+Defines the model-facing tool schema and JSON extraction logic.
+
+Responsibilities:
+
+- declares `TOOL_DEFINITIONS`
+- formats tool descriptions for the prompt
+- extracts JSON blocks, arrays, or objects from the LLM output
+- validates tool names
+- coerces parameter types
+- converts tool calls into normalized backend commands
+
+Examples of tool names defined here:
+
+- `arm`
+- `takeoff`
+- `move`
+- `goto`
+- `set_param`
+- `search_param`
+- `get_status`
+- `pause`
+- `resume`
+
+This is the key boundary between model output and deterministic backend logic.
+
+### `backend/planner.py`
+
+This is the model-calling layer for command requests.
+
+Responsibilities:
+
+- builds the message list for Ollama
+- calls `ollama.chat()`
+- extracts tool calls from raw model output
+- normalizes those tool calls into command objects
+- re-prompts the model with injected context for parameter lookup flows
+
+The planner does not execute commands. It only interprets user intent and returns structured actions.
+
+### `backend/executor.py`
+
+This is the command processing layer.
+
+Responsibilities:
+
+- validates normalized commands
+- injects prerequisites like `ARM` before `TAKEOFF` when needed
+- separates immediate commands from special flows
+- handles information-only commands internally
+- compiles multiple movement steps into waypoint missions
+- handles `CIRCLE`, `SEARCH_PARAM`, `GET_STATUS`, `GET_POSITION`, and parameter explanation flows
+
+Important behavior:
+
+- backend-only informational commands are filtered out before returning commands to the client
+- if PyMAVLink is connected, some prerequisite steps may execute directly on the backend
+- movement sequences can become uploaded missions instead of a series of raw move commands
+
+### `backend/commands.py`
+
+This file is partly legacy and partly still active.
+
+Responsibilities:
+
+- validates command structs in `validate_command()`
+- contains regex-based extraction helpers from older versions
+- defines parameter checks for commands like `TAKEOFF`, `GOTO`, `SET_SPEED`, and `CIRCLE`
+
+Current status:
+
+- validation is still important
+- regex extraction helpers are no longer the primary path for `/chat`
+
+### `backend/param_db.py`
+
+Local parameter lookup module.
+
+Responsibilities:
+
+- loads `backend/apm.pdef.json`
+- downloads the ArduCopter parameter file if cache is missing
+- flattens grouped parameter data
+- ranks matches for search queries
+
+Current implementation details:
+
+- keyword-based ranking
+- prefix boosts for domains like battery, GPS, failsafe
+- penalties for simulation/display style params
+- not a vector database
+
+### `backend/telemetry_data.py`
+
+Defines telemetry data structures and prompt formatting helpers.
+
+Responsibilities:
+
+- provides dataclasses for battery, GPS, attitude, speed, status, mission, home, and sensors
+- converts telemetry objects to dictionaries
+- formats client telemetry into plain text for LLM context
+
+This file matters because the model only sees what this formatter includes.
+
+### `backend/mavlink_manager.py`
+
+Optional direct MAVLink layer for standalone execution.
+
+Responsibilities:
+
+- opens TCP, UDP, or serial MAVLink connections
+- waits for heartbeat
+- requests telemetry streams
+- maintains live telemetry state
+- exposes command execution helpers and mission upload support
+
+This file is only active when `pymavlink` is installed and standalone features are used.
+
+### `backend/__init__.py`
+
+Package export file.
+
+Responsibilities:
+
+- exposes the app, planner, executor, tool helpers, config, and optional MAVLink manager
+- defines package version metadata
+
+It is small, but useful for understanding the public surface of the backend package.
+
+## Special flows worth explaining in interviews
+
+### Parameter search flow
+
+User asks something like "which parameter controls disarm delay?"
+
+1. Planner emits `search_param`
+2. Executor queries `param_db`
+3. Matching parameters are injected back into model context
+4. Planner is called again with the extra context
+5. Backend returns explanation text, and may return a parameter command if appropriate
+
+This is the closest thing in the current code to a multi-step reasoning flow, but it is still a bounded pipeline, not a general autonomous agent loop.
+
+### Multi-move mission flow
+
+User asks for several movement steps.
+
+1. Planner emits multiple `move` tool calls
+2. Executor converts them to `MOVE_DIRECTION` commands
+3. If enough telemetry is available, executor computes waypoint coordinates
+4. If MAVLink is available, the mission is uploaded and backend returns `CHANGE_MODE AUTO`
+
+### Pause and resume
+
+These are model-facing tools, but executor maps them to mode changes:
+
+- `PAUSE` -> `CHANGE_MODE LOITER`
+- `RESUME` -> `CHANGE_MODE AUTO`
+
+## Integrations folder
+
+`integrations/` contains copies of client-side integration code, not the main backend runtime.
+
+Important files:
+
+- `integrations/mission_planner/AIBackendService.cs`: calls backend endpoints
+- `integrations/mission_planner/DroneCommandExecutor.cs`: executes command objects in Mission Planner
+- `integrations/mavproxy/mavproxy_ai_backend.py`: MAVProxy module that forwards natural language to the backend
+- `integrations/qgroundcontrol/README.md`: notes for QGroundControl integration
+
+These files are useful when explaining how the backend is consumed by external tools.
+
+## Tests
+
+`tests/` covers both pure Python logic and HTTP behavior.
+
+Important files:
+
+- `test_new_tools.py`: tool definition and normalization coverage
+- `test_comprehensive.py`: broad backend checks
+- `test_agentic_pipeline.py`: HTTP-level end-to-end checks against a running backend
+- `test_command_dataset.py`: command dataset checks
+- `test_param_dataset.py`: parameter lookup checks
+
+## Design notes
+
+Current architecture is best described as:
+
+- local LLM-assisted command parsing
+- deterministic Python execution pipeline
+- structured command response contract
+
+It is not best described as a fully autonomous agent. The current code is mostly a request pipeline with a few controlled multi-step flows.
+
+## Interview explanation
+
+A concise way to explain the project:
+
+1. A GCS sends chat text and telemetry to a Flask backend.
+2. The backend uses a local Ollama model to convert natural language into structured tool calls.
+3. Python code normalizes and validates those tool calls.
+4. An executor handles special logic like parameter search, mission building, and mode changes.
+5. The backend returns structured commands for the GCS to execute, or executes directly through MAVLink in standalone mode.

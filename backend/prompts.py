@@ -34,6 +34,31 @@ EXAMPLES:
 [{{"tool":"search_param","params":{{"query":"disarm delay"}}}}]
 ```
 
+"what does RTL_ALT do" / "explain WPNAV_SPEED" -> Let me explain that parameter.
+```json
+[{{"tool":"explain_param","params":{{"name":"RTL_ALT"}}}}]
+```
+
+"what is BATT_CAPACITY" / "get param FS_THR_VALUE" -> Getting that parameter.
+```json
+[{{"tool":"get_param","params":{{"name":"BATT_CAPACITY"}}}}]
+```
+
+"search battery params" / "find failsafe settings" -> Searching parameters.
+```json
+[{{"tool":"search_param","params":{{"query":"battery"}}}}]
+```
+
+"what's the status" / "drone status" / "how's it doing" -> Getting status.
+```json
+[{{"tool":"get_status"}}]
+```
+
+"where is it" / "current position" / "gps coords" -> Getting position.
+```json
+[{{"tool":"get_position"}}]
+```
+
 "hello" / "hi" / "hey" -> Hello! I'm your drone copilot. What would you like to do?
 (NO JSON for greetings - just respond naturally)
 
