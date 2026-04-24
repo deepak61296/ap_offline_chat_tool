@@ -2,7 +2,7 @@
 
 Natural language drone control with structured tool calling. Talk to your drone through QGroundControl, MAVProxy, or Mission Planner. Runs fully offline with [Ollama](https://ollama.com).
 
-**v3.0** — Planner → Executor pipeline with JSON tool calling. 23/23 tests passing.
+**v3.0** — Planner → Executor pipeline with JSON tool calling. See `tests/README_TESTS.md` for the current benchmark summary.
 
 ```
 arm the drone and takeoff to 25m
