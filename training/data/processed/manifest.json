@@ -1,0 +1,18 @@
+{
+  "total_rows": 1233,
+  "train_rows": 1085,
+  "validation_rows": 98,
+  "heldout_eval_rows": 50,
+  "include_docs": true,
+  "sources": [
+    "docs:battery-failsafe.json",
+    "docs:failsafe.json",
+    "docs:parameters-overview.json",
+    "docs:radio-control.json",
+    "hardcoded_failures",
+    "hardcoded_negatives",
+    "param_db",
+    "synthetic_tools",
+    "topic_templates"
+  ]
+}

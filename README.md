@@ -258,6 +258,26 @@ ardupilot-ai-backend/
 | Python | 3.10 | 3.10+ |
 | Storage | 5 GB | 10 GB |
 
+## API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/health` | GET | Health check |
+| `/status` | GET | Backend status and available models |
+| `/models` | GET | List Ollama models |
+| `/chat` | POST | Main AI chat endpoint |
+| `/telemetry` | GET | Current telemetry (standalone mode) |
+| `/connect` | POST | Connect to vehicle (standalone mode) |
+| `/disconnect` | POST | Disconnect from vehicle |
+| `/command` | POST | Execute command directly (standalone mode) |
+
+**Example `/chat` request:**
+```bash
+curl -X POST http://localhost:5000/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "arm the drone", "mode": "agent"}'
+```
+
 ## Running Tests
 
 ```bash

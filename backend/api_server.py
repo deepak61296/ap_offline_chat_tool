@@ -378,8 +378,7 @@ def chat():
         if mode == 'agent':
             system_prompt = get_agent_prompt(connection_status, telemetry_section)
         elif mode == 'ask':
-            # Ask mode - no RAG, just use prompt
-            system_prompt = get_ask_prompt(connection_status, telemetry_section, "")
+            system_prompt = get_ask_prompt(connection_status, telemetry_section)
         else:  # script mode
             # Try template injection first (fast, guaranteed correct)
             template_code, template_used = generate_from_template(user_message)
