@@ -146,7 +146,7 @@
   {"input":"open youtube","expected_tools":[],"category":"invalid"},
   {"input":"launch missile","expected_tools":[],"category":"invalid"},
   {"input":"hack nasa","expected_tools":[],"category":"invalid"},
-  {"input":"become invisible","expected_tools":[],"category":"invalid"},
+    input":"become invisible","expected_tools":[],"category":"invalid"},
 
   {"input":"armm","expected_tools":[{"tool":"arm","params":{}}],"category":"edge_cases"},
   {"input":"tk of 20","expected_tools":[{"tool":"takeoff","params":{"altitude":20}}],"category":"edge_cases"},

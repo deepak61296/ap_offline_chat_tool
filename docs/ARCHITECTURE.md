@@ -33,6 +33,20 @@ Client UI / GCS
   -> client executes MAVLink commands
 ```
 
+**Pipeline flow (agent mode):**
+
+```text
+api_server.py      planner.py        tools.py         executor.py
+     |                 |                 |                 |
+     |--user msg------>|                 |                 |
+     |                 |--ollama.chat--->|                 |
+     |                 |<--raw response--|                 |
+     |                 |--extract_tool_calls-------------->|
+     |                 |<--normalized cmds-----------------|
+     |                 |                 |--execute------->|
+     |<--JSON response-|                 |<--result--------|
+```
+
 Two runtime modes are defined in `backend/config.py`:
 
 - `integrated`: default. External client sends telemetry and executes returned commands.
@@ -65,6 +79,17 @@ Used when `mode=agent`.
    - `response`: user-facing text
    - `command`: first command for backward compatibility
    - `commands`: ordered list when multiple commands are queued
+
+```json
+{
+  "response": "Arming and taking off to 20 meters.",
+  "command": {"type": "ARM", "params": {}},
+  "commands": [
+    {"type": "ARM", "params": {}},
+    {"type": "TAKEOFF", "params": {"altitude": 20}}
+  ]
+}
+```
 
 ## Main backend files
 
@@ -133,6 +158,18 @@ Responsibilities:
 - coerces parameter types
 - converts tool calls into normalized backend commands
 
+```python
+# Extract JSON from LLM output
+json_block = re.search(r'```json\s*(.*?)\s*```', ai_response, re.DOTALL)
+parsed = json.loads(json_block.group(1))
+
+# Normalize to backend command format
+TOOL_MAP = {
+    "arm":     lambda p: {"type": "ARM", "params": {}},
+    "takeoff": lambda p: {"type": "TAKEOFF", "params": {"altitude": p.get("altitude", 10)}},
+}
+```
+
 Examples of tool names defined here:
 
 - `arm`
@@ -159,6 +196,15 @@ Responsibilities:
 - normalizes those tool calls into command objects
 - re-prompts the model with injected context for parameter lookup flows
 
+```python
+response = ollama.chat(
+    model=model,
+    messages=messages,
+    options={'num_ctx': OLLAMA_NUM_CTX, 'temperature': 0.1}
+)
+raw_response = response['message']['content'].strip()
+```
+
 The planner does not execute commands. It only interprets user intent and returns structured actions.
 
 ### `backend/executor.py`
@@ -173,6 +219,17 @@ Responsibilities:
 - handles information-only commands internally
 - compiles multiple movement steps into waypoint missions
 - handles `CIRCLE`, `SEARCH_PARAM`, `GET_STATUS`, `GET_POSITION`, and parameter explanation flows
+
+```python
+for cmd in commands:
+    is_valid, error = validate_command(cmd)
+    if not is_valid:
+        continue
+    if cmd['type'] == 'SEARCH_PARAM':
+        plan_steps.append(('search', cmd))
+    elif cmd['type'] in IMMEDIATE_COMMANDS:
+        plan_steps.append(('immediate', cmd))
+```
 
 Important behavior:
 

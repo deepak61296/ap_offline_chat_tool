@@ -357,6 +357,7 @@ namespace MissionPlanner
 
         /// <summary>
         /// Move in a specific direction by a certain distance
+        /// Supports cardinal (N/S/E/W) and relative (forward/backward/left/right) directions
         /// </summary>
         private string MoveDirection(string direction, double distance)
         {
@@ -365,28 +366,44 @@ namespace MissionPlanner
                 // Ensure we're in GUIDED mode for movement
                 mavlink.setMode(mavlink.MAV.sysid, mavlink.MAV.compid, "GUIDED");
                 System.Threading.Thread.Sleep(500); // Wait for mode change
-                
-                // Get current position
+
+                // Get current position and heading
                 double currentLat = mavlink.MAV.cs.lat;
                 double currentLon = mavlink.MAV.cs.lng;
                 double currentAlt = mavlink.MAV.cs.alt;
+                double currentYaw = mavlink.MAV.cs.yaw; // Current heading in degrees
 
                 if (currentLat == 0 && currentLon == 0)
                 {
                     return "[Error: Current position unknown]";
                 }
 
-                // Calculate bearing based on direction (4 cardinal directions only)
+                // Calculate bearing based on direction
+                // Supports both cardinal (N/S/E/W) and relative (forward/back/left/right)
                 double bearing = 0;
                 switch (direction.ToUpper())
                 {
+                    // Cardinal directions (absolute)
                     case "NORTH": bearing = 0; break;
                     case "SOUTH": bearing = 180; break;
                     case "EAST": bearing = 90; break;
                     case "WEST": bearing = 270; break;
+                    case "NORTHEAST": bearing = 45; break;
+                    case "NORTHWEST": bearing = 315; break;
+                    case "SOUTHEAST": bearing = 135; break;
+                    case "SOUTHWEST": bearing = 225; break;
+                    // Relative directions (based on current heading)
+                    case "FORWARD": bearing = currentYaw; break;
+                    case "BACKWARD":
+                    case "BACK": bearing = currentYaw + 180; break;
+                    case "LEFT": bearing = currentYaw - 90; break;
+                    case "RIGHT": bearing = currentYaw + 90; break;
                     default:
-                        return $"[Error: Unsupported direction '{direction}'. Use: north, south, east, or west]";
+                        return $"[Error: Unsupported direction '{direction}'. Use: north/south/east/west or forward/backward/left/right]";
                 }
+
+                // Normalize bearing to 0-360 range
+                bearing = ((bearing % 360) + 360) % 360;
 
                 // Calculate new position using Haversine formula
                 const double EARTH_RADIUS = 6371000; // meters
